@@ -610,14 +610,7 @@ function createSettingsModal() {
                     <i class='bx bx-x'></i>
                 </button>
 
-                <div class="settings-section active" data-section="overview">
-                    <h3 class="settings-section-title">Overview</h3>
-                    <p class="settings-section-description">
-                        Configure key options for your admin workspace. Use the Admin accounts section
-                        to invite and manage additional administrators.
-                    </p>
-                </div>
-                <div class="settings-section" data-section="profile">
+                <div class="settings-section active" data-section="profile">
                     <h3 class="settings-section-title">My Profile</h3>
                     <p class="settings-section-description">
                         Manage your account settings and profile information.
