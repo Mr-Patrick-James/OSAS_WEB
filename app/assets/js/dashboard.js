@@ -580,11 +580,21 @@ function createSettingsModal() {
                 <div class="settings-section" data-section="profile">
                     <h3 class="settings-section-title">My Profile</h3>
                     <p class="settings-section-description">
-                        Update your username and password. Current password is required for any changes.
+                        Update your username, profile picture, and password. Current password is required for any changes.
                     </p>
                     <div id="settingsProfileAlert" class="settings-alert"></div>
-                    <form id="settingsProfileForm">
+                    <form id="settingsProfileForm" enctype="multipart/form-data">
                         <div class="settings-grid">
+                            <div class="settings-form-group" style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                                <div class="profile-upload-container" style="position: relative; width: 120px; height: 120px; margin-bottom: 15px;">
+                                    <img id="profileImagePreview" src="../public/images/default-avatar.png" alt="Profile Preview" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0;">
+                                    <label for="profilePictureInput" style="position: absolute; bottom: 0; right: 0; background: #D4AF37; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <i class='bx bx-camera'></i>
+                                    </label>
+                                    <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" style="display: none;">
+                                </div>
+                                <span style="font-size: 0.85rem; color: #64748b;">Click camera icon to change</span>
+                            </div>
                             <div class="settings-form-group">
                                 <label class="settings-label" for="profileUsername">Username</label>
                                 <input class="settings-input" type="text" id="profileUsername" name="username" placeholder="Your username">
@@ -828,6 +838,9 @@ function setActiveSettingsSection(section) {
 
 async function loadUserProfile() {
     const usernameInput = document.getElementById('profileUsername');
+    const profileImagePreview = document.getElementById('profileImagePreview');
+    const profilePictureInput = document.getElementById('profilePictureInput');
+    
     if (!usernameInput) return;
 
     // Clear password fields
@@ -835,12 +848,42 @@ async function loadUserProfile() {
     document.getElementById('profileNewPassword').value = '';
     document.getElementById('profileConfirmPassword').value = '';
     
+    // Setup file input listener for preview
+    if (profilePictureInput && profileImagePreview) {
+        profilePictureInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profileImagePreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+    
     try {
         const response = await fetch('../api/users.php?action=profile');
         const data = await response.json();
         
         if (data.status === 'success') {
             usernameInput.value = data.data.profile.username;
+            
+            // Update profile image preview if exists
+            if (data.data.profile.profile_picture && profileImagePreview) {
+                // Handle relative paths
+                let imagePath = data.data.profile.profile_picture;
+                if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                    if (imagePath.startsWith('public/')) {
+                        // Go up two levels from app/entry/ to root
+                        imagePath = '../../' + imagePath;
+                    } else {
+                        imagePath = '../' + imagePath;
+                    }
+                }
+                // Add timestamp to prevent caching issues
+                profileImagePreview.src = imagePath + '?t=' + new Date().getTime();
+            }
         }
     } catch (error) {
         console.error('Error loading profile:', error);
@@ -911,6 +954,37 @@ async function submitProfileForm() {
                  if (navUsername) {
                      navUsername.textContent = data.data.username;
                  }
+            }
+            
+            // Update profile picture if changed
+            if (data.data && data.data.profile_picture) {
+                const profilePics = document.querySelectorAll('.profile-photo, .user-avatar img, .nav-profile-photo');
+                profilePics.forEach(img => {
+                    let imagePath = data.data.profile_picture;
+                    if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                        if (imagePath.startsWith('public/')) {
+                            imagePath = '../../' + imagePath;
+                        } else {
+                            imagePath = '../' + imagePath;
+                        }
+                    }
+                    // Add timestamp to bust cache
+                    img.src = imagePath + '?t=' + new Date().getTime();
+                });
+                
+                // Also update preview
+                const preview = document.getElementById('profileImagePreview');
+                if (preview) {
+                    let imagePath = data.data.profile_picture;
+                    if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                        if (imagePath.startsWith('public/')) {
+                            imagePath = '../../' + imagePath;
+                        } else {
+                            imagePath = '../' + imagePath;
+                        }
+                    }
+                    preview.src = imagePath + '?t=' + new Date().getTime();
+                }
             }
         } else {
             alertBox.className = 'settings-alert error';

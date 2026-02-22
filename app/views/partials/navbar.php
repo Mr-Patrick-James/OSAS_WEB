@@ -1,7 +1,18 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
+// Get user profile image from session if available
 $userImage = View::asset('img/user.jpg');
-if (isset($role) && $role === 'user') {
+if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture'])) {
+    $profilePic = $_SESSION['profile_picture'];
+    
+    // Check if it's an uploaded file (starts with public/)
+    if (strpos($profilePic, 'public/') === 0) {
+        $userImage = View::url($profilePic);
+    } else {
+        // Assume it's an asset
+        $userImage = View::asset($profilePic);
+    }
+} elseif (isset($role) && $role === 'user') {
     $userImage = View::asset('img/default.png');
 }
 ?>
@@ -21,7 +32,7 @@ if (isset($role) && $role === 'user') {
     <i class='bx bxs-cog'></i>
   </a>
   <a href="#" class="profile">
-    <img src="<?= $userImage ?>">
+    <img src="<?= $userImage ?>" class="profile-photo">
   </a>
 </nav>
 <!-- NAVBAR -->

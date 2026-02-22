@@ -69,6 +69,45 @@ class View {
     }
     
     /**
+     * Get absolute URL
+     * Returns absolute path from document root
+     */
+    public static function url($path) {
+        $path = ltrim($path, '/');
+        
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $relativePath = '';
+        
+        if ($scriptName && $scriptName !== '/') {
+            $parts = explode('/', trim($scriptName, '/'));
+            if (!empty($parts[0])) {
+                $relativePath = $parts[0];
+            }
+        }
+        
+        // If we couldn't get it from SCRIPT_NAME, try REQUEST_URI
+        if (empty($relativePath)) {
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+            if ($requestUri) {
+                $parsed = parse_url($requestUri);
+                $uriPath = $parsed['path'] ?? '';
+                if ($uriPath) {
+                    $parts = explode('/', trim($uriPath, '/'));
+                    if (!empty($parts[0])) {
+                        $relativePath = $parts[0];
+                    }
+                }
+            }
+        }
+        
+        if (!empty($relativePath)) {
+            return '/' . $relativePath . '/' . $path;
+        } else {
+            return '/' . $path;
+        }
+    }
+
+    /**
      * Include a partial view
      */
     public static function partial($partialName, $data = []) {

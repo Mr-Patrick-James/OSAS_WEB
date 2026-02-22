@@ -202,6 +202,60 @@ class UserController extends Controller {
                 $this->error('Incorrect current password.');
             }
 
+            // Handle Profile Picture Upload
+            $profilePicture = isset($user['profile_picture']) ? $user['profile_picture'] : null; // Keep existing by default
+            
+            if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+                $fileName = $_FILES['profile_picture']['name'];
+                $fileSize = $_FILES['profile_picture']['size'];
+                $fileType = $_FILES['profile_picture']['type'];
+                
+                $fileNameCmps = explode(".", $fileName);
+                $fileExtension = strtolower(end($fileNameCmps));
+                
+                $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                
+                if (in_array($fileExtension, $allowedfileExtensions)) {
+                    // Check file size (limit to 5MB)
+                    if ($fileSize > 5 * 1024 * 1024) {
+                        $this->error('File size exceeds 5MB limit.');
+                    }
+                    
+                    // Generate unique filename
+                    $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                    
+                    // Upload directory - Relative to the controller file location
+                    // Controller is in app/controllers, we want to go to public/uploads/profile_pictures
+                    $uploadDir = __DIR__ . '/../../public/uploads/profile_pictures/';
+                    
+                    // Create directory if it doesn't exist
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    
+                    $dest_path = $uploadDir . $newFileName;
+                    
+                    if(move_uploaded_file($fileTmpPath, $dest_path)) {
+                        // Store relative path in database
+                        $profilePicture = 'public/uploads/profile_pictures/' . $newFileName;
+                        
+                        // Delete old profile picture if exists and not default
+                        if (!empty($user['profile_picture']) && file_exists(__DIR__ . '/../../' . $user['profile_picture'])) {
+                            // Don't delete if it's a default image or if we just uploaded it
+                            // Only delete if it's a different file
+                            if ($user['profile_picture'] !== $profilePicture) {
+                                unlink(__DIR__ . '/../../' . $user['profile_picture']);
+                            }
+                        }
+                    } else {
+                        $this->error('Error moving uploaded file.');
+                    }
+                } else {
+                    $this->error('Upload failed. Allowed file types: ' . implode(', ', $allowedfileExtensions));
+                }
+            }
+
             // Check if username is being changed and if it's already taken
             if ($username !== $user['username']) {
                 if ($this->model->usernameExists($username, $userId)) {
@@ -211,6 +265,7 @@ class UserController extends Controller {
 
             $updateData = [
                 'username' => $username,
+                'profile_picture' => $profilePicture,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 
@@ -223,12 +278,15 @@ class UserController extends Controller {
             }
 
             if ($this->model->update($userId, $updateData)) {
-                // Update session if username changed
-                $_SESSION['username'] = $username;
-                $this->success('Profile updated successfully.', ['username' => $username]);
-            } else {
-                $this->error('Failed to update profile.');
+            // Update session if username changed
+            $_SESSION['username'] = $username;
+            if (isset($profilePicture)) {
+                $_SESSION['profile_picture'] = $profilePicture;
             }
+            $this->success('Profile updated successfully.', ['username' => $username, 'profile_picture' => $profilePicture]);
+        } else {
+            $this->error('Failed to update profile.');
+        }
         } catch (Exception $e) {
             $this->error('Error updating profile: ' . $e->getMessage());
         }
@@ -248,7 +306,8 @@ class UserController extends Controller {
             $profile = [
                 'username' => $user['username'],
                 'full_name' => $user['full_name'] ?? '',
-                'email' => $user['email'] ?? ''
+                'email' => $user['email'] ?? '',
+                'profile_picture' => $user['profile_picture'] ?? ''
             ];
 
             $this->success('Profile retrieved successfully', ['profile' => $profile]);
