@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Feb 08, 2026 at 02:25 PM
+-- Generation Time: Feb 22, 2026 at 01:24 PM
 -- Server version: 8.3.0
 -- PHP Version: 8.3.14
 
@@ -234,7 +234,7 @@ CREATE TABLE IF NOT EXISTS `departments` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `department_code` (`department_code`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `departments`
@@ -253,7 +253,8 @@ INSERT INTO `departments` (`id`, `department_name`, `department_code`, `head_of_
 (10, 'BS Nursing', 'BSN', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL),
 (11, 'Bachelor of Elementary Education', 'BEED', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL),
 (12, 'Bachelor of Secondary Education', 'BSED', NULL, NULL, 'active', '2025-12-14 09:38:55', NULL, NULL),
-(13, 'BSIT', 'IT-001', NULL, NULL, 'active', '2026-02-05 02:56:49', NULL, NULL);
+(13, 'BSIT', 'IT-001', NULL, NULL, 'active', '2026-02-05 02:56:49', NULL, NULL),
+(14, 'BSIT', 'BSIS-1', NULL, NULL, 'active', '2026-02-15 07:08:47', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -411,7 +412,7 @@ CREATE TABLE IF NOT EXISTS `otps` (
   KEY `idx_otps_email` (`email`),
   KEY `idx_otps_code` (`code`),
   KEY `idx_otps_expires` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -486,16 +487,17 @@ CREATE TABLE IF NOT EXISTS `reports` (
   KEY `idx_report_period` (`report_period_start`,`report_period_end`),
   KEY `idx_reports_student_dept` (`student_id`,`department_code`),
   KEY `idx_reports_status_date` (`status`,`generated_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `reports`
 --
 
 INSERT INTO `reports` (`id`, `report_id`, `student_id`, `student_name`, `student_contact`, `department`, `department_code`, `section`, `section_id`, `yearlevel`, `uniform_count`, `footwear_count`, `no_id_count`, `total_violations`, `status`, `last_violation_date`, `report_period_start`, `report_period_end`, `generated_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'R004', '2024-004', 'Anna Marie Rodriguez', '+63 945 678 9012', 'BS Business Administration', 'BSBA', 'BSIT-1A', 1, '1st Year', 2, 0, 0, 2, 'permitted', '2025-12-15', '2024-02-08', '2025-12-15', '2026-01-08 11:19:03', '2026-01-23 10:11:08', NULL),
-(2, 'R001', '2024-001', 'John Michael Doe', '+63 912 345 6789', 'Bachelor of Elementary Education', 'BEED', 'BEED-1B', 22, '1st Year', 1, 0, 0, 1, 'permitted', '2024-02-15', '2024-02-15', '2024-02-15', '2026-01-08 11:19:03', '2026-01-23 10:11:08', NULL),
-(3, 'R008', '2023-0195', 'Jumyr Manalo Moreno', '+639099999999', 'Bachelor of Elementary Education', 'BEED', 'BEED-2B', 24, '1st Year', 4, 0, 0, 4, 'permitted', '2025-12-17', '2025-12-15', '2025-12-17', '2026-01-08 11:19:03', '2026-01-23 10:11:08', NULL);
+(4, 'R008', '2023-0195', 'Jumyr Manalo Moreno', '+639099999999', 'Bachelor of Elementary Education', 'BEED', 'BEED-2B', 24, '1st Year', 0, 1, 0, 1, 'permitted', '2026-02-18', '2026-02-18', '2026-02-18', '2026-02-15 12:56:26', '2026-02-20 18:30:40', NULL),
+(5, 'R009', '2023-006', 'Patrick Vital Romasanta', '0998913495', 'BS Business Administration', 'BSBA', 'BSBA-1B', 14, '3rd Year', 0, 2, 0, 2, 'permitted', '2026-02-22', '2026-02-18', '2026-02-22', '2026-02-15 12:56:26', '2026-02-22 20:09:08', NULL),
+(6, 'R004', '2024-004', 'Anna Marie Rodriguez', '+63 945 678 9012', 'BS Business Administration', 'BSBA', 'BSIT-1A', 1, '1st Year', 0, 1, 0, 1, 'permitted', '2026-02-14', '2026-02-14', '2026-02-14', '2026-02-15 12:56:26', NULL, NULL),
+(7, 'R001', '2024-001', 'John Michael Doe', '+63 912 345 6789', 'Bachelor of Elementary Education', 'BEED', 'BEED-1B', 22, '1st Year', 1, 1, 0, 2, 'warning', '2026-02-22', '2026-02-18', '2026-02-22', '2026-02-15 12:56:26', '2026-02-22 20:09:08', NULL);
 
 -- --------------------------------------------------------
 
@@ -512,20 +514,22 @@ CREATE TABLE IF NOT EXISTS `report_recommendations` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_report_id` (`report_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=273 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `report_recommendations`
 --
 
 INSERT INTO `report_recommendations` (`id`, `report_id`, `recommendation`, `priority`, `created_at`) VALUES
-(8, 1, 'Remind student about dress code policies', 'medium', '2026-01-08 11:19:03'),
-(9, 1, 'Monitor compliance for 2 weeks', 'medium', '2026-01-08 11:19:03'),
-(10, 2, 'Remind student about dress code policies', 'low', '2026-01-08 11:19:03'),
-(11, 2, 'Monitor compliance for 2 weeks', 'low', '2026-01-08 11:19:03'),
-(12, 3, 'Issue written warning', 'medium', '2026-01-08 11:19:03'),
-(13, 3, 'Monitor uniform compliance', 'medium', '2026-01-08 11:19:03'),
-(14, 3, 'Schedule follow-up meeting', 'medium', '2026-01-08 11:19:03');
+(264, 4, 'Remind student about dress code policies', 'low', '2026-02-22 21:22:39'),
+(265, 4, 'Monitor compliance for 2 weeks', 'low', '2026-02-22 21:22:39'),
+(266, 5, 'Remind student about dress code policies', 'medium', '2026-02-22 21:22:39'),
+(267, 5, 'Monitor compliance for 2 weeks', 'medium', '2026-02-22 21:22:39'),
+(268, 6, 'Remind student about dress code policies', 'low', '2026-02-22 21:22:39'),
+(269, 6, 'Monitor compliance for 2 weeks', 'low', '2026-02-22 21:22:39'),
+(270, 7, 'Issue written warning', 'medium', '2026-02-22 21:22:39'),
+(271, 7, 'Monitor uniform compliance', 'medium', '2026-02-22 21:22:39'),
+(272, 7, 'Schedule follow-up meeting', 'medium', '2026-02-22 21:22:39');
 
 -- --------------------------------------------------------
 
@@ -549,20 +553,18 @@ CREATE TABLE IF NOT EXISTS `report_violations` (
   KEY `idx_report_id` (`report_id`),
   KEY `idx_violation_id` (`violation_id`),
   KEY `idx_violation_date` (`violation_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=184 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `report_violations`
 --
 
 INSERT INTO `report_violations` (`id`, `report_id`, `violation_id`, `violation_type`, `violation_level`, `violation_date`, `violation_time`, `status`, `notes`, `created_at`) VALUES
-(8, 1, 4, 'improper_uniform', 'warning3', '2024-02-08', '09:15:00', 'resolved', 'Third warning for improper uniform. Student has been repeatedly reminded about the uniform policy.', '2026-01-08 11:19:03'),
-(9, 2, 1, 'improper_uniform', 'warning2', '2024-02-15', '08:15:00', 'resolved', 'Student was found wearing improper uniform - wearing colored undershirt instead of the required white undershirt. This is the second offense for improper uniform violation.', '2026-01-08 11:19:03'),
-(10, 1, 6, 'improper_uniform', 'permitted2', '2025-12-15', '08:37:00', 'resolved', 'kughk', '2026-01-08 11:19:03'),
-(11, 3, 7, 'improper_uniform', 'permitted1', '2025-12-15', '16:59:00', 'permitted', 'kn', '2026-01-08 11:19:03'),
-(12, 3, 8, 'improper_uniform', 'permitted1', '2025-12-15', '16:59:00', 'permitted', 'kn', '2026-01-08 11:19:03'),
-(13, 3, 9, 'improper_uniform', 'warning3', '2025-12-17', '11:52:00', 'resolved', 'gh', '2026-01-08 11:19:03'),
-(14, 3, 10, 'improper_uniform', 'permitted1', '2025-12-17', '11:52:00', 'permitted', 'gh', '2026-01-08 11:19:03');
+(179, 4, 82, 'Improper Footwear', 'Permitted 1', '2026-02-18', '12:57:00', 'permitted', 'tulog', '2026-02-22 21:22:39'),
+(180, 5, 83, 'Improper Footwear', 'Permitted 1', '2026-02-18', '12:58:00', 'permitted', 'nag lalakad', '2026-02-22 21:22:39'),
+(181, 7, 84, 'Improper Footwear', 'Permitted 1', '2026-02-18', '13:10:00', 'permitted', 'm k', '2026-02-22 21:22:39'),
+(182, 5, 85, 'Improper Footwear', 'Permitted 2', '2026-02-22', '20:04:00', 'permitted', NULL, '2026-02-22 21:22:39'),
+(183, 7, 86, 'Improper Uniform', 'Permitted 1', '2026-02-22', '12:09:00', 'warning', 'Test sync 1771762148', '2026-02-22 21:22:39');
 
 -- --------------------------------------------------------
 
@@ -585,7 +587,7 @@ CREATE TABLE IF NOT EXISTS `sections` (
   UNIQUE KEY `section_code` (`section_code`),
   KEY `department_id` (`department_id`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `sections`
@@ -619,7 +621,8 @@ INSERT INTO `sections` (`id`, `section_name`, `section_code`, `department_id`, `
 (25, 'BSED First Year Section A', 'BSED-1A', 12, '2024-2025', 'active', '2025-12-14 09:38:56', NULL, NULL),
 (26, 'BSED First Year Section B', 'BSED-1B', 12, '2024-2025', 'active', '2025-12-14 09:38:56', NULL, NULL),
 (27, 'BSED Second Year Section A', 'BSED-2A', 12, '2024-2025', 'active', '2025-12-14 09:38:56', NULL, NULL),
-(28, 'BSED Second Year Section B', 'BSED-2B', 12, '2024-2025', 'active', '2025-12-14 09:38:56', NULL, NULL);
+(28, 'BSED Second Year Section B', 'BSED-2B', 12, '2024-2025', 'active', '2025-12-14 09:38:56', NULL, NULL),
+(29, 'BSIS-1', 'BSIS-1', 14, '2024-2025', 'active', '2026-02-15 07:10:28', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -643,7 +646,7 @@ CREATE TABLE IF NOT EXISTS `settings` (
   UNIQUE KEY `unique_setting_key` (`setting_key`),
   KEY `idx_category` (`category`),
   KEY `idx_is_public` (`is_public`)
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `settings`
@@ -684,7 +687,8 @@ INSERT INTO `settings` (`id`, `setting_key`, `setting_value`, `setting_type`, `c
 (32, 'logo_url', '', 'string', 'appearance', 'System logo URL', 1, '2026-01-08 11:39:32', '2026-01-09 02:02:39'),
 (33, 'favicon_url', '', 'string', 'appearance', 'Favicon URL', 1, '2026-01-08 11:39:32', '2026-01-09 02:02:39'),
 (34, 'primary_color', '#000000', 'string', 'appearance', 'Primary color (gold)', 1, '2026-01-08 11:39:32', '2026-01-09 02:02:39'),
-(35, 'secondary_color', '#E3E3E3', 'string', 'appearance', 'Secondary color', 1, '2026-01-08 11:39:32', '2026-01-09 02:02:39');
+(35, 'secondary_color', '#E3E3E3', 'string', 'appearance', 'Secondary color', 1, '2026-01-08 11:39:32', '2026-01-09 02:02:39'),
+(36, 'last_monthly_reset', '2026-02', 'string', 'system', 'Last month when the violations were archived', 0, '2026-02-15 11:26:48', NULL);
 
 -- --------------------------------------------------------
 
@@ -718,7 +722,7 @@ CREATE TABLE IF NOT EXISTS `students` (
   KEY `status` (`status`),
   KEY `department` (`department`),
   KEY `idx_students_year_level` (`year_level`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `students`
@@ -733,7 +737,8 @@ INSERT INTO `students` (`id`, `student_id`, `first_name`, `middle_name`, `last_n
 (6, '2023-0206', 'Christian', 'Manalo', 'Moreno', 'morenojumyr0@gmail.com', '+639099999999', 'Street 6', 'BSIT', 4, NULL, '1st Year', 'assets/img/students/student_1765706780_693e8c1c7aec5.jpg', 'archived', '2025-12-14 18:06:20', '2025-12-14 21:57:00', NULL),
 (7, '2023-02065', 'Christian', 'Manalo', 'Moreno', 'morenojumyrw0@gmail.com', '+639099999999', 'Street 6', 'BEED', 22, NULL, '1st Year', 'assets/img/students/student_1765724438_693ed11651a2e.webp', 'archived', '2025-12-14 15:00:38', '2025-12-14 15:19:11', NULL),
 (8, '2023-0195', 'Jumyr', 'Manalo', 'Moreno', 'morenochristian20051225@gmail.com', '+639099999999', 'Street 6', 'BEED', 24, '1st Year', '1st Year', 'app/assets/img/students/student_1765788746_693fcc4a4ee38.jpg', 'active', '2025-12-15 08:52:26', '2026-01-23 09:52:21', NULL),
-(9, '2023-006', 'Patrick', 'Vital', 'Romasanta', 'patrickmontero833@gmail.com', '0998913495', 'San Antnoio Naujan Oriental Mindoro', 'BSBA', 14, '3rd Year', '1st Year', NULL, 'active', '2026-02-05 09:50:20', NULL, NULL);
+(9, '2023-006', 'Patrick', 'Vital', 'Romasanta', 'patrickmontero833@gmail.com', '0998913495', 'San Antnoio Naujan Oriental Mindoro', 'BSBA', 14, '3rd Year', '1st Year', NULL, 'active', '2026-02-05 09:50:20', NULL, NULL),
+(10, '2024-0206', 'Patrick', 'Vital', 'Romasanta', 'patric@gmail.com', '09989134594', 'San Antonio', 'BSIS-1', 29, '1st Year', '1st Year', NULL, 'active', '2026-02-15 07:12:15', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -767,20 +772,6 @@ CREATE TABLE IF NOT EXISTS `student_violation_levels` (
   KEY `idx_last_violation_date` (`last_violation_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Dumping data for table `student_violation_levels`
---
-
-INSERT INTO `student_violation_levels` (`id`, `student_id`, `violation_type`, `current_level`, `permitted_count`, `warning_count`, `total_violations`, `last_violation_date`, `last_violation_time`, `last_location`, `last_reported_by`, `last_notes`, `status`, `created_at`, `updated_at`) VALUES
-(1, '2024-001', 'no_id', 'permitted2', 2, 0, 2, '2026-02-04', '00:07:00', 'Main Gate', 'Test User', 'Test violation for collation fix', 'active', '2026-02-04 00:05:40', '2026-02-04 00:07:16'),
-(2, '1212-2122', 'improper_uniform', 'permitted1', 1, 0, 1, '2026-02-04', '08:08:00', 'gate_2', 'mn', 'A', 'active', '2026-02-04 00:09:05', '2026-02-04 00:09:05'),
-(3, '2024-001', 'improper_uniform', 'permitted1', 0, 0, 1, '2024-02-15', '08:15:00', 'gate_1', 'Officer Maria Santos', 'Student was found wearing improper uniform - wearing colored undershirt instead of the required white undershirt. This is the second offense for improper uniform violation.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
-(4, '2024-002', 'no_id', 'permitted1', 0, 0, 1, '2024-02-14', '07:30:00', 'gate_2', 'Officer Juan Dela Cruz', 'Student forgot to bring ID. First offense.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
-(5, '2024-003', 'improper_footwear', 'permitted1', 0, 0, 1, '2024-02-10', '08:30:00', 'classroom', 'Professor Ana Reyes', 'Student was wearing sneakers instead of the required black leather shoes in violation of school uniform policy.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
-(6, '2024-004', 'improper_uniform', 'permitted1', 0, 0, 1, '2024-02-08', '09:15:00', 'library', 'Librarian Pedro Gomez', 'Third warning for improper uniform. Student has been repeatedly reminded about the uniform policy.', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
-(7, '2023-0206', 'no_id', 'permitted1', 0, 0, 1, '2025-12-14', '18:06:00', 'classroom', 'soeaifjsoidjfos', ',', 'resolved', '2026-02-04 00:40:27', '2026-02-04 00:40:27'),
-(8, '2023-0195', 'improper_uniform', 'permitted1', 1, 0, 1, '2025-12-15', '16:59:00', 'classroom', 'soeaifjsoidjfos', 'kn', 'active', '2026-02-04 00:40:27', '2026-02-04 00:40:27');
-
 -- --------------------------------------------------------
 
 --
@@ -796,7 +787,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `facebook_id` varchar(255) DEFAULT NULL,
   `profile_picture` varchar(500) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('admin','user') DEFAULT 'user',
+  `role` varchar(50) NOT NULL DEFAULT 'admin',
   `full_name` varchar(100) NOT NULL,
   `student_id` varchar(20) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1',
@@ -807,20 +798,22 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `email` (`email`),
   KEY `idx_users_google_id` (`google_id`(250)),
   KEY `idx_users_facebook_id` (`facebook_id`(250))
-) ENGINE=MyISAM AUTO_INCREMENT=2029 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2035 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
 INSERT INTO `users` (`id`, `username`, `email`, `google_id`, `facebook_id`, `profile_picture`, `password`, `role`, `full_name`, `student_id`, `is_active`, `created_at`, `updated_at`) VALUES
-(2026, 'admin_demo@colegio.edu', 'ventiletos12@gmail.com', NULL, NULL, NULL, '$2y$10$8TCVnTQNnALHH1Xt6uW8lObeABzbqy9Snoa/ozSAVa5816G5u9dJ2', 'admin', 'admin admin', '2024-001', 1, '2026-02-05 01:28:46', '2026-02-05 01:29:08'),
+(2029, 'admin_demo@colegio.edu', 'ventiletos12@gmail.com', NULL, NULL, 'public/uploads/profile_pictures/7bb7d2f5bddaa424c4149800cd7a0b71.jpeg', '$2y$10$kU9Ogkvn9uNfMntp22rek.DITkCGnFmnsQPvX7z/I8WSbXGwcX6fq', 'admin', 'osas_system cdn', '2023-006', 1, '2026-02-11 00:03:09', '2026-02-22 03:46:32'),
 (3, 'student', 'student@example.com', NULL, NULL, NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'John Doe', '2024-001', 1, '2025-10-14 02:46:08', '2025-10-14 02:46:08'),
 (4, 'test_student', 'test@example.com', NULL, NULL, NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Jane Smith', '2024-002', 1, '2025-10-14 02:46:08', '2025-10-14 02:46:08'),
 (2023, 'jumyr', 'morenojumyr0@gmail.com', NULL, NULL, NULL, '$2y$10$166a7LG0mS7E.HOwr2wqhuuF.PkU8LcVCa3tRuhIZsY7YKqfk3Hau', 'admin', 'Jumyr Moreno', '2023-0195', 1, '2025-10-14 03:21:09', '2025-12-27 00:40:09'),
 (2024, 'jumyrrr', 'morenojumfyr0@gmail.com', NULL, NULL, NULL, '$2y$10$mOc68KLw6GdJ7WMsWODp8.E06FHP.09CCrNpZE0e9d7iw7TBti7rS', 'user', 'Christian Moreno', '2023-0206', 1, '2026-01-08 12:27:54', '2026-01-12 11:24:59'),
 (2025, 'hihihihi', 'morenojumyr099@gmail.com', NULL, NULL, NULL, '$2y$10$h79f5X6OmqFfq3mOSmwBIe.7jkkdW8RESunP3Pl7t4qpJw63xzUmS', 'user', 'Christian Moreno', '2023-0195', 1, '2026-01-09 03:30:51', '2026-01-12 09:36:41'),
-(2028, 'pat', 'patrickmontero@gmail.com', NULL, NULL, NULL, '$2y$10$nJi/snmyWcfFMZ/uIqXEjOGi3iNcFan9BYt49f9O9.A9FiRw4NY5a', 'admin', 'patrick Romasanta', '2024-001', 1, '2026-02-07 13:24:58', '2026-02-07 13:25:19');
+(2028, 'pat', 'patrickmontero@gmail.com', NULL, NULL, NULL, '$2y$10$nJi/snmyWcfFMZ/uIqXEjOGi3iNcFan9BYt49f9O9.A9FiRw4NY5a', 'admin', 'patrick Romasanta', '2024-001', 1, '2026-02-07 13:24:58', '2026-02-07 13:25:19'),
+(2030, 'user', 'user@gmail.com', NULL, NULL, NULL, '$2y$10$56B.cIef4Sv26CyqVAZ8Me5mVh0f.dKPVUcIdU8Lfqx5t2Ql8WY/a', 'user', 'osas_system Romasanta', '2024-001', 1, '2026-02-15 05:49:34', '2026-02-15 05:49:34'),
+(2031, 'root', 'patrickmontero833@gmail.com', NULL, NULL, NULL, '$2y$10$2UKRKuyEjjwfVT31Fbwmaewj4VvU20wJ7wWyApwqtI7.4pduFK9tG', 'user', 'patrick romasata', '2024-001', 1, '2026-02-18 05:08:56', '2026-02-18 05:08:56');
 
 -- --------------------------------------------------------
 
@@ -847,6 +840,8 @@ CREATE TABLE IF NOT EXISTS `violations` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
+  `is_archived` tinyint(1) DEFAULT '0',
+  `is_read` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `case_id` (`case_id`),
   KEY `idx_case_id` (`case_id`),
@@ -855,19 +850,21 @@ CREATE TABLE IF NOT EXISTS `violations` (
   KEY `idx_status` (`status`),
   KEY `idx_violation_date` (`violation_date`),
   KEY `idx_violation_type` (`violation_type_id`),
-  KEY `idx_violation_level` (`violation_level_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `idx_violation_level` (`violation_level_id`),
+  KEY `idx_is_archived` (`is_archived`),
+  KEY `idx_is_read` (`is_read`)
+) ENGINE=InnoDB AUTO_INCREMENT=87 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `violations`
 --
 
-INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type_id`, `violation_level_id`, `department`, `section`, `violation_date`, `violation_time`, `location`, `reported_by`, `notes`, `status`, `attachments`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(20, 'VIOL-2026-001', '2024-001', 3, 13, 'Bachelor of Elementary Education', '22', '2026-02-05', '11:42:00', 'gate_2', 'csad', 'fse', 'permitted', NULL, '2026-02-04 19:42:34', '2026-02-05 03:42:34', NULL),
-(21, 'VIOL-2026-002', '2023-006', 3, 13, 'BS Business Administration', '14', '2026-02-05', '17:52:00', 'others', 'jhsxdj,m', 'skcbsdifk.', 'permitted', NULL, '2026-02-05 01:52:45', '2026-02-05 09:52:45', NULL),
-(22, 'VIOL-2026-003', '2023-006', 3, 14, 'BS Business Administration', '14', '2026-02-07', '23:08:00', 'gate_2', 'dsd', 'fs', 'permitted', NULL, '2026-02-07 07:08:49', '2026-02-07 15:08:49', NULL),
-(23, 'VIOL-2026-004', '2023-006', 3, 15, 'BS Business Administration', '14', '2026-02-07', '23:12:00', 'gate_2', 'dsd', 'rgd', 'warning', NULL, '2026-02-07 07:12:56', '2026-02-07 15:12:56', NULL),
-(24, 'VIOL-2026-005', '2023-006', 3, 16, 'BS Business Administration', '14', '2026-02-07', '23:18:00', 'gate_2', 'dsd', NULL, 'warning', NULL, '2026-02-07 07:19:06', '2026-02-07 15:19:06', NULL);
+INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type_id`, `violation_level_id`, `department`, `section`, `violation_date`, `violation_time`, `location`, `reported_by`, `notes`, `status`, `attachments`, `created_at`, `updated_at`, `deleted_at`, `is_archived`, `is_read`) VALUES
+(82, 'VIOL-2026-001', '2023-0195', 3, 13, 'Bachelor of Elementary Education', '24', '2026-02-18', '12:57:00', 'gate_1', 'Admin', 'tulog', 'permitted', NULL, '2026-02-17 20:58:36', '2026-02-18 04:58:36', NULL, 0, 0),
+(83, 'VIOL-2026-002', '2023-006', 3, 13, 'BS Business Administration', '14', '2026-02-18', '12:58:00', 'gate_2', 'Admin', 'nag lalakad', 'permitted', NULL, '2026-02-17 20:59:02', '2026-02-18 04:59:02', NULL, 0, 0),
+(84, 'VIOL-2026-003', '2024-001', 3, 13, 'Bachelor of Elementary Education', '22', '2026-02-18', '13:10:00', 'gate_2', 'mn', 'm k', 'permitted', NULL, '2026-02-17 21:10:33', '2026-02-18 05:10:33', NULL, 0, 0),
+(85, 'VIOL-2026-004', '2023-006', 3, 14, 'BS Business Administration', '14', '2026-02-22', '20:04:00', 'gate_1', 'scadasd', NULL, 'permitted', NULL, '2026-02-22 04:04:36', '2026-02-22 12:04:36', NULL, 0, 0),
+(86, 'VIOL-2026-005', '2024-001', 1, 1, 'Bachelor of Elementary Education', '22', '2026-02-22', '12:09:00', '', 'Test Script', 'Test sync 1771762148', 'warning', NULL, '2026-02-22 04:09:08', '2026-02-22 12:09:08', NULL, 0, 0);
 
 -- --------------------------------------------------------
 
