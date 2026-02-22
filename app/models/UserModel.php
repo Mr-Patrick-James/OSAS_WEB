@@ -78,8 +78,23 @@ class UserModel extends Model {
         return parent::create($data);
     }
 
+    /**
+     * Update user with optional password hashing
+     */
+    public function update($id, $data) {
+        if (isset($data['password'])) {
+            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        }
+        return parent::update($id, $data);
+    }
+
     public function getAdmins() {
         $query = "SELECT id, username, email, full_name, student_id, role, is_active, created_at, updated_at FROM {$this->table} WHERE role != 'user' ORDER BY created_at DESC";
+        return $this->query($query);
+    }
+
+    public function getUsers() {
+        $query = "SELECT id, username, email, full_name, student_id, role, is_active, created_at, updated_at FROM {$this->table} WHERE role = 'user' ORDER BY created_at DESC";
         return $this->query($query);
     }
 }

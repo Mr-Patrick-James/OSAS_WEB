@@ -19,10 +19,16 @@ try {
 
     if ($method === 'GET' && ($action === 'admins' || $action === '')) {
         $controller->listAdmins();
+    } elseif ($method === 'GET' && $action === 'users') {
+        $controller->listUsers();
+    } elseif ($method === 'GET' && $action === 'profile') {
+        $controller->getProfile();
     } elseif ($method === 'POST' && $action === 'addAdmin') {
         $controller->createAdmin();
     } elseif ($method === 'POST' && $action === 'deleteAdmin') {
         $controller->deleteAdmin();
+    } elseif ($method === 'POST' && $action === 'updateProfile') {
+        $controller->updateProfile();
     } else {
         // Handle invalid request
         header('Content-Type: application/json');

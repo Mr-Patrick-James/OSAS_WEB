@@ -551,9 +551,17 @@ function createSettingsModal() {
                         <i class='bx bx-user-circle'></i>
                         <span>Admin accounts</span>
                     </button>
-                    <button type="button" class="settings-sidebar-item settings-sidebar-item-danger" data-section="danger">
-                        <i class='bx bx-error-circle'></i>
-                        <span>Danger zone</span>
+                    <button type="button" class="settings-sidebar-item" data-section="users">
+                        <i class='bx bx-group'></i>
+                        <span>User Accounts</span>
+                    </button>
+                    <button type="button" class="settings-sidebar-item" data-section="profile">
+                        <i class='bx bx-id-card'></i>
+                        <span>Profile</span>
+                    </button>
+                    <button type="button" class="settings-sidebar-item" data-section="export">
+                        <i class='bx bx-data'></i>
+                        <span>Export Database</span>
                     </button>
                 </div>
             </aside>
@@ -568,6 +576,38 @@ function createSettingsModal() {
                         Configure key options for your admin workspace. Use the Admin accounts section
                         to invite and manage additional administrators.
                     </p>
+                </div>
+                <div class="settings-section" data-section="profile">
+                    <h3 class="settings-section-title">My Profile</h3>
+                    <p class="settings-section-description">
+                        Update your username and password. Current password is required for any changes.
+                    </p>
+                    <div id="settingsProfileAlert" class="settings-alert"></div>
+                    <form id="settingsProfileForm">
+                        <div class="settings-grid">
+                            <div class="settings-form-group">
+                                <label class="settings-label" for="profileUsername">Username</label>
+                                <input class="settings-input" type="text" id="profileUsername" name="username" placeholder="Your username">
+                            </div>
+                            <div class="settings-form-group">
+                                <label class="settings-label" for="profileCurrentPassword">Current Password (Required)</label>
+                                <input class="settings-input" type="password" id="profileCurrentPassword" name="current_password" placeholder="Enter current password">
+                            </div>
+                            <div class="settings-form-group">
+                                <label class="settings-label" for="profileNewPassword">New Password (Optional)</label>
+                                <input class="settings-input" type="password" id="profileNewPassword" name="new_password" placeholder="Leave blank to keep current">
+                            </div>
+                            <div class="settings-form-group">
+                                <label class="settings-label" for="profileConfirmPassword">Confirm New Password</label>
+                                <input class="settings-input" type="password" id="profileConfirmPassword" name="confirm_password" placeholder="Confirm new password">
+                            </div>
+                        </div>
+                        <div class="settings-actions">
+                            <button type="submit" class="settings-btn settings-btn-primary" id="settingsProfileSubmit">
+                                <span>Save Changes</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 <div class="settings-section" data-section="admins">
                     <h3 class="settings-section-title">Admin accounts</h3>
@@ -641,11 +681,44 @@ function createSettingsModal() {
                         </table>
                     </div>
                 </div>
-                <div class="settings-section" data-section="danger">
-                    <h3 class="settings-section-title">Danger zone</h3>
+                <div class="settings-section" data-section="users">
+                    <h3 class="settings-section-title">User Accounts</h3>
                     <p class="settings-section-description">
-                        Reserved for high impact actions. This section is not yet available.
+                        View registered users and students.
                     </p>
+                    <div class="settings-table-wrapper">
+                        <table class="settings-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Username</th>
+                                    <th>Student ID</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="settingsUserTableBody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="settings-empty-state">Loading users...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="settings-section" data-section="export">
+                    <h3 class="settings-section-title">Export Database</h3>
+                    <p class="settings-section-description">
+                        Download a complete backup of the database structure and data.
+                    </p>
+                    <div class="settings-actions">
+                        <button type="button" class="settings-btn settings-btn-primary" onclick="window.location.href='../api/backup.php'">
+                            <i class='bx bx-download'></i>
+                            <span>Download SQL Backup</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -687,6 +760,14 @@ function attachSettingsModalEvents() {
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             submitAdminForm();
+        });
+    }
+
+    const profileForm = document.getElementById('settingsProfileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            submitProfileForm();
         });
     }
 }
@@ -738,6 +819,110 @@ function setActiveSettingsSection(section) {
 
     if (section === 'admins') {
         loadAdminAccounts();
+    } else if (section === 'profile') {
+        loadUserProfile();
+    } else if (section === 'users') {
+        loadUserAccounts();
+    }
+}
+
+async function loadUserProfile() {
+    const usernameInput = document.getElementById('profileUsername');
+    if (!usernameInput) return;
+
+    // Clear password fields
+    document.getElementById('profileCurrentPassword').value = '';
+    document.getElementById('profileNewPassword').value = '';
+    document.getElementById('profileConfirmPassword').value = '';
+    
+    try {
+        const response = await fetch('../api/users.php?action=profile');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            usernameInput.value = data.data.profile.username;
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+    }
+}
+
+async function submitProfileForm() {
+    const form = document.getElementById('settingsProfileForm');
+    const alertBox = document.getElementById('settingsProfileAlert');
+    const submitBtn = document.getElementById('settingsProfileSubmit');
+    
+    if (!form || !alertBox) return;
+    
+    alertBox.className = 'settings-alert';
+    alertBox.textContent = '';
+    
+    // Basic validation
+    const currentPassword = document.getElementById('profileCurrentPassword').value;
+    const newPassword = document.getElementById('profileNewPassword').value;
+    const confirmPassword = document.getElementById('profileConfirmPassword').value;
+    
+    if (!currentPassword) {
+        alertBox.className = 'settings-alert error';
+        alertBox.textContent = 'Current password is required.';
+        return;
+    }
+    
+    if (newPassword && newPassword !== confirmPassword) {
+        alertBox.className = 'settings-alert error';
+        alertBox.textContent = 'New passwords do not match.';
+        return;
+    }
+    
+    try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>Saving...</span>';
+        
+        const formData = new FormData(form);
+        
+        const response = await fetch('../api/users.php?action=updateProfile', {
+            method: 'POST',
+            body: formData
+        });
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Invalid JSON response:', text);
+            throw new Error('Server returned invalid response');
+        }
+        
+        if (data.status === 'success') {
+            alertBox.className = 'settings-alert success';
+            alertBox.textContent = 'Profile updated successfully.';
+            // Clear password fields
+            document.getElementById('profileCurrentPassword').value = '';
+            document.getElementById('profileNewPassword').value = '';
+            document.getElementById('profileConfirmPassword').value = '';
+            
+            // Update the username input if it was changed
+            if (data.data && data.data.username) {
+                 document.getElementById('profileUsername').value = data.data.username;
+                 
+                 // Update the top navigation username if present
+                 const navUsername = document.querySelector('.nav-user-menu .user-name');
+                 if (navUsername) {
+                     navUsername.textContent = data.data.username;
+                 }
+            }
+        } else {
+            alertBox.className = 'settings-alert error';
+            alertBox.textContent = data.message || 'Failed to update profile.';
+        }
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        alertBox.className = 'settings-alert error';
+        alertBox.textContent = 'An error occurred while updating profile. ' + error.message;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Save Changes</span>';
     }
 }
 
@@ -755,10 +940,18 @@ async function loadAdminAccounts() {
         </tr>
     `;
 
-    const apiPath = '../api/users.php?action=admins';
+    const apiPath = '../api/users.php?action=admins&t=' + new Date().getTime();
 
     try {
-        const response = await fetch(apiPath, { credentials: 'same-origin' });
+        console.log('🔄 Loading admin accounts...');
+        const response = await fetch(apiPath, { 
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         const text = await response.text();
         let payload;
 
@@ -962,9 +1155,23 @@ async function deleteAdmin(id, username) {
             // Reload list with safety timeout
             setTimeout(() => {
                 if (typeof loadAdminAccounts === 'function') {
+                    console.log('🔄 Triggering admin list reload after delete...');
+                    // Force a clear first to show something is happening
+                    const tableBody = document.getElementById('settingsAdminTableBody');
+                    if (tableBody) {
+                         tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="7">
+                                    <div class="settings-empty-state">Refreshing list...</div>
+                                </td>
+                            </tr>
+                        `;
+                    }
                     loadAdminAccounts().catch(e => console.error('Error reloading admins:', e));
+                } else {
+                    console.error('❌ loadAdminAccounts function not found!');
                 }
-            }, 100);
+            }, 500);
         } else {
             alert(payload.message || 'Failed to remove user.');
         }
@@ -1289,3 +1496,111 @@ window.addEventListener('resize', function () {
 });
 
 console.log('🎯 Dashboard Framework loaded successfully!');
+
+async function loadUserAccounts() {
+    const tableBody = document.getElementById('settingsUserTableBody');
+    if (!tableBody) {
+        return;
+    }
+
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6">
+                <div class="settings-empty-state">Loading users...</div>
+            </td>
+        </tr>
+    `;
+
+    const apiPath = '../api/users.php?action=users&t=' + new Date().getTime();
+
+    try {
+        console.log('🔄 Loading user accounts...');
+        const response = await fetch(apiPath, { 
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
+        const text = await response.text();
+        let payload;
+
+        try {
+            payload = JSON.parse(text);
+        } catch (error) {
+            console.error('Failed to parse users response', error);
+            console.error('Response text:', text);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        <div class="settings-empty-state">
+                            Unable to load users.<br>
+                            <small class="text-muted">Error: ${error.message}</small>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        if (payload.status !== 'success') {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        <div class="settings-empty-state">${payload.message || 'Unable to load users.'}</div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const users = Array.isArray(payload.data.users) ? payload.data.users : [];
+
+        if (users.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        <div class="settings-empty-state">No user accounts found.</div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const rows = users.map(function (user) {
+            const name = user.full_name || user.username || '';
+            const email = user.email || '';
+            const username = user.username || '';
+            const studentId = user.student_id || '';
+            const role = user.role || 'User';
+            const active = user.is_active !== undefined ? user.is_active : true;
+            const statusClass = active ? 'settings-status-badge' : 'settings-status-badge inactive';
+            const statusLabel = active ? 'Active' : 'Inactive';
+
+            return `
+                <tr>
+                    <td>${name}</td>
+                    <td>${email}</td>
+                    <td>${username}</td>
+                    <td>${studentId}</td>
+                    <td>${role}</td>
+                    <td>
+                        <span class="${statusClass}">${statusLabel}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        tableBody.innerHTML = rows;
+    } catch (error) {
+        console.error('Error loading users', error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="settings-empty-state">Network error while loading users.</div>
+                </td>
+            </tr>
+        `;
+    }
+}

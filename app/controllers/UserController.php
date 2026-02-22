@@ -36,6 +36,30 @@ class UserController extends Controller {
         }
     }
 
+    public function listUsers() {
+        try {
+            $this->requireAdmin();
+            $users = $this->model->getUsers();
+            $formatted = array_map(function ($row) {
+                return [
+                    'id' => isset($row['id']) ? (int)$row['id'] : 0,
+                    'username' => $row['username'] ?? '',
+                    'email' => $row['email'] ?? '',
+                    'full_name' => $row['full_name'] ?? '',
+                    'student_id' => $row['student_id'] ?? '',
+                    'role' => $row['role'] ?? 'User',
+                    'is_active' => isset($row['is_active']) ? (bool)$row['is_active'] : true,
+                    'created_at' => $row['created_at'] ?? null,
+                    'updated_at' => $row['updated_at'] ?? null
+                ];
+            }, $users);
+
+            $this->success('Users retrieved successfully', ['users' => $formatted]);
+        } catch (Exception $e) {
+            $this->error('Failed to load users: ' . $e->getMessage());
+        }
+    }
+
     public function createAdmin() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->error('Invalid request method');
@@ -141,6 +165,95 @@ class UserController extends Controller {
             }
         } catch (Exception $e) {
             $this->error('Error deleting user: ' . $e->getMessage());
+        }
+    }
+
+    public function updateProfile() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        if (!isset($_SESSION['user_id'])) {
+            $this->error('User not logged in.');
+        }
+
+        $userId = $_SESSION['user_id'];
+        $username = $this->sanitize($this->getPost('username', ''));
+        $currentPassword = $this->getPost('current_password', '');
+        $newPassword = $this->getPost('new_password', '');
+        $confirmPassword = $this->getPost('confirm_password', '');
+
+        if ($username === '') {
+            $this->error('Username is required.');
+        }
+
+        if ($currentPassword === '') {
+            $this->error('Current password is required to save changes.');
+        }
+
+        try {
+            $user = $this->model->getById($userId);
+            if (!$user) {
+                $this->error('User not found.');
+            }
+
+            // Verify current password
+            if (!password_verify($currentPassword, $user['password'])) {
+                $this->error('Incorrect current password.');
+            }
+
+            // Check if username is being changed and if it's already taken
+            if ($username !== $user['username']) {
+                if ($this->model->usernameExists($username, $userId)) {
+                    $this->error('Username already exists.');
+                }
+            }
+
+            $updateData = [
+                'username' => $username,
+                'updated_at' => date('Y-m-d H:i:s')
+            ];
+
+            // If new password is provided
+            if ($newPassword !== '') {
+                if ($newPassword !== $confirmPassword) {
+                    $this->error('New passwords do not match.');
+                }
+                $updateData['password'] = $newPassword;
+            }
+
+            if ($this->model->update($userId, $updateData)) {
+                // Update session if username changed
+                $_SESSION['username'] = $username;
+                $this->success('Profile updated successfully.', ['username' => $username]);
+            } else {
+                $this->error('Failed to update profile.');
+            }
+        } catch (Exception $e) {
+            $this->error('Error updating profile: ' . $e->getMessage());
+        }
+    }
+
+    public function getProfile() {
+        if (!isset($_SESSION['user_id'])) {
+            $this->error('User not logged in.');
+        }
+
+        try {
+            $user = $this->model->getById($_SESSION['user_id']);
+            if (!$user) {
+                $this->error('User not found.');
+            }
+
+            $profile = [
+                'username' => $user['username'],
+                'full_name' => $user['full_name'] ?? '',
+                'email' => $user['email'] ?? ''
+            ];
+
+            $this->success('Profile retrieved successfully', ['profile' => $profile]);
+        } catch (Exception $e) {
+            $this->error('Error retrieving profile: ' . $e->getMessage());
         }
     }
 }
