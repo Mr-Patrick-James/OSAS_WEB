@@ -62,6 +62,47 @@ function syncThemeToggles() {
 
 // Core Functions ==========================================================
 
+// Path Resolution Helper
+function getProjectRoot() {
+    const path = window.location.pathname;
+    // Fallback: assume first segment is project name
+    const parts = path.split('/');
+    if (parts.length > 1 && parts[1]) {
+        // Check if parts[1] is a common directory like 'app' or 'public'
+        // If so, we might be at root
+        if (parts[1] === 'app' || parts[1] === 'public' || parts[1] === 'api') {
+            return '';
+        }
+        return '/' + parts[1];
+    }
+    return '';
+}
+
+function resolvePath(relativePath) {
+    const root = getProjectRoot();
+    
+    // If path is already absolute (starts with http or /), return it
+    if (relativePath.startsWith('http') || relativePath.startsWith('/')) {
+        return relativePath;
+    }
+    
+    // Remove leading ./ or ../
+    relativePath = relativePath.replace(/^(\.\/|\.\.\/)+/, '');
+    
+    // Handle specific directories
+    if (relativePath.startsWith('public/')) {
+        return root + '/' + relativePath;
+    }
+    
+    // If path starts with assets/, assume app/assets/
+    if (relativePath.startsWith('assets/')) {
+        return root + '/app/' + relativePath;
+    }
+    
+    // Default fallback
+    return root + '/' + relativePath;
+}
+
 // Initialize service worker for PWA
 function initializeServiceWorker() {
     if ('serviceWorker' in navigator) {
@@ -538,6 +579,9 @@ function createSettingsModal() {
     const overlay = document.createElement('div');
     overlay.id = 'settingsModalOverlay';
     overlay.className = 'settings-modal-overlay';
+    const defaultAvatar = resolvePath('assets/img/default.png');
+    const userAvatar = resolvePath('assets/img/user.jpg');
+
     overlay.innerHTML = `
         <div class="settings-modal">
             <aside class="settings-sidebar">
@@ -580,28 +624,34 @@ function createSettingsModal() {
                 <div class="settings-section" data-section="profile">
                     <h3 class="settings-section-title">My Profile</h3>
                     <p class="settings-section-description">
-                        Update your username, profile picture, and password. Current password is required for any changes.
+                        Manage your account settings and profile information.
                     </p>
                     <div id="settingsProfileAlert" class="settings-alert"></div>
                     <form id="settingsProfileForm" enctype="multipart/form-data">
-                        <div class="settings-grid">
-                            <div class="settings-form-group" style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                                <div class="profile-upload-container" style="position: relative; width: 120px; height: 120px; margin-bottom: 15px;">
-                                    <img id="profileImagePreview" src="../public/images/default-avatar.png" alt="Profile Preview" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0;">
-                                    <label for="profilePictureInput" style="position: absolute; bottom: 0; right: 0; background: #D4AF37; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                        <i class='bx bx-camera'></i>
-                                    </label>
-                                    <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" style="display: none;">
-                                </div>
-                                <span style="font-size: 0.85rem; color: #64748b;">Click camera icon to change</span>
+                        
+                        <!-- Profile Header -->
+                        <div class="settings-profile-header">
+                            <div class="profile-upload-container">
+                                <img id="profileImagePreview" class="profile-image-preview" src="${userAvatar}" onerror="this.src='${defaultAvatar}'" alt="Profile Picture">
+                                <label for="profilePictureInput" class="profile-upload-button">
+                                    <i class='bx bx-camera'></i>
+                                </label>
+                                <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" style="display: none;">
                             </div>
+                            <div class="profile-info-text">
+                                <h4 id="profileDisplayName">Administrator</h4>
+                                <p>Manage your account details and security settings. Click the camera icon to update your profile photo.</p>
+                            </div>
+                        </div>
+
+                        <div class="settings-grid">
                             <div class="settings-form-group">
                                 <label class="settings-label" for="profileUsername">Username</label>
                                 <input class="settings-input" type="text" id="profileUsername" name="username" placeholder="Your username">
                             </div>
                             <div class="settings-form-group">
-                                <label class="settings-label" for="profileCurrentPassword">Current Password (Required)</label>
-                                <input class="settings-input" type="password" id="profileCurrentPassword" name="current_password" placeholder="Enter current password">
+                                <label class="settings-label" for="profileCurrentPassword">Current Password</label>
+                                <input class="settings-input" type="password" id="profileCurrentPassword" name="current_password" placeholder="Required only if changing password">
                             </div>
                             <div class="settings-form-group">
                                 <label class="settings-label" for="profileNewPassword">New Password (Optional)</label>
@@ -840,6 +890,7 @@ async function loadUserProfile() {
     const usernameInput = document.getElementById('profileUsername');
     const profileImagePreview = document.getElementById('profileImagePreview');
     const profilePictureInput = document.getElementById('profilePictureInput');
+    const profileDisplayName = document.getElementById('profileDisplayName');
     
     if (!usernameInput) return;
 
@@ -869,20 +920,19 @@ async function loadUserProfile() {
         if (data.status === 'success') {
             usernameInput.value = data.data.profile.username;
             
+            // Update display name
+            if (profileDisplayName) {
+                profileDisplayName.textContent = data.data.profile.full_name || data.data.profile.username || 'Administrator';
+            }
+            
             // Update profile image preview if exists
             if (data.data.profile.profile_picture && profileImagePreview) {
-                // Handle relative paths
-                let imagePath = data.data.profile.profile_picture;
-                if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                    if (imagePath.startsWith('public/')) {
-                        // Go up two levels from app/entry/ to root
-                        imagePath = '../../' + imagePath;
-                    } else {
-                        imagePath = '../' + imagePath;
-                    }
-                }
+                const fullPath = resolvePath(data.data.profile.profile_picture);
                 // Add timestamp to prevent caching issues
-                profileImagePreview.src = imagePath + '?t=' + new Date().getTime();
+                profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
+            } else if (profileImagePreview) {
+                 // Set default if no profile picture
+                 profileImagePreview.src = resolvePath('assets/img/user.jpg');
             }
         }
     } catch (error) {
@@ -905,9 +955,9 @@ async function submitProfileForm() {
     const newPassword = document.getElementById('profileNewPassword').value;
     const confirmPassword = document.getElementById('profileConfirmPassword').value;
     
-    if (!currentPassword) {
+    if (!currentPassword && newPassword) {
         alertBox.className = 'settings-alert error';
-        alertBox.textContent = 'Current password is required.';
+        alertBox.textContent = 'Current password is required to change password.';
         return;
     }
     
@@ -959,31 +1009,17 @@ async function submitProfileForm() {
             // Update profile picture if changed
             if (data.data && data.data.profile_picture) {
                 const profilePics = document.querySelectorAll('.profile-photo, .user-avatar img, .nav-profile-photo');
+                const fullPath = resolvePath(data.data.profile_picture);
+                
                 profilePics.forEach(img => {
-                    let imagePath = data.data.profile_picture;
-                    if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                        if (imagePath.startsWith('public/')) {
-                            imagePath = '../../' + imagePath;
-                        } else {
-                            imagePath = '../' + imagePath;
-                        }
-                    }
                     // Add timestamp to bust cache
-                    img.src = imagePath + '?t=' + new Date().getTime();
+                    img.src = fullPath + '?t=' + new Date().getTime();
                 });
                 
                 // Also update preview
                 const preview = document.getElementById('profileImagePreview');
                 if (preview) {
-                    let imagePath = data.data.profile_picture;
-                    if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                        if (imagePath.startsWith('public/')) {
-                            imagePath = '../../' + imagePath;
-                        } else {
-                            imagePath = '../' + imagePath;
-                        }
-                    }
-                    preview.src = imagePath + '?t=' + new Date().getTime();
+                    preview.src = fullPath + '?t=' + new Date().getTime();
                 }
             }
         } else {

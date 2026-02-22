@@ -8,6 +8,8 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
     // Check if it's an uploaded file (starts with public/)
     if (strpos($profilePic, 'public/') === 0) {
         $userImage = View::url($profilePic);
+        // Ensure we bust cache for uploaded images
+        $userImage .= '?t=' . time();
     } else {
         // Assume it's an asset
         $userImage = View::asset($profilePic);

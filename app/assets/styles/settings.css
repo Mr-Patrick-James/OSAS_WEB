@@ -425,3 +425,129 @@ body.dark-mode .settings-action-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #f1f5f9;
 }
+
+/* Profile Section Styles */
+.settings-profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid var(--settings-border);
+  text-align: center;
+}
+
+.profile-upload-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.profile-image-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  background-color: var(--settings-sidebar-bg);
+  transition: transform 0.3s ease;
+}
+
+.profile-upload-container:hover .profile-image-preview {
+  transform: scale(1.02);
+}
+
+.profile-upload-button {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 42px;
+  height: 42px;
+  background: var(--settings-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 3px solid white;
+  font-size: 20px;
+}
+
+.profile-upload-button:hover {
+  background: var(--settings-primary-hover);
+  transform: scale(1.1) rotate(15deg);
+}
+
+.profile-info-text {
+  max-width: 400px;
+}
+
+.profile-info-text h4 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--settings-text-main);
+  letter-spacing: -0.5px;
+}
+
+.profile-info-text p {
+  margin: 0;
+  color: var(--settings-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Enhanced Form Styles for Profile */
+.settings-form-group label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--settings-text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.settings-input {
+  background: #f8fafc;
+  border: 1px solid transparent;
+  padding: 14px 16px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.settings-input:hover {
+  background: #f1f5f9;
+}
+
+.settings-input:focus {
+  background: white;
+  border-color: var(--settings-primary);
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+}
+
+/* Dark mode overrides for profile */
+body.dark-mode .profile-image-preview {
+  border-color: var(--settings-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .profile-upload-button {
+  border-color: var(--settings-bg);
+}
+
+body.dark-mode .settings-input {
+  background: #0f172a;
+  border-color: var(--settings-border);
+}
+
+body.dark-mode .settings-input:focus {
+  background: #1e293b;
+}

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Start session and check authentication
 require_once __DIR__ . '/../../core/Session.php';
 Session::start();
@@ -6,9 +6,11 @@ Session::start();
 // Check if user is logged in - check cookies first (more reliable)
 if (isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
     // Restore session from cookies
-    $_SESSION['user_id'] = $_COOKIE['user_id'];
-    $_SESSION['username'] = $_COOKIE['username'] ?? '';
-    $_SESSION['role'] = $_COOKIE['role'];
+    if (!isset($_SESSION['user_id'])) {
+        $_SESSION['user_id'] = $_COOKIE['user_id'];
+        $_SESSION['username'] = $_COOKIE['username'] ?? '';
+        $_SESSION['role'] = $_COOKIE['role'];
+    }
 } elseif (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     // No session or cookies, redirect to login
     header('Location: ' . View::baseUrl('index.php'));

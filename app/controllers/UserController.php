@@ -178,28 +178,35 @@ class UserController extends Controller {
         }
 
         $userId = $_SESSION['user_id'];
-        $username = $this->sanitize($this->getPost('username', ''));
-        $currentPassword = $this->getPost('current_password', '');
-        $newPassword = $this->getPost('new_password', '');
-        $confirmPassword = $this->getPost('confirm_password', '');
-
-        if ($username === '') {
-            $this->error('Username is required.');
-        }
-
-        if ($currentPassword === '') {
-            $this->error('Current password is required to save changes.');
-        }
-
+        
         try {
             $user = $this->model->getById($userId);
             if (!$user) {
                 $this->error('User not found.');
             }
 
-            // Verify current password
-            if (!password_verify($currentPassword, $user['password'])) {
-                $this->error('Incorrect current password.');
+            $username = $this->sanitize($this->getPost('username', ''));
+            $currentPassword = $this->getPost('current_password', '');
+            $newPassword = $this->getPost('new_password', '');
+            $confirmPassword = $this->getPost('confirm_password', '');
+
+            if ($username === '') {
+                $this->error('Username is required.');
+            }
+
+            // Verify current password only if setting a new password or if provided
+            if (!empty($newPassword)) {
+                if (empty($currentPassword)) {
+                    $this->error('Current password is required to set a new password.');
+                }
+                if (!password_verify($currentPassword, $user['password'])) {
+                    $this->error('Incorrect current password.');
+                }
+            } elseif (!empty($currentPassword)) {
+                // If user provided current password voluntarily, verify it
+                if (!password_verify($currentPassword, $user['password'])) {
+                    $this->error('Incorrect current password.');
+                }
             }
 
             // Handle Profile Picture Upload
