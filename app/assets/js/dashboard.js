@@ -587,9 +587,9 @@ function createSettingsModal() {
             <aside class="settings-sidebar">
                 <div class="settings-sidebar-header">Settings</div>
                 <div class="settings-sidebar-list">
-                    <button type="button" class="settings-sidebar-item active" data-section="overview">
-                        <i class='bx bx-slider-alt'></i>
-                        <span>Overview</span>
+                    <button type="button" class="settings-sidebar-item active" data-section="profile">
+                        <i class='bx bx-id-card'></i>
+                        <span>Profile</span>
                     </button>
                     <button type="button" class="settings-sidebar-item" data-section="admins">
                         <i class='bx bx-user-circle'></i>
@@ -598,10 +598,6 @@ function createSettingsModal() {
                     <button type="button" class="settings-sidebar-item" data-section="users">
                         <i class='bx bx-group'></i>
                         <span>User Accounts</span>
-                    </button>
-                    <button type="button" class="settings-sidebar-item" data-section="profile">
-                        <i class='bx bx-id-card'></i>
-                        <span>Profile</span>
                     </button>
                     <button type="button" class="settings-sidebar-item" data-section="export">
                         <i class='bx bx-data'></i>
