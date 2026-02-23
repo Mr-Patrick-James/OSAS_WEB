@@ -100,6 +100,7 @@ if (!$student_id) {
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="../app/assets/styles/user_dashboard.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../app/assets/styles/user_topnav.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../app/assets/styles/settings.css?v=<?= time() ?>">
     <link rel="stylesheet" href="../app/assets/styles/violation.css">
     <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
     

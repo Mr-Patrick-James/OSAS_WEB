@@ -102,7 +102,7 @@ if (isset($student) && $student) {
       
       <!-- Dropdown Menu -->
       <div class="user-dropdown">
-        <a href="#" class="dropdown-item settings-item">
+        <a href="#" class="dropdown-item settings-item settings-link">
           <i class='bx bx-cog'></i>
           <span>Settings</span>
         </a>

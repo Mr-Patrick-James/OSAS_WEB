@@ -35,6 +35,7 @@ if ($_SESSION['role'] !== 'user') {
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="../app/assets/styles/user_dashboard.css">
   <link rel="stylesheet" href="../app/assets/styles/user_topnav.css">
+  <link rel="stylesheet" href="../app/assets/styles/settings.css">
   <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.puter.com/v2/"></script>

@@ -35,6 +35,17 @@ function initializeUserDropdown() {
     
     console.log('✅ User dropdown initialized');
   }
+
+  const settingsLink = document.querySelector('.user-dropdown .settings-link');
+  if (settingsLink) {
+    settingsLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      openUserSettingsModal();
+      if (userDropdown) {
+        userDropdown.classList.remove('show');
+      }
+    });
+  }
 }
 
 // ===============================
@@ -765,61 +776,486 @@ function viewAllAnnouncements() {
   showNotification('Opening all announcements...', 'info');
 }
 
-// Settings functions
+function getUserProjectRoot() {
+  const parts = window.location.pathname.split('/').filter(p => p);
+  if (parts.length > 0) {
+    const first = parts[0];
+    if (first === 'app' || first === 'public' || first === 'includes' || first === 'api') {
+      return '';
+    }
+    return '/' + first;
+  }
+  return '';
+}
+
+function getUserApiBasePath() {
+  const root = getUserProjectRoot();
+  if (root) return root + '/api/';
+  return '/api/';
+}
+
+function resolveUserPath(relativePath) {
+  if (!relativePath) return relativePath;
+  if (relativePath.startsWith('http') || relativePath.startsWith('/')) return relativePath;
+  const root = getUserProjectRoot();
+  const cleanPath = relativePath.replace(/^(\.\/|\.\.\/)+/, '');
+  if (cleanPath.startsWith('public/')) return root + '/' + cleanPath;
+  if (cleanPath.startsWith('assets/')) return root + '/app/' + cleanPath;
+  return root + '/' + cleanPath;
+}
+
+function createUserSettingsModal() {
+  let overlay = document.getElementById('userSettingsModalOverlay');
+  if (overlay) return overlay;
+
+  overlay = document.createElement('div');
+  overlay.id = 'userSettingsModalOverlay';
+  overlay.className = 'settings-modal-overlay';
+
+  const defaultAvatar = resolveUserPath('assets/img/default.png');
+
+  overlay.innerHTML = `
+    <div class="settings-modal user-settings-modal">
+      <aside class="settings-sidebar">
+        <div class="settings-sidebar-header">Settings</div>
+        <div class="settings-sidebar-list">
+          <button type="button" class="settings-sidebar-item active" data-section="profile">
+            <i class='bx bx-id-card'></i>
+            <span>Profile</span>
+          </button>
+          <button type="button" class="settings-sidebar-item" data-section="preferences">
+            <i class='bx bx-cog'></i>
+            <span>Preferences</span>
+          </button>
+        </div>
+      </aside>
+      <div class="settings-content">
+        <button type="button" class="settings-close-btn" id="userSettingsCloseBtn">
+          <i class='bx bx-x'></i>
+        </button>
+        <div class="settings-section active" data-section="profile">
+          <h2 class="settings-title">My Profile</h2>
+          <div id="userSettingsProfileAlert" class="settings-alert"></div>
+          <form id="userSettingsProfileForm" enctype="multipart/form-data">
+            <div class="settings-profile-header">
+              <div class="profile-upload-container">
+                <img id="userProfileImagePreview" class="profile-image-preview" src="${defaultAvatar}" alt="Profile Picture">
+                <label for="userProfilePictureInput" class="profile-upload-button">
+                  <i class='bx bx-camera'></i>
+                </label>
+                <input type="file" id="userProfilePictureInput" name="profile_picture" accept="image/*" style="display: none;">
+              </div>
+              <div class="profile-info-text">
+                <h4 id="userProfileDisplayName">User</h4>
+                <p>Update your account details and password.</p>
+              </div>
+            </div>
+            <div class="settings-grid">
+              <div class="settings-form-group">
+                <label class="settings-label" for="userProfileUsername">Username</label>
+                <input class="settings-input" type="text" id="userProfileUsername" name="username" placeholder="Your username">
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label" for="userProfileFullName">Full Name</label>
+                <input class="settings-input" type="text" id="userProfileFullName" name="full_name" placeholder="Full name" readonly>
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label" for="userProfileEmail">Email</label>
+                <input class="settings-input" type="email" id="userProfileEmail" name="email" placeholder="Email" readonly>
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label" for="userProfileCurrentPassword">Current Password</label>
+                <input class="settings-input" type="password" id="userProfileCurrentPassword" name="current_password" placeholder="Required only if changing password">
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label" for="userProfileNewPassword">New Password</label>
+                <input class="settings-input" type="password" id="userProfileNewPassword" name="new_password" placeholder="Leave blank to keep current">
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label" for="userProfileConfirmPassword">Confirm New Password</label>
+                <input class="settings-input" type="password" id="userProfileConfirmPassword" name="confirm_password" placeholder="Confirm new password">
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="settings-btn settings-btn-primary" id="userSettingsProfileSubmit">
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </form>
+        </div>
+        <div class="settings-section" data-section="preferences">
+          <h2 class="settings-title">Preferences</h2>
+          <div id="userSettingsPreferencesAlert" class="settings-alert"></div>
+          <form id="userSettingsPreferencesForm">
+            <div class="settings-grid">
+              <div class="settings-form-group">
+                <label class="settings-label" for="userSettingDarkMode">Dark Mode</label>
+                <input type="checkbox" id="userSettingDarkMode">
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label" for="userSettingEyeCare">Eye Care Filter</label>
+                <input type="checkbox" id="userSettingEyeCare">
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label" for="userSettingNotifications">Notifications</label>
+                <input type="checkbox" id="userSettingNotifications">
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button type="button" class="settings-btn settings-btn-secondary" id="userSettingsResetBtn">Reset</button>
+              <button type="submit" class="settings-btn settings-btn-primary" id="userSettingsPreferencesSubmit">
+                <span>Save Preferences</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function openUserSettingsModal() {
+  const overlay = createUserSettingsModal();
+  overlay.style.display = 'flex';
+  requestAnimationFrame(() => {
+    overlay.classList.add('active');
+  });
+  initializeSettings();
+  loadUserSettingsProfile();
+  initializeSettingsPreferences();
+}
+
+function closeUserSettingsModal() {
+  const overlay = document.getElementById('userSettingsModalOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 200);
+}
+
 function showSettingsTab(tabName) {
-  // Hide all panels
-  const panels = document.querySelectorAll('.settings-panel');
-  panels.forEach(panel => panel.classList.remove('active'));
+  const panels = document.querySelectorAll('#userSettingsModalOverlay .settings-section');
+  panels.forEach(panel => {
+    const panelSection = panel.getAttribute('data-section');
+    if (panelSection === tabName) {
+      panel.classList.add('active');
+    } else {
+      panel.classList.remove('active');
+    }
+  });
 
-  // Remove active class from all tabs
-  const tabs = document.querySelectorAll('.settings-tab');
-  tabs.forEach(tab => tab.classList.remove('active'));
+  const tabs = document.querySelectorAll('#userSettingsModalOverlay .settings-sidebar-item');
+  tabs.forEach(tab => {
+    const tabKey = tab.getAttribute('data-section');
+    if (tabKey === tabName) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+}
 
-  // Show selected panel
-  const selectedPanel = document.getElementById(`${tabName}-settings`);
-  if (selectedPanel) {
-    selectedPanel.classList.add('active');
+function setSettingsAlert(element, type, message) {
+  if (!element) return;
+  element.className = `settings-alert ${type}`;
+  element.textContent = message;
+}
+
+function initializeSettings() {
+  const overlay = document.getElementById('userSettingsModalOverlay');
+  if (!overlay) return;
+
+  const closeBtn = overlay.querySelector('#userSettingsCloseBtn');
+  if (closeBtn && !closeBtn.dataset.listenerAttached) {
+    closeBtn.dataset.listenerAttached = 'true';
+    closeBtn.addEventListener('click', function () {
+      closeUserSettingsModal();
+    });
   }
 
-  // Add active class to selected tab
-  const selectedTab = document.querySelector(`[data-tab="${tabName}"]`);
-  if (selectedTab) {
-    selectedTab.classList.add('active');
+  overlay.addEventListener('click', function (event) {
+    if (event.target === overlay) {
+      closeUserSettingsModal();
+    }
+  });
+
+  const sidebarItems = overlay.querySelectorAll('.settings-sidebar-item');
+  sidebarItems.forEach(item => {
+    if (item.dataset.listenerAttached) return;
+    item.dataset.listenerAttached = 'true';
+    item.addEventListener('click', function () {
+      const section = this.getAttribute('data-section');
+      if (section) showSettingsTab(section);
+    });
+  });
+
+  showSettingsTab('profile');
+
+  const profileForm = overlay.querySelector('#userSettingsProfileForm');
+  if (profileForm && !profileForm.dataset.listenerAttached) {
+    profileForm.dataset.listenerAttached = 'true';
+    profileForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitUserSettingsProfile();
+    });
+  }
+
+  const preferencesForm = overlay.querySelector('#userSettingsPreferencesForm');
+  if (preferencesForm && !preferencesForm.dataset.listenerAttached) {
+    preferencesForm.dataset.listenerAttached = 'true';
+    preferencesForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      saveSettings();
+    });
+  }
+
+  const resetBtn = overlay.querySelector('#userSettingsResetBtn');
+  if (resetBtn && !resetBtn.dataset.listenerAttached) {
+    resetBtn.dataset.listenerAttached = 'true';
+    resetBtn.addEventListener('click', resetSettings);
+  }
+}
+
+async function loadUserSettingsProfile() {
+  const usernameInput = document.getElementById('userProfileUsername');
+  const fullNameInput = document.getElementById('userProfileFullName');
+  const emailInput = document.getElementById('userProfileEmail');
+  const profileImagePreview = document.getElementById('userProfileImagePreview');
+  const profilePictureInput = document.getElementById('userProfilePictureInput');
+  const displayName = document.getElementById('userProfileDisplayName');
+
+  if (usernameInput) usernameInput.value = '';
+  if (fullNameInput) fullNameInput.value = '';
+  if (emailInput) emailInput.value = '';
+
+  const currentPassword = document.getElementById('userProfileCurrentPassword');
+  const newPassword = document.getElementById('userProfileNewPassword');
+  const confirmPassword = document.getElementById('userProfileConfirmPassword');
+  if (currentPassword) currentPassword.value = '';
+  if (newPassword) newPassword.value = '';
+  if (confirmPassword) confirmPassword.value = '';
+
+  if (profilePictureInput && profileImagePreview) {
+    profilePictureInput.onchange = function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          profileImagePreview.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+
+  try {
+    const response = await fetch(getUserApiBasePath() + 'users.php?action=profile');
+    const data = await response.json();
+    if (data.status === 'success') {
+      const profile = data.data.profile || {};
+      if (usernameInput) usernameInput.value = profile.username || '';
+      if (fullNameInput) fullNameInput.value = profile.full_name || '';
+      if (emailInput) emailInput.value = profile.email || '';
+      if (displayName) displayName.textContent = profile.full_name || profile.username || 'User';
+
+      if (profile.profile_picture && profileImagePreview) {
+        const fullPath = resolveUserPath(profile.profile_picture);
+        profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
+      } else if (profileImagePreview) {
+        profileImagePreview.src = resolveUserPath('assets/img/default.png');
+      }
+    }
+  } catch (error) {
+    console.error('Error loading profile:', error);
+  }
+}
+
+async function submitUserSettingsProfile() {
+  const form = document.getElementById('userSettingsProfileForm');
+  const alertBox = document.getElementById('userSettingsProfileAlert');
+  const submitBtn = document.getElementById('userSettingsProfileSubmit');
+
+  if (!form) return;
+  if (alertBox) {
+    alertBox.className = 'settings-alert';
+    alertBox.textContent = '';
+  }
+
+  const currentPassword = document.getElementById('userProfileCurrentPassword')?.value || '';
+  const newPassword = document.getElementById('userProfileNewPassword')?.value || '';
+  const confirmPassword = document.getElementById('userProfileConfirmPassword')?.value || '';
+
+  if (!currentPassword && newPassword) {
+    setSettingsAlert(alertBox, 'error', 'Current password is required to change password.');
+    return;
+  }
+
+  if (newPassword && newPassword !== confirmPassword) {
+    setSettingsAlert(alertBox, 'error', 'New passwords do not match.');
+    return;
+  }
+
+  try {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Saving...</span>';
+    }
+
+    const formData = new FormData(form);
+    const response = await fetch(getUserApiBasePath() + 'users.php?action=updateProfile', {
+      method: 'POST',
+      body: formData
+    });
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      data = { status: 'error', message: 'Unexpected response from server.' };
+    }
+
+    if (data.status === 'success') {
+      setSettingsAlert(alertBox, 'success', data.message || 'Profile updated successfully.');
+      const profilePicture = data.data?.profile_picture || null;
+      const username = data.data?.username || null;
+      if (username) {
+        const displayName = document.getElementById('userProfileDisplayName');
+        if (displayName) displayName.textContent = username;
+      }
+
+      if (profilePicture) {
+        const fullPath = resolveUserPath(profilePicture) + '?t=' + new Date().getTime();
+        const preview = document.getElementById('userProfileImagePreview');
+        if (preview) preview.src = fullPath;
+        const topnavAvatar = document.querySelector('.nav-user-menu .user-avatar img');
+        if (topnavAvatar) topnavAvatar.src = fullPath;
+        const sidebarAvatar = document.getElementById('sidebarProfileImage');
+        if (sidebarAvatar) sidebarAvatar.src = fullPath;
+      }
+
+      const currentPasswordField = document.getElementById('userProfileCurrentPassword');
+      const newPasswordField = document.getElementById('userProfileNewPassword');
+      const confirmPasswordField = document.getElementById('userProfileConfirmPassword');
+      if (currentPasswordField) currentPasswordField.value = '';
+      if (newPasswordField) newPasswordField.value = '';
+      if (confirmPasswordField) confirmPasswordField.value = '';
+    } else {
+      setSettingsAlert(alertBox, 'error', data.message || 'Failed to update profile.');
+    }
+  } catch (error) {
+    setSettingsAlert(alertBox, 'error', 'Error updating profile.');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span>Save Changes</span>';
+    }
+  }
+}
+
+function initializeSettingsPreferences() {
+  const darkModeToggle = document.getElementById('userSettingDarkMode');
+  const eyeCareToggle = document.getElementById('userSettingEyeCare');
+  const notificationsToggle = document.getElementById('userSettingNotifications');
+
+  if (darkModeToggle) {
+    const savedTheme = localStorage.getItem('theme');
+    darkModeToggle.checked = savedTheme ? savedTheme === 'dark' : !!window.darkMode;
+    if (!darkModeToggle.dataset.listenerAttached) {
+      darkModeToggle.dataset.listenerAttached = 'true';
+      darkModeToggle.addEventListener('change', function () {
+        window.darkMode = this.checked;
+        if (typeof updateTheme === 'function') {
+          updateTheme();
+          if (typeof updateThemeColor === 'function') updateThemeColor();
+        } else {
+          document.body.classList.toggle('dark', window.darkMode);
+          document.body.classList.toggle('dark-mode', window.darkMode);
+        }
+        localStorage.setItem('theme', window.darkMode ? 'dark' : 'light');
+        document.dispatchEvent(new CustomEvent('themeChanged', { detail: { darkMode: window.darkMode } }));
+      });
+    }
+  }
+
+  if (eyeCareToggle) {
+    const savedEyeCare = localStorage.getItem('eyeCareEnabled');
+    const isDark = window.darkMode || document.body.classList.contains('dark');
+    eyeCareToggle.checked = savedEyeCare === 'true' && !isDark;
+    if (!eyeCareToggle.dataset.listenerAttached) {
+      eyeCareToggle.dataset.listenerAttached = 'true';
+      eyeCareToggle.addEventListener('change', function () {
+        const isDark = window.darkMode || document.body.classList.contains('dark');
+        if (this.checked && isDark) {
+          this.checked = false;
+          localStorage.setItem('eyeCareEnabled', 'false');
+          showNotification('Eye Care is only available in light mode', 'info');
+          return;
+        }
+        if (this.checked) {
+          if (typeof enableEyeCare === 'function') {
+            enableEyeCare();
+          } else {
+            localStorage.setItem('eyeCareEnabled', 'true');
+          }
+        } else {
+          if (typeof disableEyeCare === 'function') {
+            disableEyeCare();
+          } else {
+            localStorage.setItem('eyeCareEnabled', 'false');
+          }
+        }
+      });
+    }
+  }
+
+  if (notificationsToggle) {
+    const savedNotifications = localStorage.getItem('userNotificationsEnabled');
+    notificationsToggle.checked = savedNotifications === null ? true : savedNotifications === 'true';
+    if (!notificationsToggle.dataset.listenerAttached) {
+      notificationsToggle.dataset.listenerAttached = 'true';
+      notificationsToggle.addEventListener('change', function () {
+        localStorage.setItem('userNotificationsEnabled', this.checked ? 'true' : 'false');
+      });
+    }
   }
 }
 
 function saveSettings() {
-  showNotification('Settings saved successfully!', 'success');
-  // Here you can implement actual settings saving logic
+  const alertBox = document.getElementById('userSettingsPreferencesAlert');
+  setSettingsAlert(alertBox, 'success', 'Preferences saved successfully.');
+  showNotification('Preferences saved successfully!', 'success');
 }
 
 function resetSettings() {
-  if (confirm('Are you sure you want to reset all settings to default? This action cannot be undone.')) {
-    showNotification('Settings reset to default', 'info');
-    // Here you can implement actual settings reset logic
+  if (!confirm('Reset preferences to default?')) {
+    return;
   }
-}
 
-function uploadProfilePicture() {
-  showNotification('Profile picture upload feature coming soon!', 'info');
-  // Here you can implement profile picture upload
-}
+  localStorage.removeItem('theme');
+  localStorage.removeItem('eyeCareEnabled');
+  localStorage.removeItem('userNotificationsEnabled');
 
-function changePassword() {
-  showNotification('Password change feature coming soon!', 'info');
-  // Here you can implement password change modal
-}
-
-function manageSessions() {
-  showNotification('Session management feature coming soon!', 'info');
-  // Here you can implement session management
-}
-
-function clearCache() {
-  if (confirm('Are you sure you want to clear the system cache?')) {
-    showNotification('Cache cleared successfully!', 'success');
-    // Here you can implement cache clearing logic
+  if (typeof initializeTheme === 'function') {
+    initializeTheme();
+  } else {
+    window.darkMode = false;
+    document.body.classList.remove('dark');
+    document.body.classList.remove('dark-mode');
   }
+
+  if (typeof disableEyeCare === 'function') {
+    disableEyeCare();
+  }
+
+  initializeSettingsPreferences();
+  const alertBox = document.getElementById('userSettingsPreferencesAlert');
+  setSettingsAlert(alertBox, 'success', 'Preferences reset to default.');
+  showNotification('Preferences reset to default', 'info');
 }
 
 // Notification system
@@ -1388,31 +1824,6 @@ function updateViolationStats() {
   if (daysClean) daysClean.textContent = stats.daysClean;
 }
 
-// Initialize settings page
-function initializeSettings() {
-  // Set default active tab
-  showSettingsTab('general');
-
-  // Add event listeners for toggle switches
-  const toggleSwitches = document.querySelectorAll('.toggle-switch input');
-  toggleSwitches.forEach(toggle => {
-    toggle.addEventListener('change', function () {
-      const statusElement = this.closest('.setting-item').querySelector('.setting-status');
-      if (statusElement) {
-        if (this.checked) {
-          statusElement.textContent = 'Enabled';
-          statusElement.className = 'setting-status enabled';
-        } else {
-          statusElement.textContent = 'Disabled';
-          statusElement.className = 'setting-status disabled';
-        }
-      }
-    });
-  });
-
-  console.log('⚡ Settings page initialized');
-}
-
 // Chart initialization function
 function initializeCharts() {
   // Check if Chart.js is available
@@ -1663,7 +2074,7 @@ const navSettings = document.querySelector('.nav-settings');
 if (navSettings) {
   navSettings.addEventListener('click', function (e) {
     e.preventDefault();
-    alert('Settings page coming soon!');
+    openUserSettingsModal();
   });
 }
 

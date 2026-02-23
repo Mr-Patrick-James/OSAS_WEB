@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Start session and check authentication
 require_once __DIR__ . '/../../core/Session.php';
 Session::start();
@@ -40,6 +40,7 @@ $notificationCount = 7; // Can be dynamic later
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/user_topnav.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/settings.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/chatbot.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.puter.com/v2/"></script>
