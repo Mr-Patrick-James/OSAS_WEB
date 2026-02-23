@@ -820,45 +820,45 @@
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">
-                    <i class="fas fa-users"></i>
+                    <i class="fas fa-user-graduate"></i>
                 </div>
-                <h3>Student Management</h3>
-                <p>Comprehensive student profile management with advanced tracking and reporting capabilities.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <h3>Analytics Dashboard</h3>
-                <p>Real-time insights and data visualization for informed decision-making.</p>
+                <h3>Student Profiles</h3>
+                <p>Centralized student records with profile details and account access.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <i class="fas fa-shield-alt"></i>
                 </div>
-                <h3>Secure Platform</h3>
-                <p>Enterprise-grade security with role-based access control and data protection.</p>
+                <h3>Violation Tracking</h3>
+                <p>Monitor violations, view histories, and keep discipline records organized.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
-                    <i class="fas fa-mobile-alt"></i>
+                    <i class="fas fa-bullhorn"></i>
                 </div>
-                <h3>Mobile Responsive</h3>
-                <p>Access the system from any device with our fully responsive design.</p>
+                <h3>Announcements</h3>
+                <p>Publish announcements and notify users of important updates.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
-                    <i class="fas fa-bell"></i>
+                    <i class="fas fa-chart-line"></i>
                 </div>
-                <h3>Notifications</h3>
-                <p>Stay updated with real-time notifications and announcements.</p>
+                <h3>Reports & Exports</h3>
+                <p>Generate reports and export data for documentation and review.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
-                    <i class="fas fa-cogs"></i>
+                    <i class="fas fa-layer-group"></i>
                 </div>
-                <h3>Automation</h3>
-                <p>Streamline workflows with automated processes and smart scheduling.</p>
+                <h3>Sections & Departments</h3>
+                <p>Organize academic structure with section and department management.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3>Role-Based Access</h3>
+                <p>Separate admin and student access with secure permissions.</p>
             </div>
         </div>
     </section>
