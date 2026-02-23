@@ -158,7 +158,7 @@ try {
         <i class='bx bxs-error-circle penalty-icon'></i>
         <span class="text">
           <h3 id="penalties-count"><?= $penaltiesCount ?></h3>
-          <p>Penalties</p>
+          <p>Disciplinary</p>
         </span>
       </li>
     </ul>
