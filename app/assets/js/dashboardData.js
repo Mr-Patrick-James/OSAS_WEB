@@ -338,65 +338,80 @@ class DashboardData {
     updateStats() {
         console.log('📊 Updating dashboard stats:', this.stats);
         
-        const statsBoxes = document.querySelectorAll('.box-info li');
-        console.log(`Found ${statsBoxes.length} stat boxes`);
+        // Try updating by ID first (more robust)
+        const violatorsCount = document.getElementById('violators-count');
+        const studentsCount = document.getElementById('students-count');
+        const departmentsCount = document.getElementById('departments-count');
+        const penaltiesCount = document.getElementById('penalties-count');
         
-        if (statsBoxes.length >= 4) {
-            // Violators
-            const violatorsBox = statsBoxes[0];
-            if (violatorsBox) {
-                const h3 = violatorsBox.querySelector('h3');
-                if (h3) {
-                    h3.textContent = this.stats.violators || 0;
-                    console.log('✅ Updated violators:', this.stats.violators || 0);
-                } else {
-                    console.warn('⚠️ Violators h3 not found');
+        if (violatorsCount) {
+            violatorsCount.textContent = this.stats.violators || 0;
+            console.log('✅ Updated violators by ID:', this.stats.violators || 0);
+        }
+        
+        if (studentsCount) {
+            studentsCount.textContent = this.stats.students || 0;
+            console.log('✅ Updated students by ID:', this.stats.students || 0);
+        }
+        
+        if (departmentsCount) {
+            departmentsCount.textContent = this.stats.departments || 0;
+            console.log('✅ Updated departments by ID:', this.stats.departments || 0);
+        }
+        
+        if (penaltiesCount) {
+            penaltiesCount.textContent = this.stats.penalties || 0;
+            console.log('✅ Updated penalties by ID:', this.stats.penalties || 0);
+        }
+        
+        // If IDs not found, fallback to selector based (legacy support)
+        if (!violatorsCount && !studentsCount) {
+            const statsBoxes = document.querySelectorAll('.box-info li');
+            console.log(`Found ${statsBoxes.length} stat boxes (fallback mode)`);
+            
+            if (statsBoxes.length >= 4) {
+                // Violators
+                const violatorsBox = statsBoxes[0];
+                if (violatorsBox) {
+                    const h3 = violatorsBox.querySelector('h3');
+                    if (h3) {
+                        h3.textContent = this.stats.violators || 0;
+                    }
                 }
+    
+                // Students
+                const studentsBox = statsBoxes[1];
+                if (studentsBox) {
+                    const h3 = studentsBox.querySelector('h3');
+                    if (h3) {
+                        h3.textContent = this.stats.students || 0;
+                    }
+                }
+    
+                // Departments
+                const departmentsBox = statsBoxes[2];
+                if (departmentsBox) {
+                    const h3 = departmentsBox.querySelector('h3');
+                    if (h3) {
+                        h3.textContent = this.stats.departments || 0;
+                    }
+                }
+    
+                // Penalties
+                const penaltiesBox = statsBoxes[3];
+                if (penaltiesBox) {
+                    const h3 = penaltiesBox.querySelector('h3');
+                    if (h3) {
+                        h3.textContent = this.stats.penalties || 0;
+                    }
+                }
+            } else {
+                 console.warn(`⚠️ Expected 4 stat boxes, found ${statsBoxes.length}. Retrying in 500ms...`);
+                 // Retry if boxes not found yet
+                 setTimeout(() => {
+                     this.updateStats();
+                 }, 500);
             }
-
-            // Students
-            const studentsBox = statsBoxes[1];
-            if (studentsBox) {
-                const h3 = studentsBox.querySelector('h3');
-                if (h3) {
-                    h3.textContent = this.stats.students || 0;
-                    console.log('✅ Updated students:', this.stats.students || 0);
-                } else {
-                    console.warn('⚠️ Students h3 not found');
-                }
-            }
-
-            // Departments
-            const departmentsBox = statsBoxes[2];
-            if (departmentsBox) {
-                const h3 = departmentsBox.querySelector('h3');
-                if (h3) {
-                    h3.textContent = this.stats.departments || 0;
-                    console.log('✅ Updated departments:', this.stats.departments || 0);
-                } else {
-                    console.warn('⚠️ Departments h3 not found');
-                }
-            }
-
-            // Penalties
-            const penaltiesBox = statsBoxes[3];
-            if (penaltiesBox) {
-                const h3 = penaltiesBox.querySelector('h3');
-                if (h3) {
-                    h3.textContent = this.stats.penalties || 0;
-                    console.log('✅ Updated penalties:', this.stats.penalties || 0);
-                } else {
-                    console.warn('⚠️ Penalties h3 not found');
-                }
-            }
-        } else {
-            console.warn(`⚠️ Expected 4 stat boxes, found ${statsBoxes.length}. Retrying in 500ms...`);
-            // Retry if boxes not found yet
-            setTimeout(() => {
-                if (document.querySelectorAll('.box-info li').length >= 4) {
-                    this.updateStats();
-                }
-            }, 500);
         }
     }
 

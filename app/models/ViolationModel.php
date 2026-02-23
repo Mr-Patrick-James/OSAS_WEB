@@ -482,7 +482,226 @@ class ViolationModel extends Model {
      * Get violation levels by type
      */
     public function getViolationLevels($typeId) {
-        return $this->query("SELECT * FROM violation_levels WHERE violation_type_id = ? ORDER BY level_order ASC", [$typeId]);
+        // This method relies on the base Model::query method which returns an array
+        // We need to implement query() in Model.php or use prepare/execute here
+        // Since Model.php as I read earlier didn't have query(), I should implement it properly using prepare
+        
+        $query = "SELECT * FROM violation_levels WHERE violation_type_id = ? ORDER BY level_order ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("i", $typeId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $levels = [];
+        while ($row = $result->fetch_assoc()) {
+            $levels[] = $row;
+        }
+        $stmt->close();
+        return $levels;
+    }
+
+
+    /**
+     * Count total violations
+     */
+    public function countViolations($studentId = null) {
+        $query = "SELECT COUNT(*) as count FROM violations v";
+        $params = [];
+        $types = "";
+        
+        if ($studentId) {
+            $query .= " WHERE BINARY v.student_id = BINARY ?";
+            $params[] = $studentId;
+            $types = "s";
+        }
+        
+        if (!empty($params)) {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+            return (int)$row['count'];
+        } else {
+            $result = $this->conn->query($query);
+            if ($result) {
+                $row = $result->fetch_assoc();
+                return (int)$row['count'];
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Count unique violators
+     */
+    public function countViolators($studentId = null) {
+        if ($studentId) {
+            return $this->countViolations($studentId) > 0 ? 1 : 0;
+        }
+        
+        $query = "SELECT COUNT(DISTINCT student_id) as count FROM violations WHERE student_id IS NOT NULL AND student_id != ''";
+        $result = $this->conn->query($query);
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return (int)$row['count'];
+        }
+        return 0;
+    }
+
+    /**
+     * Count penalties (disciplinary actions)
+     */
+    public function countPenalties($studentId = null) {
+        $query = "SELECT COUNT(*) as count FROM violations v WHERE v.status = 'disciplinary'";
+        $params = [];
+        $types = "";
+        
+        if ($studentId) {
+            $query .= " AND BINARY v.student_id = BINARY ?";
+            $params[] = $studentId;
+            $types = "s";
+        }
+        
+        if (!empty($params)) {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+            return (int)$row['count'];
+        } else {
+            $result = $this->conn->query($query);
+            if ($result) {
+                $row = $result->fetch_assoc();
+                return (int)$row['count'];
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Get recent violations
+     */
+    public function getRecent($limit = 10, $studentId = null) {
+        $query = "
+            SELECT v.id,
+                   v.case_id,
+                   v.student_id,
+                   vt.name as violation_type,
+                   vl.name as violation_level,
+                   v.violation_date,
+                   v.violation_time,
+                   v.status,
+                   v.location,
+                   v.reported_by,
+                   v.notes,
+                   v.created_at,
+                   v.updated_at,
+                   s.first_name, 
+                   s.last_name, 
+                   s.avatar,
+                   s.department
+            FROM violations v
+            LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
+            LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+            LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
+        ";
+        
+        $params = [];
+        $types = "";
+        
+        if ($studentId) {
+            $query .= " WHERE BINARY v.student_id = BINARY ?";
+            $params[] = $studentId;
+            $types = "s";
+        }
+        
+        $query .= " ORDER BY v.created_at DESC LIMIT ?";
+        $params[] = $limit;
+        $types .= "i";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            // Normalize avatar
+            $firstName = $row['first_name'] ?? '';
+            $middleName = ''; // Not in query but needed for normalization
+            $lastName = $row['last_name'] ?? '';
+            $fullName = trim($firstName . ' ' . $lastName);
+            
+            $avatar = $row['avatar'] ?? '';
+            if (empty($avatar) || trim($avatar) === '') {
+                $avatar = 'https://ui-avatars.com/api/?name=' . urlencode($fullName) . '&background=ffd700&color=333&size=40';
+            } else {
+                if (!filter_var($avatar, FILTER_VALIDATE_URL) && strpos($avatar, 'data:') !== 0) {
+                    if (strpos($avatar, 'app/assets/img/students/') === false && strpos($avatar, 'assets/img/students/') === false) {
+                         if (strpos($avatar, '../app/assets/img/students/') === 0 || strpos($avatar, '../assets/img/students/') === 0) {
+                             $avatar = 'app/' . ltrim(substr($avatar, 3), '/');
+                             if (strpos($avatar, 'app/assets/') === false) {
+                                 $avatar = str_replace('assets/', 'app/assets/', $avatar);
+                             }
+                         } else {
+                             $avatar = 'app/assets/img/students/' . basename($avatar);
+                         }
+                    } elseif (strpos($avatar, 'assets/img/students/') !== false && strpos($avatar, 'app/assets/') === false) {
+                        $avatar = str_replace('assets/', 'app/assets/', $avatar);
+                    }
+                }
+            }
+            $row['avatar'] = $avatar;
+            
+            $data[] = $row;
+        }
+        $stmt->close();
+        return $data;
+    }
+
+    /**
+     * Get top violators
+     */
+    public function getTopViolators($limit = 5, $studentId = null) {
+        $query = "
+            SELECT 
+                v.student_id,
+                s.first_name,
+                s.last_name,
+                s.avatar,
+                COUNT(*) as violation_count
+            FROM violations v
+            LEFT JOIN students s ON BINARY v.student_id = BINARY s.student_id
+        ";
+        
+        $params = [];
+        $types = "";
+        
+        if ($studentId) {
+            $query .= " WHERE BINARY v.student_id = BINARY ?";
+            $params[] = $studentId;
+            $types = "s";
+        }
+        
+        $query .= " GROUP BY v.student_id, s.first_name, s.last_name, s.avatar ORDER BY violation_count DESC LIMIT ?";
+        $params[] = $limit;
+        $types .= "i";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        $stmt->close();
+        return $data;
     }
 }
 

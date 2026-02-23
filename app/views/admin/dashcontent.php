@@ -1,5 +1,41 @@
 ﻿<?php
 require_once __DIR__ . '/../../core/View.php';
+
+// Initialize counts with default values
+$violatorsCount = 0;
+$studentsCount = 0;
+$departmentsCount = 0;
+$penaltiesCount = 0;
+
+try {
+    // Attempt to load models and fetch data for Server-Side Rendering (SSR)
+    // This ensures data is visible even before JS loads
+    $modelsPath = __DIR__ . '/../../models/';
+    
+    // Check if we can connect to DB by trying to load one model
+    if (file_exists($modelsPath . 'StudentModel.php')) {
+        require_once $modelsPath . 'StudentModel.php';
+        $studentModel = new StudentModel();
+        $studentsCount = $studentModel->countActive();
+    }
+    
+    if (file_exists($modelsPath . 'ViolationModel.php')) {
+        require_once $modelsPath . 'ViolationModel.php';
+        $violationModel = new ViolationModel();
+        $violatorsCount = $violationModel->countViolators();
+        $penaltiesCount = $violationModel->countPenalties();
+    }
+    
+    if (file_exists($modelsPath . 'DepartmentModel.php')) {
+        require_once $modelsPath . 'DepartmentModel.php';
+        $deptModel = new DepartmentModel();
+        $departmentsCount = $deptModel->getCountWithFilters('active');
+    }
+} catch (Throwable $e) {
+    // Silently fail for SSR, let JS handle it or show 0
+    // This prevents the whole page from crashing if DB is down
+    error_log("SSR Error in dashcontent.php: " . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,28 +136,28 @@ require_once __DIR__ . '/../../core/View.php';
       <li>
         <i class='bx bxs-calendar-check'></i>
         <span class="text">
-          <h3>10</h3>
+          <h3 id="violators-count"><?= $violatorsCount ?></h3>
           <p>Violators</p>
         </span>
       </li>
       <li>
         <i class='bx bxs-group'></i>
         <span class="text">
-          <h3>2834</h3>
+          <h3 id="students-count"><?= $studentsCount ?></h3>
           <p>Students</p>
         </span>
       </li>
       <li>
         <i class='bx bxs-building'></i>
         <span class="text">
-          <h3>4</h3>
+          <h3 id="departments-count"><?= $departmentsCount ?></h3>
           <p>Departments</p>
         </span>
       </li>
       <li>
         <i class='bx bxs-error-circle penalty-icon'></i>
         <span class="text">
-          <h3>43</h3>
+          <h3 id="penalties-count"><?= $penaltiesCount ?></h3>
           <p>Penalties</p>
         </span>
       </li>
@@ -179,47 +215,8 @@ require_once __DIR__ . '/../../core/View.php';
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>
-                <img src="<?= View::asset('img/default.png') ?>" alt="Violator Image">
-                <p>Some One Else</p>
-              </td>
-              <td>01-10-2021</td>
-              <td><span class="status completed">Permitted</span></td>
-            </tr>
-            <tr>
-              <td>
-                <img src="<?= View::asset('img/default.png') ?>" alt="Violator Image">
-                <p>Some One Else</p>
-              </td>
-              <td>01-10-2021</td>
-              <td><span class="status pending">Permitted</span></td>
-            </tr>
-            <tr>
-              <td>
-                <img src="<?= View::asset('img/default.png') ?>" alt="Violator Image">
-                <p>Some One Else</p>
-              </td>
-              <td>01-10-2021</td>
-              <td><span class="status process">Warning</span></td>
-            </tr>
-            <tr>
-              <td>
-                <img src="<?= View::asset('img/default.png') ?>" alt="Violator Image">
-                <p>Some One Else</p>
-              </td>
-              <td>01-10-2021</td>
-              <td><span class="status pending">Permitted</span></td>
-            </tr>
-            <tr>
-              <td>
-                <img src="<?= View::asset('img/default.png') ?>" alt="Violator Image">
-                <p>Some One Else</p>
-              </td>
-              <td>01-10-2021</td>
-              <td><span class="status completed">Diciplinary Action</span></td>
-            </tr>
+          <tbody id="recent-violators-body">
+            <!-- Populated by JS -->
           </tbody>
         </table>
       </div>
@@ -230,51 +227,39 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-refresh'></i>
           <i class='bx bx-filter'></i>
         </div>
-        <ul class="violator-list">
-          <li class="high-priority">
-            <div class="violator-info">
-              <span class="rank">1</span>
-              <span class="name">Lebron James</span>
-              <span class="violations">12 violations</span>
-            </div>
-            <i class='bx bx-chevron-right'></i>
-          </li>
-          <li class="high-priority">
-            <div class="violator-info">
-              <span class="rank">2</span>
-              <span class="name">Manny Pacquiao</span>
-              <span class="violations">9 violations</span>
-            </div>
-            <i class='bx bx-chevron-right'></i>
-          </li>
-          <li class="medium-priority">
-            <div class="violator-info">
-              <span class="rank">3</span>
-              <span class="name">Jhony Died On Our Sins</span>
-              <span class="violations">6 violations</span>
-            </div>
-            <i class='bx bx-chevron-right'></i>
-          </li>
-          <li class="medium-priority">
-            <div class="violator-info">
-              <span class="rank">4</span>
-              <span class="name">Some One Else</span>
-              <span class="violations">5 violations</span>
-            </div>
-            <i class='bx bx-chevron-right'></i>
-          </li>
-          <li class="low-priority">
-            <div class="violator-info">
-              <span class="rank">5</span>
-              <span class="name">Robert Wilson</span>
-              <span class="violations">3 violations</span>
-            </div>
-            <i class='bx bx-chevron-right'></i>
-          </li>
+        <ul class="violator-list" id="top-violators-list">
+            <!-- Populated by JS -->
         </ul>
       </div>
   </main>
 
+  <script>
+    // Initialize Dashboard Data
+    (function() {
+         console.log('🚀 Dashcontent script executing...');
+         
+         let attempts = 0;
+         function init() {
+             if (typeof DashboardData !== 'undefined') {
+                 console.log('✅ DashboardData class found, initializing...');
+                 const dashboardData = new DashboardData();
+                 window.dashboardDataInstance = dashboardData;
+                 dashboardData.loadAllData();
+             } else {
+                 attempts++;
+                 if (attempts < 50) {
+                     console.warn('⚠️ DashboardData class not found, retrying in 100ms...');
+                     setTimeout(init, 100);
+                 } else {
+                     console.error('❌ DashboardData failed to load after 5 seconds');
+                 }
+             }
+         }
+         
+         // Run initialization
+         init();
+     })();
+  </script>
 </body>
 
 </html>

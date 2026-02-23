@@ -153,6 +153,19 @@ class StudentModel extends Model {
         return $students;
     }
 
+    /**
+     * Count active students
+     */
+    public function countActive() {
+        $query = "SELECT COUNT(*) as count FROM students WHERE status != 'archived' OR status IS NULL";
+        $result = $this->conn->query($query);
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return (int)$row['count'];
+        }
+        return 0;
+    }
+
     public function getCountWithFilters($filter = 'all', $search = '') {
         $sectionsExist = $this->tableExists('sections');
         $deptExist = $this->tableExists('departments');

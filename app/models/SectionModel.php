@@ -34,6 +34,20 @@ class SectionModel extends Model {
     }
 
     /**
+     * Count active sections
+     */
+    public function countActive() {
+        $query = "SELECT COUNT(*) as count FROM sections WHERE status = 'active' OR status IS NULL";
+        $result = $this->conn->query($query);
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return (int)$row['count'];
+        }
+        return 0;
+    }
+
+
+    /**
      * Get all sections with filters
      */
     public function getAllWithFilters($filter = 'all', $search = '', $page = null, $limit = null) {
