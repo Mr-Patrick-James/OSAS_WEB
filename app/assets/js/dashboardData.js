@@ -834,6 +834,8 @@ class DashboardData {
                               `${violation.firstName || ''} ${violation.lastName || ''}`.trim() || 
                               'Unknown Student';
             const date = violation.violationDate || violation.violation_date || violation.dateReported || 'N/A';
+            const enrolledDate = violation.studentEnrolledDate || violation.student_enrolled_date || violation.created_at || 'N/A';
+            const remarks = violation.remarks || violation.notes || 'N/A';
             const status = violation.status || 'pending';
             const avatar = violation.studentImage || violation.avatar || '../app/assets/img/default.png';
 
@@ -849,7 +851,9 @@ class DashboardData {
                     <img src="${avatar}" alt="Student Image" onerror="this.src='../app/assets/img/default.png'">
                     <p>${this.escapeHtml(studentName)}</p>
                 </td>
+                <td>${this.formatDate(enrolledDate)}</td>
                 <td>${this.formatDate(date)}</td>
+                <td>${this.escapeHtml(remarks)}</td>
                 <td><span class="status ${statusClass}">${statusText}</span></td>
             `;
             tbody.appendChild(row);

@@ -108,7 +108,7 @@ def seed_database():
             if match:
                 year_level = int(match.group(1))
 
-            email = f"{student['first_name'].lower().replace(' ', '.').replace('..', '.')}.{student['last_name'].lower()}@student.university.edu"
+            email = f"{student['first_name'].lower().replace(' ', '.').replace('..', '.')}.{student['last_name'].lower()}@colegiodenaujan.edu.ph"
             email = re.sub(r'[^a-zA-Z0-9.@]', '', email)
             
             # Ensure unique email by appending ID if needed? 

@@ -211,7 +211,9 @@ try {
           <thead>
             <tr>
               <th>Violator</th>
+              <th>Enrolled Date</th>
               <th>Date</th>
+              <th>Remarks</th>
               <th>Status</th>
             </tr>
           </thead>

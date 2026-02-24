@@ -890,7 +890,7 @@
             <div class="footer-section">
                 <h4>Contact</h4>
                 <ul>
-                    <li><i class="fas fa-envelope"></i>osas@university.edu</li>
+                    <li><i class="fas fa-envelope"></i>osas@colegiodenaujan.edu.ph</li>
                     <li><i class="fas fa-phone"></i> +123 456 7890</li>
                     <li><i class="fas fa-map-marker-alt"></i> University Campus</li>
                 </ul>
