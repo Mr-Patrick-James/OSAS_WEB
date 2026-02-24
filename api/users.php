@@ -17,46 +17,61 @@ try {
     $action = $_GET['action'] ?? '';
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-    if ($method === 'GET' && ($action === 'admins' || $action === '')) {
-        $controller->listAdmins();
-    } elseif ($method === 'GET' && $action === 'users') {
-        $controller->listUsers();
-    } elseif ($method === 'GET' && $action === 'profile') {
-        $controller->getProfile();
-    } elseif ($method === 'POST' && $action === 'addAdmin') {
-        $controller->createAdmin();
-    } elseif ($method === 'POST' && $action === 'deleteAdmin') {
-        $controller->deleteAdmin();
-    } elseif ($method === 'POST' && $action === 'updateStatus') {
-        $controller->updateStatus();
-    } elseif ($method === 'POST' && $action === 'resetPassword') {
-        $controller->resetPassword();
-    } elseif ($method === 'POST' && $action === 'deleteUser') {
-        $controller->deleteUser();
-    } elseif ($method === 'POST' && $action === 'updateProfile') {
-        $controller->updateProfile();
+    if ($method === 'GET') {
+        switch ($action) {
+            case 'admins':
+            case '':
+                $controller->listAdmins();
+                break;
+            case 'users':
+                $controller->listUsers();
+                break;
+            case 'archived':
+                $controller->listArchived();
+                break;
+            case 'profile':
+                $controller->getProfile();
+                break;
+            default:
+                throw new Exception('Invalid GET action');
+        }
+    } elseif ($method === 'POST') {
+        switch ($action) {
+            case 'addAdmin':
+                $controller->createAdmin();
+                break;
+            case 'deleteAdmin':
+                $controller->deleteAdmin();
+                break;
+            case 'deleteUser':
+                $controller->deleteUser();
+                break;
+            case 'restoreUser':
+                $controller->restoreUser();
+                break;
+            case 'updateStatus':
+                $controller->updateStatus();
+                break;
+            case 'resetPassword':
+                $controller->resetPassword();
+                break;
+            case 'updateProfile':
+                $controller->updateProfile();
+                break;
+            default:
+                throw new Exception('Invalid POST action');
+        }
     } else {
-        // Handle invalid request
         header('Content-Type: application/json');
         http_response_code(405);
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Invalid request',
-            'data' => []
-        ]);
+        echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
     }
 } catch (Exception $e) {
-    // Handle any uncaught exceptions (like DB connection errors in constructor)
     while (ob_get_level() > 0) {
         ob_end_clean();
     }
-    
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Server Error: ' . $e->getMessage(),
-        'data' => []
-    ]);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 exit;

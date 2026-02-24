@@ -89,13 +89,63 @@ class UserModel extends Model {
     }
 
     public function getAdmins() {
-        $query = "SELECT id, username, email, full_name, student_id, role, is_active, created_at, updated_at FROM {$this->table} WHERE role != 'user' ORDER BY created_at DESC";
+        $query = "SELECT id, username, email, full_name, student_id, role, is_active, status, created_at, updated_at 
+                  FROM {$this->table} 
+                  WHERE role != 'user' AND status != 'archived' AND deleted_at IS NULL 
+                  ORDER BY created_at DESC";
         return $this->query($query);
     }
 
     public function getUsers() {
-        $query = "SELECT id, username, email, full_name, student_id, role, is_active, created_at, updated_at FROM {$this->table} WHERE role = 'user' ORDER BY created_at DESC";
+        $query = "SELECT id, username, email, full_name, student_id, role, is_active, status, created_at, updated_at 
+                  FROM {$this->table} 
+                  WHERE role = 'user' AND status != 'archived' AND deleted_at IS NULL 
+                  ORDER BY created_at DESC";
         return $this->query($query);
+    }
+
+    /**
+     * Soft delete (archive) a user
+     */
+    public function archive($id) {
+        $data = [
+            'status' => 'archived',
+            'deleted_at' => date('Y-m-d H:i:s'),
+            'is_active' => 0
+        ];
+        return $this->update($id, $data);
+    }
+
+    /**
+     * Get archived users (both admins and users)
+     */
+    public function getArchived() {
+        $query = "SELECT id, username, email, full_name, student_id, role, is_active, status, created_at, updated_at, deleted_at 
+                  FROM {$this->table} 
+                  WHERE status = 'archived' OR deleted_at IS NULL = false 
+                  ORDER BY deleted_at DESC";
+        return $this->query($query);
+    }
+
+    /**
+     * Restore an archived user
+     */
+    public function restore($id) {
+        $data = [
+            'status' => 'active',
+            'deleted_at' => null,
+            'is_active' => 1
+        ];
+        
+        $query = "UPDATE {$this->table} SET status = ?, deleted_at = ?, is_active = ? WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $status = 'active';
+        $deletedAt = null;
+        $isActive = 1;
+        $stmt->bind_param("ssii", $status, $deletedAt, $isActive, $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 }
 

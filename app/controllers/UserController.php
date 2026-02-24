@@ -156,12 +156,11 @@ class UserController extends Controller {
                 $this->error('User not found.');
             }
 
-            // Perform deletion
-            // Using generic delete from Model class
-            if ($this->model->delete($id)) {
-                $this->success('User deleted successfully.');
+            // Perform archiving (soft delete)
+            if ($this->model->archive($id)) {
+                $this->success('User archived successfully.');
             } else {
-                $this->error('Failed to delete user.');
+                $this->error('Failed to archive user.');
             }
         } catch (Exception $e) {
             $this->error('Error deleting user: ' . $e->getMessage());
@@ -386,13 +385,62 @@ class UserController extends Controller {
             if (!$user) {
                 $this->error('User not found.');
             }
-            if ($this->model->delete($id)) {
-                $this->success('User deleted successfully.');
+            if ($this->model->archive($id)) {
+                $this->success('User archived successfully.');
             } else {
-                $this->error('Failed to delete user.');
+                $this->error('Failed to archive user.');
             }
         } catch (Exception $e) {
             $this->error('Error deleting user: ' . $e->getMessage());
+        }
+    }
+
+    public function listArchived() {
+        try {
+            $this->requireAdmin();
+            $archived = $this->model->getArchived();
+            $formatted = array_map(function ($row) {
+                return [
+                    'id' => isset($row['id']) ? (int)$row['id'] : 0,
+                    'username' => $row['username'] ?? '',
+                    'email' => $row['email'] ?? '',
+                    'full_name' => $row['full_name'] ?? '',
+                    'student_id' => $row['student_id'] ?? '',
+                    'role' => $row['role'] ?? 'User',
+                    'is_active' => isset($row['is_active']) ? (bool)$row['is_active'] : false,
+                    'status' => $row['status'] ?? 'archived',
+                    'deleted_at' => $row['deleted_at'] ?? null,
+                    'created_at' => $row['created_at'] ?? null
+                ];
+            }, $archived);
+
+            $this->success('Archived users retrieved successfully', ['archived' => $formatted]);
+        } catch (Exception $e) {
+            $this->error('Failed to load archived users: ' . $e->getMessage());
+        }
+    }
+
+    public function restoreUser() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $this->requireAdmin();
+
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+
+        if ($id <= 0) {
+            $this->error('Invalid user ID.');
+        }
+
+        try {
+            if ($this->model->restore($id)) {
+                $this->success('User restored successfully.');
+            } else {
+                $this->error('Failed to restore user.');
+            }
+        } catch (Exception $e) {
+            $this->error('Error restoring user: ' . $e->getMessage());
         }
     }
 }

@@ -599,6 +599,10 @@ function createSettingsModal() {
                         <i class='bx bx-group'></i>
                         <span>User Accounts</span>
                     </button>
+                    <button type="button" class="settings-sidebar-item" data-section="archive">
+                        <i class='bx bx-archive'></i>
+                        <span>Archive</span>
+                    </button>
                     <button type="button" class="settings-sidebar-item" data-section="export">
                         <i class='bx bx-data'></i>
                         <span>Export Database</span>
@@ -758,6 +762,32 @@ function createSettingsModal() {
                         </table>
                     </div>
                 </div>
+                <div class="settings-section" data-section="archive">
+                    <h3 class="settings-section-title">Archived Accounts</h3>
+                    <p class="settings-section-description">
+                        View and restore archived admin or user accounts.
+                    </p>
+                    <div class="settings-table-wrapper">
+                        <table class="settings-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Archived Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="settingsArchiveTableBody">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="settings-empty-state">Loading archived accounts...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <div class="settings-section" data-section="export">
                     <h3 class="settings-section-title">Export Database</h3>
                     <p class="settings-section-description">
@@ -873,6 +903,8 @@ function setActiveSettingsSection(section) {
         loadUserProfile();
     } else if (section === 'users') {
         loadUserAccounts();
+    } else if (section === 'archive') {
+        loadArchivedAccounts();
     }
 }
 
@@ -1122,8 +1154,8 @@ async function loadAdminAccounts() {
                         <span class="${statusClass}">${statusLabel}</span>
                     </td>
                     <td>
-                        <button type="button" class="settings-action-btn delete" onclick="deleteAdmin(${id}, '${username}')" title="Remove User">
-                            <i class='bx bx-trash'></i>
+                        <button type="button" class="settings-action-btn delete" onclick="deleteAdmin(${id}, '${username}')" title="Archive User">
+                            <i class='bx bx-archive-in'></i>
                         </button>
                     </td>
                 </tr>
@@ -1217,7 +1249,7 @@ async function submitAdminForm() {
 }
 
 async function deleteAdmin(id, username) {
-    if (!confirm(`Are you sure you want to remove the user "${username}"? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to archive the user "${username}"? They will be safely stored and hidden from the active list.`)) {
         return;
     }
 
@@ -1231,7 +1263,7 @@ async function deleteAdmin(id, username) {
         });
 
         const text = await response.text();
-        console.log('Delete Admin Response:', text); // Debug response
+        console.log('Archive Admin Response:', text); // Debug response
 
         if (!response.ok) {
             throw new Error(`Server returned status ${response.status}: ${text}`);
@@ -1248,14 +1280,14 @@ async function deleteAdmin(id, username) {
 
         if (payload.status === 'success') {
             if (typeof showNotification === 'function') {
-                showNotification(`User "${username}" has been removed.`, 'success');
+                showNotification(`User "${username}" has been archived.`, 'success');
             } else {
-                alert(`User "${username}" has been removed.`);
+                alert(`User "${username}" has been archived.`);
             }
             // Reload list with safety timeout
             setTimeout(() => {
                 if (typeof loadAdminAccounts === 'function') {
-                    console.log('🔄 Triggering admin list reload after delete...');
+                    console.log('🔄 Triggering admin list reload after archive...');
                     // Force a clear first to show something is happening
                     const tableBody = document.getElementById('settingsAdminTableBody');
                     if (tableBody) {
@@ -1273,10 +1305,10 @@ async function deleteAdmin(id, username) {
                 }
             }, 500);
         } else {
-            alert(payload.message || 'Failed to remove user.');
+            alert(payload.message || 'Failed to archive user.');
         }
     } catch (error) {
-        console.error('Error removing user:', error);
+        console.error('Error archiving user:', error);
         // Avoid showing "Maximum call stack size exceeded" as network error
         if (error.message.includes('Maximum call stack size exceeded')) {
             console.error('Stack overflow detected. Please check recursive calls.');
@@ -1695,8 +1727,8 @@ async function loadUserAccounts() {
                         <button type="button" class="settings-action-btn" onclick="resetUserPassword('${user.id}', '${username}')" title="Reset Password">
                             <i class='bx bx-reset'></i>
                         </button>
-                        <button type="button" class="settings-action-btn delete" onclick="deleteUser('${user.id}', '${username}')" title="Delete">
-                            <i class='bx bx-trash'></i>
+                        <button type="button" class="settings-action-btn delete" onclick="deleteUser('${user.id}', '${username}')" title="Archive User">
+                            <i class='bx bx-archive-in'></i>
                         </button>
                     </td>
                 </tr>
@@ -1739,6 +1771,75 @@ async function resetUserPassword(id, username) {
     }
 }
 
+async function loadArchivedAccounts() {
+    const tableBody = document.getElementById('settingsArchiveTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">Loading archived accounts...</div></td></tr>`;
+
+    try {
+        const response = await fetch('../api/users.php?action=archived');
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            const archived = data.data.archived || [];
+            if (archived.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">No archived accounts found.</div></td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = archived.map(user => {
+                const date = user.deleted_at ? new Date(user.deleted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+                return `
+                    <tr>
+                        <td>${user.full_name || user.username}</td>
+                        <td>${user.username}</td>
+                        <td>${user.role}</td>
+                        <td>${date}</td>
+                        <td>
+                            <button type="button" class="settings-action-btn" onclick="restoreUser(${user.id}, '${user.username}')" title="Restore User">
+                                <i class='bx bx-undo'></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">${data.message || 'Failed to load archived accounts.'}</div></td></tr>`;
+        }
+    } catch (error) {
+        console.error('Error loading archived accounts:', error);
+        tableBody.innerHTML = `<tr><td colspan="5"><div class="settings-empty-state">Network error while loading archived accounts.</div></td></tr>`;
+    }
+}
+
+async function restoreUser(id, username) {
+    if (!confirm(`Restore account for "${username}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('../api/users.php?action=restoreUser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}`
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+            if (typeof showNotification === 'function') {
+                showNotification(`User "${username}" has been restored.`, 'success');
+            }
+            loadArchivedAccounts();
+        } else {
+            alert(data.message || 'Failed to restore user.');
+        }
+    } catch (error) {
+        console.error('Error restoring user:', error);
+        alert('Network error');
+    }
+}
+
 async function toggleUserActive(id, isActive) {
     try {
         const response = await fetch('../api/users.php?action=updateStatus', {
@@ -1760,7 +1861,7 @@ async function toggleUserActive(id, isActive) {
 }
 
 async function deleteUser(id, username) {
-    if (!confirm(`Delete user "${username}"? This cannot be undone.`)) {
+    if (!confirm(`Archive user "${username}"? This will safely store their account data but remove them from the active list.`)) {
         return;
     }
     try {
@@ -1773,9 +1874,12 @@ async function deleteUser(id, username) {
         let payload;
         try { payload = JSON.parse(text); } catch (e) { alert('Server error'); return; }
         if (payload.status === 'success') {
+            if (typeof showNotification === 'function') {
+                showNotification(`User "${username}" has been archived.`, 'success');
+            }
             loadUserAccounts();
         } else {
-            alert(payload.message || 'Failed to delete');
+            alert(payload.message || 'Failed to archive');
         }
     } catch (e) {
         alert('Network error');
