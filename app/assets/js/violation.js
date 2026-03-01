@@ -287,9 +287,9 @@ function initViolationsModule() {
                 if (showLoading) showLoadingOverlay('Loading violations...');
                 console.log('🔄 Fetching violations data...', { currentView });
         
-                // Add timestamp to prevent caching and include isArchived parameter
+                // Add timestamp to prevent caching and include is_archived parameter
                 const isArchived = currentView === 'archive' ? 1 : 0;
-                const response = await fetch(API_BASE + `violations.php?isArchived=${isArchived}&t=` + new Date().getTime());
+                const response = await fetch(API_BASE + `violations.php?is_archived=${isArchived}&t=` + new Date().getTime());
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     console.error('HTTP Error Response:', errorText);
@@ -871,21 +871,18 @@ function initViolationsModule() {
             return notification;
         }
 
-        async function saveViolation(violationData) {
+        async function saveViolation(formData) {
             if (isSubmitting) return;
             isSubmitting = true;
             
             try {
-                console.log('💾 Saving violation...', violationData);
+                console.log('💾 Saving violation (FormData)...');
 
                 showLoadingOverlay('Saving violation...');
 
                 const response = await fetch(API_BASE + 'violations.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(violationData)
+                    body: formData // Send as FormData (multipart/form-data)
                 });
 
                 // Try to get response text first to see what the server returned
@@ -939,18 +936,30 @@ function initViolationsModule() {
                 if (!savedViolation) {
                     console.warn('⚠️ New violation not found in reloaded data. Injecting manual fallback...');
                     
+                    // Extract values from FormData for manual injection
+                    const studentId = formData.get('studentId');
+                    const vType = formData.get('violationType');
+                    const vLevel = formData.get('violationLevel');
+                    const vDate = formData.get('violationDate');
+                    const vTime = formData.get('violationTime');
+                    const vLocation = formData.get('location');
+                    const vReportedBy = formData.get('reportedBy');
+                    const vStatus = formData.get('status');
+                    const vNotes = formData.get('notes');
+                    const vDept = formData.get('department');
+
                     // 1. Find Student
-                    const student = students.find(s => s.studentId === violationData.studentId);
+                    const student = students.find(s => s.studentId === studentId);
                     
                     // 2. Find Type Label
                     let typeLabel = 'Violation';
-                    const typeObj = violationTypes.find(t => t.id == violationData.violationType);
+                    const typeObj = violationTypes.find(t => t.id == vType);
                     if (typeObj) typeLabel = typeObj.name;
                     
                     // 3. Find Level Label
                     let levelLabel = 'Level';
                     if (typeObj && typeObj.levels) {
-                         const levelObj = typeObj.levels.find(l => l.id == violationData.violationLevel);
+                         const levelObj = typeObj.levels.find(l => l.id == vLevel);
                          if (levelObj) levelLabel = levelObj.name;
                     }
                     
@@ -958,25 +967,26 @@ function initViolationsModule() {
                     savedViolation = {
                         id: resultId,
                         caseId: resultCaseId || 'PENDING',
-                        studentId: violationData.studentId,
+                        studentId: studentId,
                         studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown',
                         studentImage: student ? student.avatar : '',
-                        violationType: violationData.violationType,
+                        violationType: vType,
                         violationTypeLabel: typeLabel,
-                        violationLevel: violationData.violationLevel,
+                        violationLevel: vLevel,
                         violationLevelLabel: levelLabel,
-                        department: violationData.department || (student ? student.department : 'N/A'),
+                        department: vDept || (student ? student.department : 'N/A'),
                         section: student ? student.section : 'N/A',
                         studentYearlevel: student ? student.yearlevel : 'N/A',
-                        dateReported: violationData.violationDate,
-                        violationTime: violationData.violationTime,
-                        dateTime: `${formatDate(violationData.violationDate)} ${formatTime(violationData.violationTime)}`,
-                        location: violationData.location,
-                        locationLabel: violationData.location,
-                        reportedBy: violationData.reportedBy,
-                        status: violationData.status,
-                        statusLabel: violationData.status.charAt(0).toUpperCase() + violationData.status.slice(1),
-                        notes: violationData.notes
+                        dateReported: vDate,
+                        violationTime: vTime,
+                        dateTime: `${formatDate(vDate)} ${formatTime(vTime)}`,
+                        location: vLocation,
+                        locationLabel: vLocation,
+                        reportedBy: vReportedBy,
+                        status: vStatus,
+                        statusLabel: vStatus.charAt(0).toUpperCase() + vStatus.slice(1),
+                        notes: vNotes,
+                        attachments: result.data?.attachments || [] // Use attachments from server response if available
                     };
                     
                     // 5. Inject at the beginning (assuming desc sort)
@@ -989,9 +999,10 @@ function initViolationsModule() {
                 renderViolations();
                 
                 // Explicitly update badges for the student if applicable
-                if (violationData && violationData.studentId) {
-                    console.log('🔄 Force updating badges for student:', violationData.studentId);
-                    updateViolationTypeBadges(violationData.studentId);
+                const sId = formData.get('studentId');
+                if (sId) {
+                    console.log('🔄 Force updating badges for student:', sId);
+                    updateViolationTypeBadges(sId);
                 }
 
                 showNotification('Violation recorded successfully!', 'success');
@@ -2064,6 +2075,28 @@ function initViolationsModule() {
             
             setElementText('detailNotes', violation.notes || 'No notes available.');
             
+            // Attachments display
+             const attachmentsContainer = document.getElementById('detailAttachments');
+             if (attachmentsContainer) {
+                 if (violation.attachments && violation.attachments.length > 0) {
+                     attachmentsContainer.innerHTML = violation.attachments.map(filePath => {
+                         // Resolve full URL for the attachment
+                         const fullUrl = getImageUrl(filePath);
+                         const fileName = filePath.split('/').pop();
+                         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+                         
+                         return `<a href="${fullUrl}" target="_blank" class="attachment-item">
+                             <i class='bx ${isImage ? 'bx-image' : 'bx-file'}'></i>
+                             <span>${fileName}</span>
+                         </a>`;
+                     }).join('');
+                     attachmentsContainer.style.display = 'flex';
+                 } else {
+                    attachmentsContainer.innerHTML = '<p class="no-attachments">No attachments available.</p>';
+                    attachmentsContainer.style.display = 'block';
+                }
+            }
+            
             // Populate timeline
             const timelineEl = document.getElementById('detailTimeline');
             if (timelineEl) {
@@ -3103,6 +3136,17 @@ function initViolationsModule() {
                 const location = document.getElementById('violationLocation').value;
                 const reportedBy = document.getElementById('reportedBy').value.trim();
                 const notes = document.getElementById('violationNotes').value.trim();
+                
+                // Get attachments
+                const attachmentInput = document.getElementById('violationAttachment');
+                let attachments = [];
+                if (attachmentInput && attachmentInput.files.length > 0) {
+                    // In a real app, you'd upload files to a server and get URLs back.
+                    // For now, we'll store filenames or a placeholder if actual upload logic isn't here.
+                    for (let i = 0; i < attachmentInput.files.length; i++) {
+                        attachments.push(attachmentInput.files[i].name);
+                    }
+                }
 
                 // Show loading state
                 const submitBtn = document.querySelector('#ViolationRecordForm .Violations-btn-primary');
@@ -3139,7 +3183,7 @@ function initViolationsModule() {
                             }
                         }
 
-                        // Edit existing violation
+                        // Edit existing violation - keep JSON for PUT requests
                         const updateData = {
                             violationType: violationType ? violationType.value : '',
                             violationLevel: violationLevel ? violationLevel.value : '',
@@ -3194,20 +3238,28 @@ function initViolationsModule() {
                             throw new Error('Student department is required. Please ensure the student has a department assigned.');
                         }
 
-                        const violationData = {
-                            studentId: student.studentId,
-                            violationType: violationType ? violationType.value : '',
-                            violationLevel: violationLevel ? violationLevel.value : '',
-                            violationDate: violationDate,
-                            violationTime: violationTime,
-                            location: location,
-                            reportedBy: reportedBy,
-                            status: status,
-                            notes: notes,
-                            department: studentDepartment // Include department in the request
-                        };
+                        // Create FormData object for new record
+                        const formData = new FormData();
+                        formData.append('studentId', student.studentId);
+                        formData.append('violationType', violationType ? violationType.value : '');
+                        formData.append('violationLevel', violationLevel ? violationLevel.value : '');
+                        formData.append('violationDate', violationDate);
+                        formData.append('violationTime', violationTime);
+                        formData.append('location', location);
+                        formData.append('reportedBy', reportedBy);
+                        formData.append('status', status);
+                        formData.append('notes', notes);
+                        formData.append('department', studentDepartment);
 
-                        await saveViolation(violationData);
+                        // Append files
+                        const attachmentInput = document.getElementById('violationAttachment');
+                        if (attachmentInput && attachmentInput.files.length > 0) {
+                            for (let i = 0; i < attachmentInput.files.length; i++) {
+                                formData.append('attachments[]', attachmentInput.files[i]);
+                            }
+                        }
+
+                        await saveViolation(formData);
                         showNotification('Violation recorded successfully!', 'success');
                     }
 

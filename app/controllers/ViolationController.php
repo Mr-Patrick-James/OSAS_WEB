@@ -54,7 +54,7 @@ class ViolationController extends Controller
         $search    = $this->getGet('search', '');
         $dateFrom  = $this->getGet('date_from', '');
         $dateTo    = $this->getGet('date_to', '');
-        $isArchived = (int)$this->getGet('is_archived', 0);
+        $isArchived = (int)($this->getGet('is_archived') ?? $this->getGet('isArchived') ?? 0);
 
         if ($action === 'archive') {
             try {
@@ -113,7 +113,12 @@ class ViolationController extends Controller
             $this->error('Invalid request method');
         }
 
-        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        // Handle both JSON and FormData
+        $input = $_POST;
+        if (empty($input)) {
+            $jsonInput = json_decode(file_get_contents('php://input'), true);
+            if ($jsonInput) $input = $jsonInput;
+        }
 
         $studentId      = $this->sanitize($input['studentId'] ?? '');
         $violationType  = $this->sanitize($input['violationType'] ?? '');
@@ -124,6 +129,28 @@ class ViolationController extends Controller
         $reportedBy     = $this->sanitize($input['reportedBy'] ?? '');
         $status         = $this->sanitize($input['status'] ?? 'warning');
         $notes          = $this->sanitize($input['notes'] ?? '');
+
+        // Handle attachments (File Upload)
+        $attachmentPaths = [];
+        if (!empty($_FILES['attachments'])) {
+            $uploadDir = __DIR__ . '/../../app/assets/img/violations/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            foreach ($_FILES['attachments']['tmp_name'] as $key => $tmpName) {
+                if ($_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
+                    $originalName = $_FILES['attachments']['name'][$key];
+                    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+                    $newFileName = 'viol_' . time() . '_' . uniqid() . '.' . $extension;
+                    $destPath = $uploadDir . $newFileName;
+
+                    if (move_uploaded_file($tmpName, $destPath)) {
+                        $attachmentPaths[] = 'app/assets/img/violations/' . $newFileName;
+                    }
+                }
+            }
+        }
 
         if (
             empty($studentId) || empty($violationType) || empty($violationLevel) ||
@@ -200,6 +227,7 @@ class ViolationController extends Controller
                 'reported_by'    => $reportedBy,
                 'status'         => $status,
                 'notes'          => $notes ?: null,
+                'attachments'    => !empty($attachmentPaths) ? json_encode($attachmentPaths) : null,
                 'created_at'     => date('Y-m-d H:i:s')
             ];
 
@@ -254,6 +282,7 @@ class ViolationController extends Controller
             'reported_by'     => $this->sanitize($input['reportedBy'] ?? $current['reported_by']),
             'status'          => $this->sanitize($input['status'] ?? $current['status']),
             'notes'           => $this->sanitize($input['notes'] ?? $current['notes']),
+            'attachments'     => isset($input['attachments']) ? json_encode($input['attachments']) : $current['attachments'],
             'updated_at'      => date('Y-m-d H:i:s')
         ];
 

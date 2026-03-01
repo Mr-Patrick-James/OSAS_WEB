@@ -267,7 +267,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="form-progress" id="violationFormProgress"></div>
       </div>
 
-      <form id="ViolationRecordForm">
+      <form id="ViolationRecordForm" enctype="multipart/form-data">
         <!-- Student Search Section -->
         <div class="Violations-form-group">
             <label for="studentSearch">Search Student</label>
@@ -475,6 +475,14 @@ require_once __DIR__ . '/../../core/View.php';
           <h4>Violation Description</h4>
           <div class="notes-content">
             <p id="detailNotes">No notes available.</p>
+          </div>
+        </div>
+
+        <!-- Evidence Section -->
+        <div class="violation-evidence-section">
+          <h4>Evidence / Attachments</h4>
+          <div id="detailAttachments" class="attachments-grid">
+            <p class="no-attachments">No attachments available.</p>
           </div>
         </div>
 
