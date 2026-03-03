@@ -36,16 +36,17 @@ function initializeUserDropdown() {
     console.log('✅ User dropdown initialized');
   }
 
-  const settingsLink = document.querySelector('.user-dropdown .settings-link');
-  if (settingsLink) {
-    settingsLink.addEventListener('click', function (e) {
+  // Use event delegation for all settings links (topnav, sidebar, and dynamic dashboard content)
+  document.addEventListener('click', function(e) {
+    const settingsLink = e.target.closest('.settings-link');
+    if (settingsLink) {
       e.preventDefault();
       openUserSettingsModal();
       if (userDropdown) {
         userDropdown.classList.remove('show');
       }
-    });
-  }
+    }
+  });
 }
 
 // ===============================

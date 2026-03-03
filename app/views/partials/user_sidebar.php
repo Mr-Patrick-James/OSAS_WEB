@@ -78,6 +78,12 @@ if (isset($student) && $student) {
         <span class="text">Announcements</span>
       </a>
     </li>
+    <li>
+      <a href="#" class="settings-link">
+        <i class='bx bxs-cog'></i>
+        <span class="text">Settings</span>
+      </a>
+    </li>
   </ul>
   <!-- Logout Fixed at Bottom -->
   <div class="sidebar-logout">
