@@ -1,92 +1,111 @@
-# 🌐 OSAS WEB SYSTEM
+# <p align="center">🌐 E-OSAS WEB SYSTEM</p>
 
-A modern, full-stack web-based system designed for the **Office of Student Affairs and Services (OSAS)** to manage departments, sections, students, violations, and reports — all in one centralized platform.
+<p align="center">
+  <img src="https://img.shields.io/badge/PHP-7.4+-777BB4?style=for-the-badge&logo=php&logoColor=white" />
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" />
+  <img src="https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white" />
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
+</p>
+
+<p align="center">
+  <b>A comprehensive, modern, and highly-scalable management solution for the Office of Student Affairs and Services.</b>
+  <br />
+  <i>Empowering campus management through automation, real-time tracking, and AI-driven support.</i>
+</p>
 
 ---
 
-## 📁 Project Structure
+## 🚀 Overview
+
+The **E-OSAS WEB SYSTEM** is a full-stack, enterprise-ready platform designed to centralize and automate student affairs operations. Built with a custom MVC architecture, it provides seamless management for departments, violations, and student records while offering students a personalized dashboard and AI assistance.
+
+---
+
+## ✨ Key Features
+
+### 🔐 Enterprise-Grade Security
+*   **Multi-Factor Authentication (OTP):** Secure account creation with email-based One-Time Passwords via **PHPMailer**.
+*   **Role-Based Access Control (RBAC):** Granular permissions for Administrators and Students.
+*   **Session Resilience:** Robust session management with persistent login support via encrypted cookies.
+*   **Data Integrity:** Secure password hashing using **BCRYPT** and prepared SQL statements to prevent injection.
+
+### 📊 Advanced Administration
+*   **Real-time Analytics:** Visualized system data using **Chart.js** for violation trends and student demographics.
+*   **Automated Document Generation:** Export violation reports and official letters directly to **.docx** and **.pdf** formats.
+*   **Academic Hierarchy:** Seamless management of Departments and Sections.
+*   **Digital Evidence:** Support for student profile images and violation photo evidence.
+
+### 👤 Student Experience
+*   **Interactive Dashboard:** At-a-glance view of active violations, clean-day streaks, and campus updates.
+*   **Self-Service Profile:** Independent management of personal details and **secure password updates**.
+*   **Smart Assistant:** Integrated **AI Chatbot** to provide instant answers to common student inquiries.
+
+### 📱 Progressive Web App (PWA)
+*   **Installability:** Cross-platform installation on Android, iOS, and Desktop.
+*   **Reliability:** Service worker integration for fast loading and offline data access.
+*   **UX-First Design:** Fully responsive interface optimized for all screen sizes.
+
+---
+
+## 🏗️ System Architecture
 
 ```text
 OSAS_WEB/
-├── api/                      # API endpoints (announcements, dashboard, settings, students, etc.)
-├── app/                      # Main application logic
-│   ├── assets/               # Static assets
-│   │   ├── img/              # Images (students, violations, system defaults)
-│   │   ├── js/               # JavaScript files (modules, utils, dashboard logic)
-│   │   └── styles/           # CSS stylesheets
-│   ├── config/               # Configuration files (AI config, DB connect)
-│   ├── controllers/          # MVC Controllers (Auth, Student, Violation, etc.)
-│   ├── core/                 # Core framework classes (Model, Controller, Session, View, Router)
-│   ├── entry/                # Dashboard entry points (dashboard.php, user_dashboard.php)
-│   ├── models/               # MVC Models (StudentModel, ViolationModel, UserModel, etc.)
-│   └── views/                # MVC Views
-│       ├── admin/            # Admin interface views
-│       ├── auth/             # Authentication views (login, register, OTP)
-│       ├── layouts/          # Layout templates (admin, user)
-│       ├── partials/         # Reusable view components (sidebar, topnav)
-│       └── user/             # Student/User interface views
-├── config/                   # Root level configuration
-├── includes/                 # Root level dashboard and signup includes
-├── migrations/               # SQL database migration files
-├── scripts/                  # Utility scripts (data population, parsing)
-├── index.php                 # Main entry point (Login page)
-├── manifest.json             # PWA manifest
-└── service-worker.js         # PWA service worker
+├── 🔌 api/                  # RESTful API Endpoints (JSON-driven)
+├── ⚙️ app/                  # Core MVC Engine
+│   ├── 🛠️ core/             # Base Framework (Model, Controller, Router, View)
+│   ├── 📦 models/           # Data Abstraction & Database Logic
+│   ├── 🎮 controllers/      # Application Logic & Request Handling
+│   ├── 🖼️ views/             # Template Engine & UI Components
+│   └── 🎨 assets/           # Client-side Resources (SASS/JS/Images)
+├── 📂 config/               # Global Environment & Connection Configs
+├── 📜 migrations/           # Version-controlled Database Schemas
+└── 🚀 index.php             # Unified Entry Point
 ```
 
 ---
 
-## ✨ Features
+## ⚙️ Tech Stack
 
-### 🔐 Authentication & Authorization
-* **User Authentication:** Secure login and registration system.
-* **OTP Verification:** Email-based One-Time Password for enhanced security.
-* **Session Management:** PHP-based session handling with cookie restoration support.
-* **Role-Based Access:** Distinct admin and student (user) dashboards.
-* **Password Security:** Secure password hashing (BCRYPT) and management.
-
-### 📊 Admin Dashboard
-* **Dashboard Overview:** Real-time system statistics and analytics.
-* **Department & Section Management:** Organize students by academic structure.
-* **Student Records:** Comprehensive student management with profile images.
-* **Violation Tracking:** Record and monitor student violations with image evidence.
-* **Reports & Analytics:** Generate detailed summaries and exportable reports.
-* **System Settings:** Centralized configuration for system-wide preferences.
-
-### 👤 Student Dashboard
-* **Personalized Overview:** Quick view of active violations and account status.
-* **My Violations:** Detailed history of personal violation records.
-* **Announcements:** Stay updated with the latest system and campus announcements.
-* **Account Settings:** Update profile picture, username, and **change password** securely.
-
-### 🤖 Smart Features
-* **AI Chatbot:** Integrated support assistant for student inquiries.
-* **Announcement System:** Real-time updates for important information.
-
-### 📱 Progressive Web App (PWA)
-* **Installable:** Install as a mobile or desktop application.
-* **Offline Support:** Service worker for basic offline functionality.
-* **Responsive Design:** Optimized for mobile, tablet, and desktop viewports.
+| Component | Technology |
+| :--- | :--- |
+| **Language** | PHP 7.4+ |
+| **Database** | MySQL / MariaDB |
+| **Frontend** | HTML5, CSS3, JavaScript (ES6+) |
+| **Architecture** | Custom MVC Framework |
+| **Libraries** | PHPMailer, PHPWord, Chart.js, jsPDF, Puter.js |
+| **Mobile** | Progressive Web App (PWA) |
 
 ---
 
-## ⚙️ Technologies Used
+## 🛠️ Quick Start
 
-* **Frontend:**
-  * HTML5 & CSS3
-  * JavaScript (ES6+)
-  * Chart.js (for analytics and reports)
-  * Boxicons & Font Awesome (icons)
-  * PWA (Service Workers, Manifest)
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/your-repo/osas-web.git
+    ```
+2.  **Environment Setup:**
+    -   Import `migrations/osas.sql` into your MySQL database.
+    -   Configure `config/db_connect.php` with your database credentials.
+3.  **Dependency Installation:**
+    ```bash
+    composer install
+    ```
+4.  **Run locally:**
+    -   Serve via WAMP/XAMPP or any PHP-compatible web server.
 
-* **Backend:**
-  * PHP 7.4+ (MVC Architecture)
-  * MySQL/MariaDB
-  * Composer (Dependency Management)
-  * PHPMailer (Email notifications/OTP)
-  * PHPWord (Document generation)
+---
 
-* **Tools & Libraries:**
-  * Docxtemplater & Pizzip (Client-side document processing)
-  * jsPDF (PDF generation)
-  * Puter.js (Cloud-based storage/utilities)
+## 🤝 Contribution
+
+We welcome contributions to the E-OSAS ecosystem!
+-   **Bug Reports:** Open an issue to report any system anomalies.
+-   **Feature Requests:** Suggest new tools or improvements.
+-   **Code:** Submit pull requests for bug fixes or feature implementations.
+
+---
+
+<p align="center">
+  Made with ❤️ for Academic Excellence.
+</p>
