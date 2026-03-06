@@ -871,7 +871,7 @@
                 <h4>Quick Links</h4>
                 <ul>
                     <li><a href="login_page.php?direct=true">Login</a></li>
-                    <li><a href="includes/signup.php">Sign Up</a></li>
+                    <li><a href="app/views/auth/signup.php">Sign Up</a></li>
                     <li><a href="#features">Features</a></li>
                 </ul>
             </div>
