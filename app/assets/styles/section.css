@@ -27,15 +27,15 @@ body.dark {
 /* ========================================= */
 .sections-head-title {
   background: var(--light);
-  border-radius: 20px;
-  padding: 28px 32px;
-  margin-bottom: 24px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 16px;
 }
 
 .sections-left {
@@ -54,16 +54,16 @@ body.dark {
 }
 
 .sections-subtitle {
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: var(--dark-grey);
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
 }
 
 .sections-breadcrumb {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: 10px;
   color: var(--dark-grey);
   list-style: none;
   padding: 0;
@@ -105,11 +105,11 @@ body.dark {
 
 .sections-button-group {
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px;
   background: var(--light);
-  border-radius: 14px;
-  border: 2px solid var(--border);
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -117,14 +117,14 @@ body.dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 14px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
   font-family: var(--poppins);
   white-space: nowrap;
   position: relative;
@@ -134,14 +134,14 @@ body.dark {
 .sections-btn.outline {
   background: var(--light);
   color: var(--dark);
-  border: 2px solid var(--border);
+  border: 1.5px solid var(--border);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .sections-btn.outline.small {
-  padding: 8px 14px;
-  font-size: 13px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 10px;
+  border-radius: 6px;
   border-width: 1.5px;
 }
 
@@ -149,23 +149,23 @@ body.dark {
   background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
   color: var(--dark);
   font-weight: 600;
-  padding: 11px 24px;
-  border-radius: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
 }
 
 .sections-btn i {
-  font-size: 18px;
+  font-size: 14px;
   transition: transform 0.25s ease;
   color: currentColor;
 }
 
 .sections-btn.primary i {
-  font-size: 19px;
+  font-size: 15px;
 }
 
 .sections-btn.outline.small i {
-  font-size: 17px;
+  font-size: 13px;
 }
 
 .sections-btn.outline:hover {
@@ -231,11 +231,11 @@ body.dark {
 
 .sections-stat-card {
   background: var(--light);
-  border-radius: 18px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   border-left: 5px solid var(--gold);
@@ -247,14 +247,14 @@ body.dark {
 }
 
 .sections-stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 20px;
   color: var(--dark);
 }
 
@@ -263,22 +263,22 @@ body.dark {
 }
 
 .sections-stat-title {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   font-weight: 500;
 }
 
 .sections-stat-value {
-  font-size: 2.2rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .sections-stat-change,
 .sections-stat-percentage {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -301,7 +301,7 @@ body.dark {
 /* ========================================= */
 .sections-content-card {
   background: var(--light);
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
@@ -309,13 +309,13 @@ body.dark {
 
 /* Table Header */
 .sections-table-header {
-  padding: 28px 32px 20px;
+  padding: 16px 20px 12px;
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
 }
 
 .sections-header-left {
@@ -323,14 +323,14 @@ body.dark {
 }
 
 .sections-table-title {
-  font-size: 1.6rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .sections-table-subtitle {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
   margin: 0;
 }
@@ -349,21 +349,21 @@ body.dark {
 
 .sections-search-box i {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--dark-grey);
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .sections-search-box input {
   width: 100%;
-  padding: 12px 16px 12px 48px;
+  padding: 8px 12px 8px 36px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   transition: all 0.3s ease;
 }
 
@@ -380,12 +380,12 @@ body.dark {
 }
 
 .sections-filter-select {
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -397,9 +397,9 @@ body.dark {
 }
 
 .sections-filter-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--light);
   color: var(--dark);
@@ -435,10 +435,10 @@ body.dark {
 }
 
 .sections-table th {
-  padding: 20px 16px;
+  padding: 12px 10px;
   text-align: left;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--dark-grey);
@@ -465,9 +465,9 @@ body.dark {
 }
 
 .sections-table td {
-  padding: 20px 16px;
+  padding: 12px 10px;
   color: var(--dark);
-  font-size: 15px;
+  font-size: 11px;
   vertical-align: middle;
 }
 

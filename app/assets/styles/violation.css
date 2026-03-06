@@ -20,14 +20,14 @@ body.dark {
 }
 
 .Violations-tab-btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: none;
   background: transparent;
   color: var(--dark-grey);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.3s ease;
   position: relative;
 }
@@ -59,7 +59,7 @@ body.dark {
 /* ========================================= */
 
 #Violations-page {
-  padding: 24px;
+  padding: 16px;
   min-height: calc(100vh - 56px);
   font-family: var(--poppins);
   background: var(--grey);
@@ -72,15 +72,15 @@ body.dark {
 
 .Violations-head-title {
   background: var(--light);
-  border-radius: 20px;
-  padding: 28px 32px;
-  margin-bottom: 24px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 16px;
 }
 
 .Violations-left {
@@ -104,17 +104,11 @@ body.dark {
   margin: 0 0 12px 0;
 }
 
-.Violations-subtitle {
-  font-size: 1rem;
-  color: var(--dark-grey);
-  margin: 0 0 16px 0;
-}
-
 .Violations-breadcrumb {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: 10px;
   color: var(--dark-grey);
   list-style: none;
   padding: 0;
@@ -140,7 +134,7 @@ body.dark {
 }
 
 .Violations-breadcrumb i {
-  font-size: 16px;
+  font-size: 12px;
   color: var(--dark-grey);
 }
 
@@ -151,17 +145,17 @@ body.dark {
 .Violations-header-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
 .Violations-button-group {
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px;
   background: var(--light);
-  border-radius: 14px;
-  border: 2px solid var(--border);
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -169,14 +163,14 @@ body.dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 14px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
   font-family: var(--poppins);
   white-space: nowrap;
   position: relative;
@@ -186,14 +180,14 @@ body.dark {
 .Violations-btn.outline {
   background: var(--light);
   color: var(--dark);
-  border: 2px solid var(--border);
+  border: 1.5px solid var(--border);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .Violations-btn.outline.small {
-  padding: 8px 14px;
-  font-size: 13px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 10px;
+  border-radius: 6px;
   border-width: 1.5px;
 }
 
@@ -201,23 +195,23 @@ body.dark {
   background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
   color: var(--dark);
   font-weight: 600;
-  padding: 11px 24px;
-  border-radius: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
 }
 
 .Violations-btn i {
-  font-size: 18px;
+  font-size: 14px;
   transition: transform 0.25s ease;
   color: currentColor;
 }
 
 .Violations-btn.primary i {
-  font-size: 19px;
+  font-size: 15px;
 }
 
 .Violations-btn.outline.small i {
-  font-size: 17px;
+  font-size: 13px;
 }
 
 .Violations-btn.outline:hover {
@@ -270,11 +264,11 @@ body.dark {
 
 .Violations-stat-card {
   background: var(--light);
-  border-radius: 18px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   border-left: 5px solid var(--gold);
@@ -286,14 +280,14 @@ body.dark {
 }
 
 .Violations-stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 20px;
   color: var(--dark);
 }
 
@@ -302,22 +296,22 @@ body.dark {
 }
 
 .Violations-stat-title {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   font-weight: 500;
 }
 
 .Violations-stat-value {
-  font-size: 2.2rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .Violations-stat-change,
 .Violations-stat-percentage {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -341,7 +335,7 @@ body.dark {
 
 .Violations-content-card {
   background: var(--light);
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
@@ -349,13 +343,13 @@ body.dark {
 
 /* Table Header */
 .Violations-table-header {
-  padding: 28px 32px 20px;
+  padding: 16px 20px 12px;
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
 }
 
 .Violations-header-left {
@@ -363,14 +357,14 @@ body.dark {
 }
 
 .Violations-table-title {
-  font-size: 1.6rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .Violations-table-subtitle {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
   margin: 0;
 }
@@ -384,26 +378,26 @@ body.dark {
 
 .Violations-search-box {
   position: relative;
-  width: 260px;
+  width: 220px;
 }
 
 .Violations-search-box i {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--dark-grey);
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .Violations-search-box input {
   width: 100%;
-  padding: 12px 16px 12px 48px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
+  padding: 8px 12px 8px 36px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
@@ -419,33 +413,33 @@ body.dark {
 .Violations-filter-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .Violations-date-filter {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--light);
-  padding: 4px 12px;
-  border-radius: 12px;
-  border: 2px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .Violations-date-filter span {
-  font-size: 14px;
+  font-size: 11px;
   color: var(--dark-grey);
   font-weight: 500;
 }
 
 .Violations-filter-date {
-  padding: 8px;
+  padding: 4px;
   border: none;
   background: transparent;
   color: var(--dark);
   font-family: var(--poppins);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   outline: none;
@@ -456,16 +450,16 @@ body.dark {
 }
 
 .Violations-filter-select {
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 2px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 150px;
+  min-width: 120px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
@@ -477,9 +471,9 @@ body.dark {
 }
 
 .Violations-filter-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--light);
   color: var(--dark);
@@ -502,8 +496,8 @@ body.dark {
 
 .Violations-table-container {
   overflow-x: auto;
-  padding: 0 32px;
-  border-radius: 12px;
+  padding: 0 20px;
+  border-radius: 8px;
   background: var(--light);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   scrollbar-width: thin;
@@ -545,12 +539,12 @@ body.dark {
 }
 
 .Violations-table th {
-  padding: 16px 12px;
+  padding: 10px 8px;
   text-align: left;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   color: var(--dark);
   white-space: nowrap;
   border-bottom: 2px solid var(--border);
@@ -585,9 +579,9 @@ body.dark {
 }
 
 .Violations-table td {
-  padding: 16px 12px;
+  padding: 10px 8px;
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   vertical-align: middle;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
   white-space: nowrap;
@@ -719,7 +713,7 @@ body.dark {
   display: block;
   font-weight: 600;
   color: var(--dark);
-  font-size: 13px;
+  font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -728,7 +722,7 @@ body.dark {
 .violation-student-name small {
   display: block;
   color: var(--dark-grey);
-  font-size: 11px;
+  font-size: 10px;
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -744,9 +738,9 @@ body.dark {
 
 /* Violation Type Badges */
 .violation-type-badge {
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 700;
   display: inline-block;
   border: 1.5px solid transparent;
@@ -779,9 +773,9 @@ body.dark {
 
 /* Violation Level Badges */
 .violation-level-badge {
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 700;
   display: inline-block;
   border: 1.5px solid transparent;
@@ -808,9 +802,9 @@ body.dark {
 
 /* Department Badges */
 .dept-badge {
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 700;
   display: inline-block;
   letter-spacing: 0.5px;
@@ -850,18 +844,18 @@ body.dark {
 /* Violation Date */
 .violation-date {
   color: var(--dark-grey);
-  font-size: 14px;
+  font-size: 11px;
 }
 
 /* Status Badges */
 .Violations-status-badge {
-  padding: 8px 18px;
+  padding: 4px 10px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   display: inline-block;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   border: 1.5px solid transparent;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
@@ -963,13 +957,14 @@ body.dark {
 .Violations-btn-outline.entrance-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border: 1px solid #3f51b5;
   color: #3f51b5;
   background: transparent;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
   font-weight: 600;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -1013,17 +1008,17 @@ body.dark {
 /* ========================================= */
 
 .Violations-table-footer {
-  padding: 20px 32px;
+  padding: 12px 20px;
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
 }
 
 .Violations-footer-info {
-  font-size: 14px;
+  font-size: 11px;
   color: var(--dark-grey);
 }
 
@@ -1034,13 +1029,13 @@ body.dark {
 
 .Violations-pagination {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .Violations-pagination-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--light);
   color: var(--dark);
@@ -1048,6 +1043,7 @@ body.dark {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 11px;
   transition: all 0.3s ease;
 }
 
@@ -1096,8 +1092,8 @@ body.dark {
   position: relative;
   background: var(--light);
   width: 95%;
-  max-width: 750px; /* Increased width for better layout */
-  border-radius: 24px;
+  max-width: 600px; /* Reduced from 750px */
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.4s ease-out;
@@ -1119,7 +1115,7 @@ body.dark {
 }
 
 .Violations-modal-header {
-  padding: 24px 32px;
+  padding: 16px 20px;
   border-bottom: none;
   display: flex;
   justify-content: space-between;
@@ -1133,12 +1129,12 @@ body.dark {
 
 .Violations-modal-header h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--dark);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-family: var(--poppins);
   line-height: 1.3;
   flex: 1;
@@ -1146,7 +1142,7 @@ body.dark {
 }
 
 .Violations-modal-header h2 i {
-  font-size: 28px;
+  font-size: 20px;
 }
 
 .form-progress {
@@ -1181,19 +1177,19 @@ body.dark {
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: var(--dark);
-  font-size: 28px;
+  font-size: 20px;
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.2s ease;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
 }
 
 .Violations-close-btn:hover {
@@ -1206,20 +1202,20 @@ body.dark {
 /* ========================================= */
 
 #ViolationRecordForm {
-  padding: 24px; /* Reduced padding */
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Reduced gap */
+  gap: 12px;
 }
 
 /* Student Search Enhancement */
 .student-search-wrapper {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   background: var(--grey);
-  padding: 8px;
-  border-radius: 12px;
+  padding: 6px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   transition: all 0.3s ease;
 }
@@ -1230,19 +1226,19 @@ body.dark {
 }
 
 .student-search-wrapper i {
-  margin-left: 12px;
+  margin-left: 8px;
   color: var(--dark-grey);
-  font-size: 20px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
 .student-search-wrapper input {
   flex: 1;
-  padding: 12px 16px;
+  padding: 8px 12px;
   border: none;
   background: transparent;
   color: var(--dark);
-  font-size: 15px;
+  font-size: 11px;
   outline: none;
 }
 
@@ -1254,13 +1250,14 @@ body.dark {
 .Violations-refresh-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--light);
   color: var(--dark);
   font-weight: 600;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -1273,7 +1270,7 @@ body.dark {
 }
 
 .Violations-refresh-btn {
-  padding: 10px;
+  padding: 6px;
   aspect-ratio: 1;
 }
 
@@ -1285,15 +1282,15 @@ body.dark {
 /* Enhanced Student Info Card */
 .violation-student-info-card {
   background: var(--grey);
-  border-radius: 16px;
-  padding: 12px; /* Further reduced */
+  border-radius: 8px;
+  padding: 8px;
   margin: 0;
   display: flex;
   flex-direction: row;
-  gap: 12px; /* Further reduced */
+  gap: 8px;
   align-items: center;
   text-align: left;
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
   transition: all 0.3s ease;
   animation: fadeIn 0.5s ease-out;
 }
@@ -1316,11 +1313,11 @@ body.dark {
 }
 
 .violation-student-image {
-  width: 60px; /* Reduced from 70px */
-  height: 60px; /* Reduced from 70px */
+  width: 44px; /* Reduced from 60px */
+  height: 44px; /* Reduced from 60px */
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid var(--gold);
+  border: 2px solid var(--gold);
   background: var(--light);
   display: flex;
   align-items: center;
@@ -1337,7 +1334,7 @@ body.dark {
 .violation-student-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   align-items: flex-start;
 }
@@ -1346,19 +1343,20 @@ body.dark {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 8px;
 }
 
 .violation-detail-label {
-  min-width: 85px; /* Reduced from 100px */
+  min-width: 70px;
   font-weight: 600;
   color: var(--dark-grey);
-  font-size: 13px; /* Slightly smaller font */
+  font-size: 11px;
 }
 
 .violation-detail-value {
   color: var(--dark);
   font-weight: 500;
+  font-size: 11px;
   flex: 1;
   text-align: left;
 }
@@ -1369,8 +1367,8 @@ body.dark {
 .violation-details-section,
 .violation-attachments {
   background: var(--light);
-  border-radius: 16px;
-  padding: 16px; /* Further reduced from 20px */
+  border-radius: 12px;
+  padding: 12px;
   border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
@@ -1379,22 +1377,22 @@ body.dark {
 .violation-level-section h3,
 .violation-details-section h3,
 .violation-attachments h4 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: var(--dark);
-  margin: 0 0 20px 0;
+  margin: 0 0 12px 0;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-bottom: 12px;
+  padding-bottom: 8px;
   border-bottom: 2px solid rgba(255, 215, 0, 0.2);
 }
 
 .violation-type-section h3::before {
   content: '';
   display: inline-block;
-  width: 4px;
-  height: 20px;
+  width: 3px;
+  height: 16px;
   background: var(--gold);
   border-radius: 2px;
 }
@@ -1402,8 +1400,8 @@ body.dark {
 .violation-level-section h3::before {
   content: '';
   display: inline-block;
-  width: 4px;
-  height: 20px;
+  width: 3px;
+  height: 16px;
   background: #ff6b6b;
   border-radius: 2px;
 }
@@ -1411,8 +1409,8 @@ body.dark {
 .violation-details-section h3::before {
   content: '';
   display: inline-block;
-  width: 4px;
-  height: 20px;
+  width: 3px;
+  height: 16px;
   background: #6f42c1;
   border-radius: 2px;
 }
@@ -1420,8 +1418,8 @@ body.dark {
 .violation-attachments h4::before {
   content: '';
   display: inline-block;
-  width: 4px;
-  height: 20px;
+  width: 3px;
+  height: 16px;
   background: #17a2b8;
   border-radius: 2px;
 }
@@ -1434,9 +1432,9 @@ body.dark {
 }
 
 .violation-type-card {
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   background: var(--light);
@@ -1450,7 +1448,7 @@ body.dark {
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
+  height: 3px;
   background: transparent;
   transition: all 0.3s ease;
 }
@@ -1470,13 +1468,13 @@ body.dark {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   cursor: pointer;
   text-align: center;
 }
 
 .violation-type-card i {
-  font-size: 28px;
+  font-size: 20px;
   color: var(--dark-grey);
   transition: all 0.3s ease;
 }
@@ -1484,7 +1482,7 @@ body.dark {
 .violation-type-card span {
   font-weight: 600;
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   transition: all 0.3s ease;
 }
 
@@ -1523,9 +1521,9 @@ body.dark {
 }
 
 .violation-level-option {
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   background: var(--light);
@@ -1538,7 +1536,7 @@ body.dark {
   position: absolute;
   top: 0;
   left: 0;
-  width: 6px;
+  width: 4px;
   height: 100%;
   background: transparent;
   transition: all 0.3s ease;
@@ -1554,22 +1552,22 @@ body.dark {
 .violation-level-option label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
-  padding-left: 8px;
+  padding-left: 6px;
 }
 
 .level-title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 11px;
   color: var(--dark);
   transition: all 0.3s ease;
 }
 
 .level-desc {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--dark-grey);
-  line-height: 1.4;
+  line-height: 1.3;
   transition: all 0.3s ease;
 }
 
@@ -1676,10 +1674,10 @@ body.dark {
 
 .Violations-form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   font-weight: 600;
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   position: relative;
   padding-left: 12px;
 }
@@ -1690,8 +1688,8 @@ body.dark {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 4px;
-  height: 16px;
+  width: 3px;
+  height: 12px;
   background: var(--gold);
   border-radius: 2px;
   opacity: 0.7;
@@ -1701,10 +1699,10 @@ body.dark {
 .Violations-form-group select,
 .Violations-form-group textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: 6px;
+  font-size: 11px;
   background: var(--light);
   color: var(--dark);
   transition: all 0.3s ease;
@@ -1745,10 +1743,10 @@ body.dark {
 
 .attachment-upload {
   flex-shrink: 0;
-  width: 70px !important;
-  height: 70px !important;
-  border: 2px dashed var(--border) !important;
-  border-radius: 12px !important;
+  width: 50px !important;
+  height: 50px !important;
+  border: 1.5px dashed var(--border) !important;
+  border-radius: 8px !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;

@@ -55,16 +55,16 @@ body.dark {
 }
 
 .Students-subtitle {
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: var(--dark-grey);
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
 }
 
 .Students-breadcrumb {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: 10px;
   color: var(--dark-grey);
   list-style: none;
   padding: 0;
@@ -90,7 +90,7 @@ body.dark {
 }
 
 .Students-breadcrumb i {
-  font-size: 16px;
+  font-size: 12px;
   color: var(--dark-grey);
 }
 
@@ -106,11 +106,11 @@ body.dark {
 
 .Students-button-group {
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px;
   background: var(--light);
-  border-radius: 14px;
-  border: 2px solid var(--border);
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -118,14 +118,14 @@ body.dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 14px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
   font-family: var(--poppins);
   white-space: nowrap;
   position: relative;
@@ -135,14 +135,14 @@ body.dark {
 .Students-btn.outline {
   background: var(--light);
   color: var(--dark);
-  border: 2px solid var(--border);
+  border: 1.5px solid var(--border);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .Students-btn.outline.small {
-  padding: 8px 14px;
-  font-size: 13px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 10px;
+  border-radius: 6px;
   border-width: 1.5px;
 }
 
@@ -150,23 +150,23 @@ body.dark {
   background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
   color: var(--dark);
   font-weight: 600;
-  padding: 11px 24px;
-  border-radius: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
 }
 
 .Students-btn i {
-  font-size: 18px;
+  font-size: 14px;
   transition: transform 0.25s ease;
   color: currentColor;
 }
 
 .Students-btn.primary i {
-  font-size: 19px;
+  font-size: 15px;
 }
 
 .Students-btn.outline.small i {
-  font-size: 17px;
+  font-size: 13px;
 }
 
 .Students-btn.outline:hover {
@@ -232,11 +232,11 @@ body.dark {
 
 .Students-stat-card {
   background: var(--light);
-  border-radius: 18px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   border-left: 5px solid var(--gold);
@@ -248,14 +248,14 @@ body.dark {
 }
 
 .Students-stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 20px;
   color: var(--dark);
 }
 
@@ -302,7 +302,7 @@ body.dark {
 /* ========================================= */
 .Students-content-card {
   background: var(--light);
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
@@ -310,13 +310,13 @@ body.dark {
 
 /* Table Header */
 .Students-table-header {
-  padding: 28px 32px 20px;
+  padding: 16px 20px 12px;
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
 }
 
 .Students-header-left {
@@ -345,16 +345,16 @@ body.dark {
 
 .Students-search-box {
   position: relative;
-  width: 260px;
+  width: 220px;
 }
 
 .Students-search-box i {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--dark-grey);
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .Students-search-box input {
@@ -404,9 +404,9 @@ body.dark {
 }
 
 .Students-filter-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--light);
   color: var(--dark);
@@ -523,8 +523,8 @@ body.dark {
 }
 
 .student-image-wrapper {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
 }
 
 .student-avatar {
@@ -532,7 +532,7 @@ body.dark {
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--gold);
+  border: 1.5px solid var(--gold);
 }
 
 /* Student Name Cell */
@@ -544,11 +544,12 @@ body.dark {
 .student-name-wrapper strong {
   font-weight: 600;
   color: var(--dark);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  font-size: 11px;
 }
 
 .student-name-wrapper small {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--dark-grey);
 }
 
@@ -577,9 +578,9 @@ body.dark {
 
 /* Department Badges */
 .dept-badge {
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 700;
   display: inline-block;
   letter-spacing: 0.5px;
@@ -630,13 +631,13 @@ body.dark {
 
 /* Status Badges */
 .Students-status-badge {
-  padding: 8px 18px;
+  padding: 4px 10px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   display: inline-block;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   border: 1.5px solid transparent;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
@@ -668,19 +669,18 @@ body.dark {
 }
 
 .Students-action-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: var(--light);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   transition: all 0.3s ease;
-  color: var(--dark);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: var(--dark-grey);
 }
 
 .Students-action-btn:hover {
