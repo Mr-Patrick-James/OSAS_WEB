@@ -2,8 +2,8 @@
 
 /* Reset content positioning */
 #content {
-  margin-top: 70px;
-  height: calc(100vh - 70px);
+  margin-top: 55px;
+  height: calc(100vh - 55px);
   margin-left:0 !important;
   width: 100% !important;
   display: flex;
@@ -19,7 +19,7 @@
   max-width: 1400px; /* Increased from 1200px for better large screen usage */
   margin: 0 auto;
   padding: 0.001 rem; /* Reduced from 1rem */
-  min-height: calc(100vh - 70px);
+  min-height: calc(100vh - 55px);
   display: flex;
   flex-direction: column;
   align-items: center;

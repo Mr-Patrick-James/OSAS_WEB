@@ -28,15 +28,15 @@ body.dark {
 /* ========================================= */
 .Students-head-title {
   background: var(--light);
-  border-radius: 20px;
-  padding: 28px 32px;
-  margin-bottom: 24px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 16px;
 }
 
 .Students-left {
@@ -44,9 +44,9 @@ body.dark {
 }
 
 .Students-head-title h1 {
-  font-size: 2.4rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin: 0 0 8px 0;
+  margin: 0 0 2px 0;
   color: var(--dark);
   background: linear-gradient(135deg, var(--dark) 0%, var(--dark-grey) 100%);
   -webkit-background-clip: text;
@@ -64,7 +64,7 @@ body.dark {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--dark-grey);
   list-style: none;
   padding: 0;
@@ -264,22 +264,22 @@ body.dark {
 }
 
 .Students-stat-title {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   font-weight: 500;
 }
 
 .Students-stat-value {
-  font-size: 2.2rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .Students-stat-change,
 .Students-stat-percentage {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -324,14 +324,14 @@ body.dark {
 }
 
 .Students-table-title {
-  font-size: 1.6rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .Students-table-subtitle {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
   margin: 0;
 }
@@ -359,12 +359,12 @@ body.dark {
 
 .Students-search-box input {
   width: 100%;
-  padding: 12px 16px 12px 48px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
+  padding: 8px 12px 8px 36px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
@@ -384,12 +384,12 @@ body.dark {
 }
 
 .Students-filter-select {
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 2px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -443,12 +443,12 @@ body.dark {
 }
 
 .Students-table th {
-  padding: 20px 16px;
+  padding: 12px 10px;
   text-align: left;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   color: var(--dark);
   white-space: nowrap;
   border-bottom: 2px solid var(--border);
@@ -481,9 +481,9 @@ body.dark {
 }
 
 .Students-table td {
-  padding: 20px 16px;
+  padding: 12px 10px;
   color: var(--dark);
-  font-size: 15px;
+  font-size: 11px;
   vertical-align: middle;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
 }

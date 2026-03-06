@@ -75,15 +75,15 @@ body.dark #departmentModal .close-btn:hover {
 /* ========================================= */
 .page-header {
   background: var(--light);
-  border-radius: 20px;
-  padding: 28px 32px;
-  margin-bottom: 24px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 16px;
 }
 
 .header-content {
@@ -91,9 +91,9 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .page-title {
-  font-size: 2.4rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin: 0 0 8px 0;
+  margin: 0 0 2px 0;
   color: var(--dark);
   background: linear-gradient(135deg, var(--dark) 0%, var(--dark-grey) 100%);
   -webkit-background-clip: text;
@@ -102,9 +102,9 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .page-subtitle {
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: var(--dark-grey);
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
 }
 
 .breadcrumb-wrapper {
@@ -116,7 +116,7 @@ body.dark #departmentModal .close-btn:hover {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: 10px;
   color: var(--dark-grey);
   list-style: none;
   padding: 0;
@@ -286,11 +286,11 @@ body.dark #departmentModal .close-btn:hover {
 
 .stat-card {
   background: var(--light);
-  border-radius: 18px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   border-left: 5px solid var(--gold);
@@ -302,14 +302,14 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 20px;
   color: var(--dark);
 }
 
@@ -318,22 +318,22 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .stat-title {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   font-weight: 500;
 }
 
 .stat-value {
-  font-size: 2.2rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .stat-change,
 .stat-percentage {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -378,14 +378,14 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .table-title {
-  font-size: 1.6rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .table-subtitle {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   color: var(--dark-grey);
   margin: 0;
 }
@@ -404,21 +404,21 @@ body.dark #departmentModal .close-btn:hover {
 
 .search-box i {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--dark-grey);
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .search-box input {
   width: 100%;
-  padding: 12px 16px 12px 48px;
+  padding: 8px 12px 8px 36px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   transition: all 0.3s ease;
 }
 
@@ -435,12 +435,12 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .filter-select {
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--light);
   color: var(--dark);
-  font-size: 14px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -491,10 +491,10 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .department-table th {
-  padding: 20px 16px;
+  padding: 12px 10px;
   text-align: left;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--dark-grey);
@@ -521,9 +521,9 @@ body.dark #departmentModal .close-btn:hover {
 }
 
 .department-table td {
-  padding: 20px 16px;
+  padding: 12px 10px;
   color: var(--dark);
-  font-size: 15px;
+  font-size: 11px;
   vertical-align: middle;
 }
 
