@@ -570,3 +570,47 @@
             background: linear-gradient(135deg, #D4AF37, #B8860B);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
         }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 15px;
+            }
+
+            .login-card {
+                padding: 20px;
+                border-radius: 16px;
+            }
+
+            .login-header h2 {
+                font-size: 1.25rem;
+            }
+
+            .form-group label {
+                font-size: 0.8rem;
+            }
+
+            .form-group input {
+                padding: 12px;
+                font-size: 0.85rem;
+            }
+
+            .login-button {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+
+            .pwa-install-btn {
+                bottom: 15px;
+                right: 15px;
+                padding: 8px 16px;
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-height: 600px) {
+            body {
+                align-items: flex-start;
+                padding: 20px 0;
+            }
+        }

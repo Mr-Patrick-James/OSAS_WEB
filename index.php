@@ -490,11 +490,70 @@
             color: #ffffff !important;
         }
 
-        /* Responsive Design */
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 1001;
+        }
+
+        body.dark .mobile-menu-toggle {
+            color: white;
+        }
+
+        /* Updated Responsive Design */
+        @media (max-width: 992px) {
+            .hero-content h1 {
+                font-size: 3rem;
+            }
+            .hero-container {
+                gap: 2rem;
+            }
+        }
+
         @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 72px;
+                left: 0;
+                right: 0;
+                background: var(--bg-white);
+                flex-direction: column;
+                padding: 2rem;
+                gap: 1.5rem;
+                border-bottom: 1px solid var(--border);
+                transform: translateY(-150%);
+                transition: var(--transition);
+                margin: 0 !important;
+                z-index: 999;
+                box-shadow: var(--shadow-lg);
+                display: flex !important;
+            }
+
+            body.dark .nav-links {
+                background: #1a1a1a;
+                border-color: #333;
+            }
+
+            .nav-links.active {
+                transform: translateY(0);
+            }
+
+            .hero {
+                padding: 6rem 1rem 3rem;
+            }
+
             .hero-container {
                 grid-template-columns: 1fr;
-                gap: 2rem;
                 text-align: center;
             }
 
@@ -509,61 +568,62 @@
             .hero-card {
                 transform: none;
                 max-width: 100%;
+                margin: 0 auto;
             }
 
-            .nav-container {
-                padding: 1rem;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .nav-buttons {
-                gap: 0.5rem;
-            }
-
-            .btn {
-                padding: 0.5rem 1rem;
-                font-size: 0.8rem;
+            .hero-buttons {
+                justify-content: center;
             }
 
             .features-grid {
                 grid-template-columns: 1fr;
+                padding: 0 1rem;
+            }
+
+            .feature-card p {
+                display: block;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 3rem;
+            }
+
+            .footer-section ul li {
+                display: block;
+                margin: 10px 0;
+            }
+
+            .footer-section ul {
+                padding: 0;
             }
         }
 
-        @media (max-width: 640px) {
-            .nav-container {
-                padding: 1rem;
+        @media (max-width: 480px) {
+            .logo span {
+                display: none;
             }
-
-            .logo {
-                font-size: 1.2rem;
-            }
-
-            .logo-icon {
-                width: 32px;
-                height: 32px;
-                font-size: 1rem;
+            
+            .login-btn span {
+                display: none;
             }
 
             .hero-content h1 {
                 font-size: 2rem;
             }
 
-            .hero-content p {
-                font-size: 1rem;
-            }
-
             .hero-buttons {
                 flex-direction: column;
-                align-items: center;
+                width: 100%;
             }
 
             .btn-hero {
                 width: 100%;
-                max-width: 280px;
+            }
+
+            .section-header h2 {
+                font-size: 2rem;
             }
         }
 
@@ -669,13 +729,6 @@
             color: var(--primary);
         }
 
-        body.dark .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-            margin-left: 2rem;
-        }
-
         body.dark .nav-link {
             color: #ffffff;
             text-decoration: none;
@@ -762,7 +815,7 @@
                 </div>
                 <span>OSAS</span>
             </a>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="#features" class="nav-link">Features</a>
                 <a href="#contact" class="nav-link">Contact</a>
             </div>
@@ -770,11 +823,13 @@
                 <button class="btn btn-outline" id="theme-toggle" title="Toggle dark mode">
                     <i class="fas fa-moon" id="theme-icon"></i>
                 </button>
-                <a href="login_page.php?direct=true" class="btn btn-outline">
+                <a href="login_page.php?direct=true" class="btn btn-outline login-btn">
                     <i class="fas fa-sign-in-alt"></i>
-                    Login
+                    <span>Login</span>
                 </a>
-                
+                <button class="mobile-menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -898,6 +953,27 @@
     </footer>
 
     <script>
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const navLinks = document.getElementById('navLinks');
+        
+        menuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            const icon = menuToggle.querySelector('i');
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-times');
+        });
+
+        // Close menu when clicking a link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                const icon = menuToggle.querySelector('i');
+                icon.classList.add('fa-bars');
+                icon.classList.remove('fa-times');
+            });
+        });
+
         // Dark mode toggle functionality
         const themeToggle = document.getElementById('theme-toggle');
         const themeIcon = document.getElementById('theme-icon');
