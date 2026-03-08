@@ -469,9 +469,9 @@ class ViolationController extends Controller
         // 3. Prepare Data
         $studentName = $violation['studentName'] ?? 'N/A';
         // $studentId already set
-        $dept = $violation['studentDept'] ?? 'N/A';
+        $section = $violation['section'] ?? 'N/A';
         $yearLevel = $violation['studentYearlevel'] ?? 'N/A';
-        $courseYear = "$dept - $yearLevel";
+        $courseYear = "$section - $yearLevel";
         
         $vType = strtolower($violation['violationTypeLabel'] ?? '');
         $vLevel = strtolower($violation['violationLevelLabel'] ?? '');

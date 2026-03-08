@@ -1092,7 +1092,7 @@ body.dark {
   position: relative;
   background: var(--light);
   width: 95%;
-  max-width: 500px; /* Reduced from 600px */
+  max-width: 1050px; /* Increased from 500px to stretch the view */
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
@@ -2056,10 +2056,10 @@ body.dark {
 /* Details Grid */
 .violation-details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Increased min-width from 100px */
+  gap: 12px;
   margin: 10px 0;
-  padding: 8px;
+  padding: 12px;
   background: var(--grey);
   border-radius: 6px;
 }
@@ -2073,7 +2073,7 @@ body.dark {
 .detail-label {
   font-weight: 600;
   color: var(--dark-grey);
-  font-size: 7.5px;
+  font-size: 9px; /* Increased from 7.5px */
   text-transform: uppercase;
   letter-spacing: 0.2px;
 }
@@ -2081,7 +2081,8 @@ body.dark {
 .detail-value {
   color: var(--dark);
   font-weight: 500;
-  font-size: 9.5px;
+  font-size: 11px; /* Increased from 9.5px */
+  word-break: break-all;
 }
 
 .detail-value.badge {

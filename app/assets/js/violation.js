@@ -2734,7 +2734,6 @@ function initViolationsModule() {
                                     <div><span class="report-label">Case ID:</span> <span class="report-value">${violation.caseId}</span></div>
                                     <div><span class="report-label">Student ID:</span> <span class="report-value">${violation.studentId}</span></div>
                                     <div><span class="report-label">Student Name:</span> <span class="report-value">${violation.studentName}</span></div>
-                                    <div><span class="report-label">Department:</span> <span class="report-value">${violation.department}</span></div>
                                     <div><span class="report-label">Section:</span> <span class="report-value">${violation.section}</span></div>
                                     <div><span class="report-label">Year Level:</span> <span class="report-value">${violation.studentYearlevel || 'N/A'}</span></div>
                                     <div><span class="report-label">Violation Type:</span> <span class="report-value">${violation.violationTypeLabel}</span></div>
@@ -2895,10 +2894,9 @@ function initViolationsModule() {
                 // 4. Prepare Data
                 const studentName = violation.studentName || 'N/A';
                 const studentId = violation.studentId || 'N/A';
-                const dept = violation.department || violation.studentDept || '';
                 const section = violation.section || violation.studentSection || '';
                 const yearLevel = violation.studentYearlevel || '';
-                const courseYear = `${dept} ${section} - ${yearLevel}`;
+                const courseYear = `${section} - ${yearLevel}`;
                 
                 const vType = (violation.violationTypeLabel || '').toLowerCase();
                 const vLevel = (violation.violationLevelLabel || '').toLowerCase();
@@ -3749,7 +3747,6 @@ function initViolationsModule() {
                                 <th>Student Name</th>
                                 <th>Violation Type</th>
                                 <th>Level</th>
-                                <th>Department</th>
                                 <th>Section</th>
                                 <th>Year Level</th>
                                 <th>Date Reported</th>
@@ -3772,7 +3769,6 @@ function initViolationsModule() {
                             <td>${violation.studentName}</td>
                             <td><span class="type-badge ${typeClass}">${violation.violationTypeLabel}</span></td>
                             <td><span class="level-badge ${levelClass}">${violation.violationLevelLabel}</span></td>
-                            <td><span class="dept-badge ${deptClass}">${violation.department}</span></td>
                             <td>${violation.section}</td>
                             <td>${violation.studentYearlevel || 'N/A'}</td>
                             <td>${formatDate(violation.dateReported)}</td>
