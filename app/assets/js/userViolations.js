@@ -209,7 +209,7 @@ function renderViolationTable() {
 
         return `
             <tr class="violation-row">
-                <td data-label="Case ID"><span style="font-family:monospace; font-weight:600;">#${v.case_id || v.id}</span></td>
+                <td data-label="Case ID"><span class="violation-case-id">#${v.case_id || v.id}</span></td>
                 <td data-label="Violation Type">${escapeHtml(violationTypeFormatted)}</td>
                 <td data-label="Offense Level"><span class="Violations-badge warning">${level}</span></td>
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
@@ -246,6 +246,36 @@ function getImageUrl(imagePath, fallbackName = 'Student') {
     if (imagePath.startsWith('app/assets/')) return projectBase + imagePath;
     
     return projectBase + 'app/assets/img/students/' + imagePath;
+}
+
+function getViolationTypeClass(typeLabel) {
+    if (!typeLabel || typeof typeLabel !== 'string') return 'default';
+    const lower = typeLabel.toLowerCase();
+    if (lower.includes('uniform')) return 'uniform';
+    if (lower.includes('footwear') || lower.includes('shoe')) return 'footwear';
+    if (lower.includes('id')) return 'id';
+    if (lower.includes('misconduct') || lower.includes('behavior')) return 'behavior';
+    return 'default';
+}
+
+function getViolationLevelClass(level) {
+    if (level === null || level === undefined) return 'default';
+    const levelStr = String(level);
+    const lowerLevel = levelStr.toLowerCase();
+    if (lowerLevel.startsWith('permitted')) return 'permitted';
+    if (lowerLevel.startsWith('warning')) return 'warning';
+    if (lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
+    return 'default';
+}
+
+function getDepartmentClass(dept) {
+    const classes = {
+        'BSIS': 'bsis',
+        'WFT': 'wft',
+        'BTVTED': 'btvted',
+        'CHS': 'chs'
+    };
+    return classes[dept] || 'default';
 }
 
 function getStatusClass(status) {
@@ -298,7 +328,6 @@ function viewViolationDetails(id) {
 
     if (displayStatus === 'resolved' || displayStatus === 'permitted') {
         displayStatusLabel = isDisciplinary ? 'Resolved' : 'Permitted';
-        // Ensure we use the success color
         displayStatus = 'resolved'; 
     } else if (isDisciplinary || displayStatus === 'disciplinary') {
         displayStatus = 'disciplinary';
@@ -310,37 +339,126 @@ function viewViolationDetails(id) {
     setElementClass('detailStatusBadge', `case-status-badge ${getStatusClass(displayStatus)}`);
 
     // --- Student Info ---
-    // Note: Student info might be partial in the violation object depending on the API query.
-    // If we have it, use it. Otherwise, use what's available or placeholders.
     const studentName = v.student_name || v.studentName || 'Student';
     const studentImg = v.student_image || v.studentImage || '';
     
     const studentImageUrl = getImageUrl(studentImg, studentName);
     setElementSrc('detailStudentImage', studentImageUrl);
     setElementText('detailStudentName', studentName);
-    setElementText('detailStudentId', v.student_id || studentId); // Fallback to global studentId
+    setElementText('detailStudentId', v.student_id || studentId);
     setElementText('detailStudentDept', v.department || v.department_name || 'N/A');
-    setElementClass('detailStudentDept', `student-dept badge`); // Could add dept specific class if mapped
+    setElementClass('detailStudentDept', `student-dept badge ${getDepartmentClass(v.department || v.department_name)}`);
     setElementText('detailStudentSection', v.section || 'N/A');
     setElementText('detailStudentContact', v.student_contact || v.studentContact || 'N/A');
 
-    // --- Violation Details Grid ---
-    setElementText('detailViolationType', formatViolationType(v.violation_type_name || v.violationTypeLabel || v.violation_type));
-    setElementText('detailViolationLevel', v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1');
+    // --- Violation Details Grid (Match Admin style) ---
+    // In user view, "userViolations" is already filtered for this student
+    let studentViolations = [...userViolations];
     
-    const dateStr = formatDate(v.created_at || v.violation_date || v.date);
-    const timeStr = formatTime(v.violation_time || '');
-    setElementText('detailDateTime', `${dateStr} ${timeStr ? '• ' + timeStr : ''}`);
+    // Sort violations by date descending
+    studentViolations.sort((a, b) => {
+         const dateA = new Date((a.created_at || a.violation_date || a.date) + ' ' + (a.violation_time || '00:00'));
+         const dateB = new Date((b.created_at || b.violation_date || b.date) + ' ' + (b.violation_time || '00:00'));
+         return dateB - dateA;
+    });
+
+    // Keep only the latest record per violation type
+    const latestByType = new Map();
+    studentViolations.forEach(sv => {
+        const type = sv.violation_type_name || sv.violationTypeLabel || sv.violation_type || 'Unknown';
+        if (!latestByType.has(type)) {
+            latestByType.set(type, sv);
+        }
+    });
     
-    setElementText('detailLocation', v.locationLabel || v.location || 'N/A');
-    setElementText('detailReportedBy', v.reported_by || v.reportedBy || 'N/A');
+    const displayList = Array.from(latestByType.values());
+    displayList.sort((a, b) => {
+         const dateA = new Date((a.created_at || a.violation_date || a.date) + ' ' + (a.violation_time || '00:00'));
+         const dateB = new Date((b.created_at || b.violation_date || b.date) + ' ' + (b.violation_time || '00:00'));
+         return dateB - dateA;
+    });
+
+    const renderList = (containerId, items, renderer) => {
+        const container = document.getElementById(containerId);
+        if (container) {
+             container.className = 'detail-value-container';
+             container.innerHTML = items.map(item => {
+                 const content = renderer(item);
+                 return `<div style="margin-bottom: 4px; min-height: 24px; line-height: 24px;">${content}</div>`;
+             }).join('');
+        }
+    };
+
+    // Types
+    renderList('detailViolationType', displayList, sv => {
+        const type = sv.violation_type_name || sv.violationTypeLabel || sv.violation_type || 'Unknown';
+        return `<span class="badge ${getViolationTypeClass(type)}">${formatViolationType(type)}</span>`;
+    });
+
+    // Levels
+    renderList('detailViolationLevel', displayList, sv => {
+        const level = sv.violation_level_name || sv.violationLevelLabel || sv.level || sv.offense_level || '-';
+        const badgeClass = level !== '-' ? `badge ${getViolationLevelClass(level)}` : '';
+        return `<span class="${badgeClass}">${level}</span>`;
+    });
+
+    // Dates
+    renderList('detailDateTime', displayList, sv => {
+        const dateStr = formatDate(sv.created_at || sv.violation_date || sv.date);
+        const timeStr = formatTime(sv.violation_time || '');
+        return `${dateStr} ${timeStr ? '• ' + timeStr : ''}`;
+    });
+
+    // Locations
+    renderList('detailLocation', displayList, sv => sv.locationLabel || sv.location || '-');
+
+    // Reported By
+    renderList('detailReportedBy', displayList, sv => sv.reported_by || sv.reportedBy || '-');
     
-    setElementText('detailStatus', displayStatusLabel);
-    const statusBadge = document.getElementById('detailStatus');
-    if(statusBadge) statusBadge.className = `detail-value badge ${getStatusClass(displayStatus)}`;
+    // Statuses
+    renderList('detailStatus', displayList, sv => {
+        let itemStatus = (sv.status || '').toLowerCase();
+        let itemStatusLabel = sv.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'Unknown');
+        
+        const svLevelLabel = (sv.violation_level_name || sv.violationLevelLabel || sv.level || sv.offense_level || '').toLowerCase();
+        const svIsDisciplinary = svLevelLabel.includes('warning 3') || svLevelLabel.includes('3rd') || svLevelLabel.includes('disciplinary');
+        
+        if (itemStatus === 'resolved' || itemStatus === 'permitted') {
+            itemStatusLabel = svIsDisciplinary ? 'Resolved' : 'Permitted';
+            itemStatus = 'resolved'; 
+        } else if (svIsDisciplinary || itemStatus === 'disciplinary') {
+            itemStatus = 'disciplinary';
+            itemStatusLabel = 'Disciplinary';
+        }
+        
+        return `<span class="badge ${getStatusClass(itemStatus)}">${itemStatusLabel}</span>`;
+    });
 
     // --- Description / Notes ---
     setElementText('detailNotes', v.notes || v.description || 'No description provided.');
+
+    // --- Evidence / Attachments (Match Admin) ---
+    const attachmentsContainer = document.getElementById('detailAttachments');
+    const evidenceSection = document.getElementById('evidenceSection');
+    if (attachmentsContainer) {
+        if (v.attachments && v.attachments.length > 0) {
+            attachmentsContainer.innerHTML = v.attachments.map(filePath => {
+                const fullUrl = getImageUrl(filePath);
+                const fileName = filePath.split('/').pop();
+                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+                
+                return `<a href="${fullUrl}" target="_blank" class="attachment-item">
+                    <i class='bx ${isImage ? 'bx-image' : 'bx-file'}'></i>
+                    <span>${fileName}</span>
+                </a>`;
+            }).join('');
+            if (evidenceSection) evidenceSection.style.display = 'block';
+        } else {
+            attachmentsContainer.innerHTML = '<p class="no-attachments">No attachments available.</p>';
+            // Hide if no attachments and we want it strictly like admin (admin shows "No attachments available")
+            // But usually admin only shows it if it's there. Let's keep it visible with "No attachments" for now.
+        }
+    }
 
     // --- Resolution (if exists) ---
     const resSection = document.getElementById('resolutionSection');
@@ -352,30 +470,61 @@ function viewViolationDetails(id) {
         resSection.style.display = 'none';
     }
 
-    // --- History Timeline ---
+    // --- History Timeline (Match Admin Deduplication) ---
     const timelineEl = document.getElementById('detailTimeline');
     if (timelineEl) {
-        // Since userViolations contains ALL violations for this student, we just use it directly.
-        // Filter out duplicates if any (though API shouldn't return dupes)
-        // Sort by date descending
-        let history = [...userViolations];
+        let studentHistory = [...userViolations];
         
-        history.sort((a, b) => {
-             const dateA = new Date((a.created_at || a.violation_date) + ' ' + (a.violation_time || '00:00'));
-             const dateB = new Date((b.created_at || b.violation_date) + ' ' + (b.violation_time || '00:00'));
+        // Deduplicate history for timeline
+        const seenHistory = new Set();
+        studentHistory = studentHistory.filter(h => {
+            const hType = h.violation_type_name || h.violationTypeLabel || h.violation_type || 'Type';
+            const hLevel = h.violation_level_name || h.violationLevelLabel || h.level || h.offense_level || 'Level';
+            const hDate = h.created_at || h.violation_date || h.date;
+            const hTime = h.violation_time || '00:00';
+            const hLoc = h.locationLabel || h.location || 'N/A';
+            const hBy = h.reported_by || h.reportedBy || 'N/A';
+            
+            const key = `${hType}|${hLevel}|${hDate}|${hTime}|${hLoc}|${hBy}`;
+            if (seenHistory.has(key)) return false;
+            seenHistory.add(key);
+            return true;
+        });
+        
+        // Sort by date descending
+        studentHistory.sort((a, b) => {
+             const dateA = new Date((a.created_at || a.violation_date || a.date) + ' ' + (a.violation_time || '00:00'));
+             const dateB = new Date((b.created_at || b.violation_date || b.date) + ' ' + (b.violation_time || '00:00'));
              return dateB - dateA;
         });
 
-        if (history.length > 0) {
-            timelineEl.innerHTML = history.map(h => {
-                const isCurrent = String(h.id) === String(v.id);
+        if (studentHistory.length > 0) {
+            timelineEl.innerHTML = studentHistory.map(h => {
+                const vType = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Type';
+                const vLevel = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || 'Level';
+                const vDate = v.created_at || v.violation_date || v.date;
+                const vTime = v.violation_time || '00:00';
+                const vLoc = v.locationLabel || v.location || 'N/A';
+                const vBy = v.reported_by || v.reportedBy || 'N/A';
+                
+                const hType = h.violation_type_name || h.violationTypeLabel || h.violation_type || 'Type';
+                const hLevel = h.violation_level_name || h.violationLevelLabel || h.level || h.offense_level || 'Level';
+                const hDate = h.created_at || h.violation_date || h.date;
+                const hTime = h.violation_time || '00:00';
+                const hLoc = h.locationLabel || h.location || 'N/A';
+                const hBy = h.reported_by || h.reportedBy || 'N/A';
+
+                const viewingKey = `${vType}|${vLevel}|${vDate}|${vTime}|${vLoc}|${vBy}`;
+                const currentKey = `${hType}|${hLevel}|${hDate}|${hTime}|${hLoc}|${hBy}`;
+                
+                const isCurrent = viewingKey === currentKey;
                 const activeClass = isCurrent ? 'current-viewing' : '';
-                const hDateStr = formatDate(h.created_at || h.violation_date);
-                const hTimeStr = formatTime(h.violation_time);
+                const hDateStr = formatDate(hDate);
+                const hTimeStr = formatTime(hTime);
                 
                 let itemStatus = (h.status || '').toLowerCase();
-                const hLevel = (h.violation_level_name || h.violationLevelLabel || h.level || h.offense_level || '').toLowerCase();
-                const hIsDisciplinary = hLevel.includes('warning 3') || hLevel.includes('3rd') || hLevel.includes('disciplinary');
+                const hlLabel = hLevel.toLowerCase();
+                const hIsDisciplinary = hlLabel.includes('warning 3') || hlLabel.includes('3rd') || hlLabel.includes('disciplinary');
                 
                 let statusHtml = '';
                 if (itemStatus === 'resolved' || itemStatus === 'permitted') {
@@ -391,11 +540,11 @@ function viewViolationDetails(id) {
                     <div class="timeline-content">
                         <span class="timeline-date">${hDateStr} ${hTimeStr ? '• ' + hTimeStr : ''}</span>
                         <span class="timeline-title">
-                            ${h.violation_level_name || h.violationLevelLabel || h.level || h.offense_level || 'Level'} - ${formatViolationType(h.violation_type_name || h.violationTypeLabel || h.violation_type || 'Type')}
+                            ${hLevel} - ${formatViolationType(hType)}
                             ${isCurrent ? '<span style="font-size: 10px; background: #eee; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Current</span>' : ''}
                         </span>
                         <span class="timeline-desc">
-                            Reported at ${h.locationLabel || h.location || 'N/A'} 
+                            Reported at ${hLoc} 
                             ${statusHtml}
                         </span>
                     </div>
@@ -410,8 +559,8 @@ function viewViolationDetails(id) {
     const modal = document.getElementById('ViolationDetailsModal');
     if (modal) {
         modal.style.display = 'flex';
-        // Add active class if CSS requires it for animation
         modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 }
 

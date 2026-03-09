@@ -88,10 +88,26 @@ $role = $_SESSION['role'] ?? 'admin';
 
     <!-- Notifications -->
     <div class="nav-notifications">
-      <button class="notification-btn">
+      <button class="notification-btn" id="notifBtn">
         <i class='bx bx-bell'></i>
-        <span class="notification-badge">1</span>
+        <span class="notification-badge" id="notifBadge">0</span>
       </button>
+      
+      <!-- Notification Modal -->
+      <div id="notifModal" class="notif-modal">
+        <div class="notif-modal-content">
+          <div class="notif-modal-header">
+            <h3>Notifications</h3>
+            <button class="notif-close-btn">&times;</button>
+          </div>
+          <div class="notif-modal-body" id="notifList">
+            <div class="notif-loading">Loading notifications...</div>
+          </div>
+          <div class="notif-modal-footer">
+            <button class="notif-view-all" onclick="loadContent('admin_page/Violations')">View All Violations</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- User Menu -->

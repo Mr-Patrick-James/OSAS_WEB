@@ -306,11 +306,15 @@ body, html {
   position: relative;
   background: none;
   border: none;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-radius: 50%;
   cursor: pointer;
   color: var(--dark-grey);
   transition: all 0.3s ease;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .notification-btn:hover {
@@ -320,16 +324,223 @@ body, html {
 
 .notification-badge {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -2px;
+  right: -2px;
   background: var(--gold);
   color: var(--dark);
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.2rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.35rem;
   border-radius: 10px;
-  min-width: 18px;
+  min-width: 16px;
   text-align: center;
+  font-family: var(--poppins);
+}
+
+/* Notification Modal */
+.notif-modal {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -10px;
+  width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  display: none;
+  z-index: 1001;
+  border: 1px solid var(--grey);
+  animation: slideDown 0.3s ease;
+  font-family: var(--poppins);
+}
+
+.notif-modal.show {
+  display: block;
+}
+
+.notif-modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+}
+
+.notif-modal-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--grey);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-modal-header h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--dark);
+  font-weight: 700;
+}
+
+.notif-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--dark-grey);
+}
+
+.notif-modal-body {
+  overflow-y: auto;
+  padding: 0.4rem;
+  min-height: 70px;
+}
+
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+  cursor: pointer;
+  border-bottom: 1px solid var(--grey);
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item:hover {
+  background: var(--grey);
+}
+
+.notif-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.notif-info {
+  flex: 1;
+}
+
+.notif-name {
+  font-weight: 600;
+  font-size: 0.75rem;
+  display: block;
+  color: var(--dark);
+}
+
+.notif-desc {
+  font-size: 0.65rem;
+  color: var(--dark-grey);
+  display: block;
+  margin-bottom: 1px;
+}
+
+.notif-time {
+  font-size: 0.6rem;
+  color: #888;
+}
+
+.notif-manage-btn {
+  background: var(--gold);
+  color: var(--dark);
+  border: none;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.notif-loading, .notif-empty {
+  padding: 1.2rem;
+  text-align: center;
+  color: var(--dark-grey);
+  font-size: 0.75rem;
+}
+
+.notif-modal-footer {
+  padding: 0.5rem;
+  border-top: 1px solid var(--grey);
+  text-align: center;
+}
+
+.notif-view-all {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-size: 0.7rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.notif-time {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.notif-manage-btn {
+  background: var(--gold);
+  color: var(--dark);
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.notif-loading, .notif-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--dark-grey);
+  font-size: 0.9rem;
+}
+
+.notif-modal-footer {
+  padding: 0.8rem;
+  border-top: 1px solid var(--grey);
+  text-align: center;
+}
+
+.notif-view-all {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dark mode support for notif modal */
+body.dark .notif-modal {
+  background: var(--dark);
+  border-color: #333;
+}
+
+body.dark .notif-modal-header {
+  border-bottom-color: #333;
+}
+
+body.dark .notif-modal-header h3 {
+  color: white;
+}
+
+body.dark .notif-item:hover {
+  background: #222;
+}
+
+body.dark .notif-name {
+  color: white;
+}
+
+body.dark .notif-modal-footer {
+  border-top-color: #333;
 }
 
 /* User Menu */

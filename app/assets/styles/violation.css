@@ -668,7 +668,7 @@ body.dark {
 
 /* Case ID */
 .violation-case-id {
-  font-family: 'Courier New', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-weight: 600;
   color: var(--gold);
 }
@@ -1963,11 +1963,35 @@ body.dark {
   border-bottom: 1px solid var(--border);
 }
 
+/* Modal Font Consistency */
+.Violations-modal *,
+.Violations-modal span,
+.Violations-modal p,
+.Violations-modal div {
+  font-size: 12px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", var(--poppins);
+}
+
+.Violations-modal-header h2,
+.Violations-modal-header h2 span {
+  font-size: 15px !important;
+}
+
+.violation-notes-section h4,
+.violation-evidence-section h4,
+.violation-history h4 {
+  font-size: 14px !important;
+}
+
+.violation-student-details h3 {
+  font-size: 15px !important;
+}
+
 .case-id {
-  font-family: 'Courier New', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-weight: 600;
   color: var(--gold);
-  font-size: 13px;
+  font-size: 13px !important;
 }
 
 .case-status-badge {
@@ -2030,7 +2054,7 @@ body.dark {
 }
 
 .student-id {
-  font-family: 'Courier New', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-weight: 600;
   color: var(--dark);
   font-size: 11px;

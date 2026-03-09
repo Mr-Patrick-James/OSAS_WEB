@@ -26,10 +26,28 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
   <label for="eye-care-toggle" class="eye-care-toggle" title="Eye Care (Light Mode Only)">
     <i class='bx bx-brightness'></i>
   </label>
-  <a href="#" class="notification">
-    <i class='bx bxs-bell'></i>
-    <span class="num"><?= isset($notificationCount) ? $notificationCount : '1' ?></span>
-  </a>
+  <div class="nav-notifications">
+    <button class="notification-btn" id="notifBtn">
+      <i class='bx bxs-bell'></i>
+      <span class="notification-badge" id="notifBadge"><?= isset($notificationCount) ? $notificationCount : '0' ?></span>
+    </button>
+    
+    <!-- Notification Modal -->
+    <div id="notifModal" class="notif-modal">
+      <div class="notif-modal-content">
+        <div class="notif-modal-header">
+          <h3>Notifications</h3>
+          <button class="notif-close-btn">&times;</button>
+        </div>
+        <div class="notif-modal-body" id="notifList">
+          <div class="notif-loading">Loading notifications...</div>
+        </div>
+        <div class="notif-modal-footer">
+          <button class="notif-view-all" onclick="loadContent('admin_page/Violations')">View All Violations</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <a href="#" class="nav-settings" id="openSettingsModal" title="Settings">
     <i class='bx bxs-cog'></i>
   </a>

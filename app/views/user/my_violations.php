@@ -197,6 +197,14 @@ require_once __DIR__ . '/../../core/View.php';
                     <p id="detailNotes">-</p>
                 </div>
             </div>
+
+            <!-- Evidence Section -->
+            <div class="violation-evidence-section" id="evidenceSection">
+                <h4>Evidence / Attachments</h4>
+                <div id="detailAttachments" class="attachments-grid">
+                    <p class="no-attachments">No attachments available.</p>
+                </div>
+            </div>
             
              <div class="violation-notes-section" id="resolutionSection" style="display:none;">
                 <h4>Resolution</h4>

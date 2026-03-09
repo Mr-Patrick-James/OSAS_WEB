@@ -1697,7 +1697,7 @@ function initViolationsModule() {
 
                 return `
                 <tr data-id="${v.id}">
-                    <td class="violation-case-id" data-label="Case ID">${v.caseId}</td>
+                    <td class="violation-case-id" data-label="Case ID">#${v.caseId}</td>
                     <td class="violation-student-cell" data-label="Student">
                         <div class="violation-student-info">
                             <div class="violation-student-image">
@@ -2126,7 +2126,7 @@ function initViolationsModule() {
                 displayStatusLabel = 'Disciplinary';
             }
 
-            setElementText('detailCaseId', violation.caseId);
+            setElementText('detailCaseId', '#' + violation.caseId);
             setElementText('detailStatusBadge', displayStatusLabel);
             setElementClass('detailStatusBadge', `case-status-badge ${getStatusClass(displayStatus)}`);
             
