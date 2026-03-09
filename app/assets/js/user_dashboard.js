@@ -152,11 +152,11 @@ function initializeNotifications() {
 
       // Count only the LATEST violation as new if it hasn't been seen
       const latestViolation = recentViolations[0];
-      const unseenCount = !seenNotifs.includes(String(latestViolation.id)) ? 1 : 0;
+      const unseenCount = (!seenNotifs.includes(String(latestViolation.id)) && latestViolation.is_read != 1) ? 1 : 0;
       if (notifBadge) notifBadge.textContent = unseenCount;
 
       notifList.innerHTML = recentViolations.map(v => {
-        const isUnread = !readNotifs.includes(String(v.id));
+        const isUnread = !readNotifs.includes(String(v.id)) && v.is_read != 1;
         const isLatest = v.id === latestViolation.id;
         const type = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Violation';
         
@@ -214,17 +214,29 @@ function initializeNotifications() {
     }
   }
 
-  function markNotificationAsRead(id) {
+  async function markNotificationAsRead(id) {
     const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
     if (!readNotifs.includes(String(id))) {
       readNotifs.push(String(id));
       localStorage.setItem('read_notifications', JSON.stringify(readNotifs));
-      
-      const item = notifList.querySelector(`.notification-item[data-id="${id}"]`);
-      if (item) item.classList.remove('unread');
-      
-      updateBadgeCount();
     }
+    
+    // Persist to database
+    try {
+      const apiBase = (function() {
+        const pathParts = window.location.pathname.split('/').filter(p => p);
+        if (pathParts.length > 0 && pathParts[0] === 'OSAS_WEB') return '/OSAS_WEB/api/';
+        return '/api/';
+      })();
+      await fetch(`${apiBase}violations.php?action=mark_as_read&id=${id}`);
+    } catch (e) {
+      console.error('Failed to persist read status:', e);
+    }
+
+    const item = notifList.querySelector(`.notification-item[data-id="${id}"]`);
+    if (item) item.classList.remove('unread');
+    
+    updateBadgeCount();
   }
 
   function markNotificationAsSeen(id) {
@@ -236,7 +248,7 @@ function initializeNotifications() {
     }
   }
 
-  function markAllNotificationsAsRead() {
+  async function markAllNotificationsAsRead() {
     const items = notifList.querySelectorAll('.notification-item.unread');
     if (items.length === 0) return;
 
@@ -252,6 +264,20 @@ function initializeNotifications() {
 
     localStorage.setItem('read_notifications', JSON.stringify(readNotifs));
     localStorage.setItem('seen_notifications', JSON.stringify(seenNotifs));
+    
+    // Persist to database
+    try {
+      const apiBase = (function() {
+        const pathParts = window.location.pathname.split('/').filter(p => p);
+        if (pathParts.length > 0 && pathParts[0] === 'OSAS_WEB') return '/OSAS_WEB/api/';
+        return '/api/';
+      })();
+      await fetch(`${apiBase}violations.php?action=mark_all_read`);
+      showNotification('All notifications marked as read', 'success');
+    } catch (e) {
+      console.error('Failed to persist mark all as read:', e);
+    }
+
     updateBadgeCount();
   }
 
@@ -260,11 +286,14 @@ function initializeNotifications() {
     const items = notifList.querySelectorAll('.notification-item');
     if (items.length === 0) return;
     
-    const latestId = items[0].dataset.id;
-    const isLatestSeen = seenNotifs.includes(String(latestId));
+    const latestItem = items[0];
+    const latestId = latestItem.dataset.id;
+    const isUnread = latestItem.classList.contains('unread');
+    const isSeen = seenNotifs.includes(String(latestId));
     
     if (notifBadge) {
-      notifBadge.textContent = isLatestSeen ? '0' : '1';
+      // Badge should show if latest is both unread AND unseen
+      notifBadge.textContent = (isUnread && !isSeen) ? '1' : '0';
     }
   }
 

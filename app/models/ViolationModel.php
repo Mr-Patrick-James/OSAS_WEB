@@ -6,6 +6,41 @@ class ViolationModel extends Model {
     protected $primaryKey = 'id';
 
     /**
+     * Mark a violation as read
+     */
+    public function markAsRead($id, $studentId = null) {
+        $query = "UPDATE violations SET is_read = 1 WHERE id = ?";
+        $params = [$id];
+        $types = "i";
+        
+        if ($studentId) {
+            $query .= " AND BINARY student_id = BINARY ?";
+            $params[] = $studentId;
+            $types .= "s";
+        }
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param($types, ...$params);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Mark all violations as read for a student
+     */
+    public function markAllAsRead($studentId) {
+        if (empty($studentId)) return false;
+        
+        $query = "UPDATE violations SET is_read = 1 WHERE BINARY student_id = BINARY ? AND is_read = 0";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("s", $studentId);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
      * Get all violations with student info
      */
     public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '', $isArchived = 0, $specificId = null) {
@@ -20,6 +55,13 @@ class ViolationModel extends Model {
         if ($columnCheck === false || $columnCheck->num_rows === 0) {
             @$this->conn->query("ALTER TABLE violations ADD COLUMN is_archived TINYINT(1) DEFAULT 0");
             @$this->conn->query("ALTER TABLE violations ADD INDEX idx_is_archived (is_archived)");
+        }
+
+        // Auto-fix: Check if is_read column exists, if not add it
+        $readColumnCheck = @$this->conn->query("SHOW COLUMNS FROM violations LIKE 'is_read'");
+        if ($readColumnCheck === false || $readColumnCheck->num_rows === 0) {
+            @$this->conn->query("ALTER TABLE violations ADD COLUMN is_read TINYINT(1) DEFAULT 0");
+            @$this->conn->query("ALTER TABLE violations ADD INDEX idx_is_read (is_read)");
         }
         
         // First, check if there are any violations at all (without JOIN)

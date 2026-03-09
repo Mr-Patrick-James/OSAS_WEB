@@ -70,6 +70,49 @@ class ViolationController extends Controller
             }
         }
 
+        if ($action === 'mark_as_read') {
+            $id = (int)$this->getGet('id', 0);
+            if ($id === 0) {
+                $this->error('Violation ID required');
+            }
+            
+            $studentId = '';
+            if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
+                $studentId = $_SESSION['student_id_code'] ?? '';
+            }
+
+            try {
+                $this->model->markAsRead($id, $studentId);
+                $this->json(['status' => 'success', 'message' => 'Notification marked as read']);
+                return;
+            } catch (Exception $e) {
+                $this->error('Failed to mark as read: ' . $e->getMessage());
+                return;
+            }
+        }
+
+        if ($action === 'mark_all_read') {
+            $studentId = '';
+            if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
+                $studentId = $_SESSION['student_id_code'] ?? '';
+            } else {
+                $studentId = $this->getGet('student_id', '');
+            }
+
+            if (empty($studentId)) {
+                $this->error('Student ID required');
+            }
+
+            try {
+                $this->model->markAllAsRead($studentId);
+                $this->json(['status' => 'success', 'message' => 'All notifications marked as read']);
+                return;
+            } catch (Exception $e) {
+                $this->error('Failed to mark all as read: ' . $e->getMessage());
+                return;
+            }
+        }
+
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
             $studentId = $_SESSION['student_id_code'] ?? '';
             if (empty($studentId)) {
