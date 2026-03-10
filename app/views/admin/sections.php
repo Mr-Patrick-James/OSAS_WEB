@@ -47,17 +47,9 @@ if ($deptResult && $deptResult->num_rows > 0) {
             <i class='bx bx-archive'></i>
             <span>Archived</span>
           </button>
-          <button id="btnImportSections" class="sections-btn outline small">
-            <i class='bx bx-upload'></i>
-            <span>Import</span>
-          </button>
           <button id="btnExportSections" class="sections-btn outline small">
             <i class='bx bx-download'></i>
             <span>Export</span>
-          </button>
-          <button id="btnPrintSection" class="sections-btn outline small">
-            <i class='bx bx-printer'></i>
-            <span>Print</span>
           </button>
         </div>
         <button id="btnAddSection" class="sections-btn primary">
@@ -246,6 +238,39 @@ if ($deptResult && $deptResult->num_rows > 0) {
       </div>
     </div>
 
+    <!-- Export Modal -->
+    <div id="ExportSectionsModal" class="sections-modal">
+      <div class="sections-modal-overlay" id="ExportModalOverlay"></div>
+      <div class="sections-modal-container" style="max-width: 400px;">
+        <div class="sections-modal-header">
+          <h2>
+            <i class='bx bx-download'></i>
+            <span>Export Sections</span>
+          </h2>
+          <button class="sections-close-btn" id="closeExportModal">
+            <i class='bx bx-x'></i>
+          </button>
+        </div>
+        <div class="sections-modal-body" style="padding: 20px;">
+          <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the section records.</p>
+          <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="exportPDF" class="sections-btn outline" style="justify-content: flex-start; width: 100%;">
+              <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
+              <span style="margin-left: 10px;">Export as PDF</span>
+            </button>
+            <button id="exportExcel" class="sections-btn outline" style="justify-content: flex-start; width: 100%;">
+              <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
+              <span style="margin-left: 10px;">Export as Excel (CSV)</span>
+            </button>
+            <button id="exportWord" class="sections-btn outline" style="justify-content: flex-start; width: 100%;">
+              <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
+              <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Empty State (hidden by default) -->
     <div class="sections-empty-state" id="sectionsEmptyState" style="display: none;">
       <div class="sections-empty-icon">
@@ -258,6 +283,11 @@ if ($deptResult && $deptResult->num_rows > 0) {
       </button>
     </div>
   </main>
+  <!-- Load Libraries for Export -->
+  <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
   <script src="<?= View::asset('js/section.js') ?>?v=<?= time() ?>"></script>
 </body>
 

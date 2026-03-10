@@ -14,7 +14,13 @@ function initSectionsModule() {
         const sectionsForm = document.getElementById('sectionsForm');
         const searchInput = document.getElementById('searchSection');
         const filterSelect = document.getElementById('sectionFilterSelect');
-        const printBtn = document.getElementById('btnPrintSection');
+        const exportBtn = document.getElementById('btnExportSections');
+        const exportModal = document.getElementById('ExportSectionsModal');
+        const closeExportBtn = document.getElementById('closeExportModal');
+        const exportModalOverlay = document.getElementById('ExportModalOverlay');
+        const exportPDFBtn = document.getElementById('exportPDF');
+        const exportExcelBtn = document.getElementById('exportExcel');
+        const exportWordBtn = document.getElementById('exportWord');
 
         // Check for essential elements
         if (!tableBody) {
@@ -283,6 +289,183 @@ function initSectionsModule() {
             }
         }
 
+        // --- Export Functions ---
+        function csvEscape(value) {
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            if (/[",\n]/.test(str)) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        async function loadImage(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => {
+                    console.warn('Could not load image:', url);
+                    resolve(null);
+                }
+                img.src = url;
+            });
+        }
+
+        async function downloadSectionsPDF() {
+            if (!window.jspdf) {
+                alert('PDF library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const now = new Date();
+            
+            const logoPath = '/OSAS_WEB/app/assets/img/default.png';
+            const logoData = await loadImage(logoPath);
+
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
+                doc.setFontSize(18);
+                doc.setTextColor(44, 62, 80); 
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 40, 18);
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141); 
+                doc.text("Office of Student Affairs and Services", 40, 24);
+            } else {
+                doc.setFontSize(22);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("E-OSAS SYSTEM", 14, 20);
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(127, 140, 141);
+                doc.text("Office of Student Affairs and Services", 14, 28);
+            }
+
+            doc.setFontSize(14);
+            doc.setTextColor(41, 128, 185); 
+            doc.setFont("helvetica", "bold");
+            doc.text("SECTION LIST REPORT", 196, 18, { align: 'right' });
+
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.5);
+            doc.line(14, 35, 196, 35);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(60, 60, 60);
+            doc.text(`Total Records: ${sections.length}`, 14, 45);
+            
+            const tableColumn = ["ID", "Section Name", "Department", "Academic Year", "Students", "Status"];
+            const tableRows = sections.map(s => [
+                s.section_id || 'SEC-' + String(s.id).padStart(3, '0'),
+                s.name,
+                s.department,
+                s.academic_year,
+                s.student_count,
+                s.status.charAt(0).toUpperCase() + s.status.slice(1)
+            ]);
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 50,
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 3 },
+                headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80], fontStyle: 'bold' }
+            });
+
+            doc.save(`Sections_${now.toISOString().slice(0, 10)}.pdf`);
+        }
+
+        function downloadSectionsExcel() {
+            const lines = [];
+            const now = new Date();
+            lines.push('Section List Report');
+            lines.push('Generated,' + csvEscape(now.toLocaleString()));
+            lines.push('');
+            lines.push(['ID', 'Section Name', 'Department', 'Academic Year', 'Student Count', 'Status'].map(csvEscape).join(','));
+
+            sections.forEach(s => {
+                lines.push([
+                    s.section_id || 'SEC-' + String(s.id).padStart(3, '0'),
+                    s.name,
+                    s.department,
+                    s.academic_year,
+                    s.student_count,
+                    s.status
+                ].map(csvEscape).join(','));
+            });
+
+            const csvContent = lines.join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const fileName = 'sections_export_' + now.toISOString().slice(0, 10) + '.csv';
+            saveAs(blob, fileName);
+        }
+
+        async function downloadSectionsWord() {
+            if (!window.docx) {
+                alert('DOCX library not loaded. Please refresh the page.');
+                return;
+            }
+            
+            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
+            const now = new Date();
+            
+            const tableHeader = new TableRow({
+                children: ["ID", "Section Name", "Department", "Academic Year", "Students", "Status"].map(text => new TableCell({
+                    children: [new Paragraph({ text, bold: true, size: 20 })],
+                    shading: { fill: "E0E0E0" }
+                }))
+            });
+            
+            const tableRows = sections.map(s => new TableRow({
+                children: [
+                    String(s.section_id || 'SEC-' + String(s.id).padStart(3, '0')),
+                    s.name,
+                    s.department,
+                    s.academic_year,
+                    String(s.student_count),
+                    s.status
+                ].map(text => new TableCell({
+                    children: [new Paragraph({ text: text || "", size: 18 })]
+                }))
+            }));
+
+            const doc = new Document({
+                sections: [{
+                    children: [
+                        new Paragraph({ text: "SECTION LIST REPORT", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+                        new Paragraph({ text: `Office of Student Affairs and Services`, alignment: AlignmentType.CENTER }),
+                        new Paragraph({ text: `Generated: ${now.toLocaleString()}`, alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
+                        new Table({
+                            rows: [tableHeader, ...tableRows],
+                            width: { size: 100, type: WidthType.PERCENTAGE }
+                        })
+                    ]
+                }]
+            });
+
+            Packer.toBlob(doc).then(blob => {
+                saveAs(blob, `Sections_${now.toISOString().slice(0, 10)}.docx`);
+            });
+        }
+
         // --- Render function ---
         function renderSections() {
             const list = Array.isArray(sections) ? sections : [];
@@ -478,6 +661,59 @@ function initSectionsModule() {
             // Add Section button
             if (btnAddSection) {
                 btnAddSection.addEventListener('click', () => openModal());
+            }
+
+            // Export button
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    if (exportModal) {
+                        exportModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+            }
+
+            if (closeExportBtn) {
+                closeExportBtn.addEventListener('click', () => {
+                    if (exportModal) {
+                        exportModal.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+
+            if (exportModalOverlay) {
+                exportModalOverlay.addEventListener('click', () => {
+                    if (exportModal) {
+                        exportModal.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+
+            // Export formats
+            if (exportPDFBtn) {
+                exportPDFBtn.addEventListener('click', async () => {
+                    await downloadSectionsPDF();
+                    if (exportModal) exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+
+            if (exportExcelBtn) {
+                exportExcelBtn.addEventListener('click', () => {
+                    downloadSectionsExcel();
+                    if (exportModal) exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+
+            if (exportWordBtn) {
+                exportWordBtn.addEventListener('click', async () => {
+                    await downloadSectionsWord();
+                    if (exportModal) exportModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                });
             }
 
             // Add First Section button

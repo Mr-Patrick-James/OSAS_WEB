@@ -15,6 +15,7 @@ function initStudentsModule() {
         const searchInput = document.getElementById('searchStudent');
         const filterSelect = document.getElementById('StudentsFilterSelect');
         const exportBtn = document.getElementById('btnExportStudents');
+        const importBtn = document.getElementById('btnImportStudents');
         const exportModal = document.getElementById('ExportStudentsModal');
         const closeExportBtn = document.getElementById('closeExportModal');
         const exportModalOverlay = document.getElementById('ExportModalOverlay');
@@ -23,6 +24,16 @@ function initStudentsModule() {
         const exportWordBtn = document.getElementById('exportWord');
         const studentDeptSelect = document.getElementById('studentDept');
         const studentSectionSelect = document.getElementById('studentSection');
+
+        // Modern Alert Elements
+        const modernAlertModal = document.getElementById('ModernAlertModal');
+        const modernAlertIcon = document.getElementById('ModernAlertIcon');
+        const modernAlertTitle = document.getElementById('ModernAlertTitle');
+        const modernAlertMessage = document.getElementById('ModernAlertMessage');
+        const modernAlertStats = document.getElementById('ModernAlertStats');
+        const modernAlertActions = document.getElementById('ModernAlertActions');
+        const modernAlertCancel = document.getElementById('ModernAlertCancel');
+        const modernAlertConfirm = document.getElementById('ModernAlertConfirm');
 
         // Check for essential elements
         if (!tableBody) {
@@ -82,6 +93,64 @@ function initStudentsModule() {
         console.log('📡 Students API:', apiBase);
         console.log('📡 Departments API:', departmentsApiBase);
         console.log('📡 Sections API:', sectionsApiBase);
+
+        // --- Modern Alert Function ---
+        function showModernAlert({ title, message, icon = 'warning', showCancel = true, confirmText = 'Confirm', cancelText = 'Cancel', stats = null }) {
+            return new Promise((resolve) => {
+                if (!modernAlertModal) return resolve(false);
+
+                // Reset
+                modernAlertTitle.textContent = title;
+                modernAlertMessage.textContent = message;
+                modernAlertIcon.className = `Modern-modal-icon ${icon}`;
+                
+                // Set Icon
+                let iconHtml = "<i class='bx bx-help-circle'></i>";
+                if (icon === 'success') iconHtml = "<i class='bx bx-check-circle'></i>";
+                if (icon === 'error') iconHtml = "<i class='bx bx-x-circle'></i>";
+                if (icon === 'loading') iconHtml = "<i class='bx bx-loader-alt bx-spin'></i>";
+                modernAlertIcon.innerHTML = iconHtml;
+
+                // Stats
+                if (stats) {
+                    modernAlertStats.style.display = 'grid';
+                    document.getElementById('statNew').textContent = stats.created || 0;
+                    document.getElementById('statUpdated').textContent = stats.updated || 0;
+                    document.getElementById('statSkipped').textContent = stats.skipped || 0;
+                } else {
+                    modernAlertStats.style.display = 'none';
+                }
+
+                // Buttons
+                modernAlertCancel.style.display = showCancel ? 'block' : 'none';
+                modernAlertCancel.textContent = cancelText;
+                modernAlertConfirm.textContent = confirmText;
+                modernAlertConfirm.style.display = 'block';
+
+                // Show
+                modernAlertModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+
+                // Handlers
+                const onConfirm = () => {
+                    cleanup();
+                    resolve(true);
+                };
+                const onCancel = () => {
+                    cleanup();
+                    resolve(false);
+                };
+                const cleanup = () => {
+                    modernAlertConfirm.removeEventListener('click', onConfirm);
+                    modernAlertCancel.removeEventListener('click', onCancel);
+                    modernAlertModal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                };
+
+                modernAlertConfirm.addEventListener('click', onConfirm);
+                modernAlertCancel.addEventListener('click', onCancel);
+            });
+        }
 
         // Pagination renderer
         function renderPagination() {
@@ -1094,6 +1163,66 @@ function initStudentsModule() {
                     if (exportModal) {
                         exportModal.classList.add('active');
                         document.body.style.overflow = 'hidden';
+                    }
+                });
+            }
+
+            // Import Students button
+            if (importBtn) {
+                importBtn.addEventListener('click', async () => {
+                    const confirmed = await showModernAlert({
+                        title: 'Import Enrollment List',
+                        message: 'Sync student records with the latest list? This will update departments and auto-generate student emails/accounts.',
+                        confirmText: 'Yes, Sync Data',
+                        cancelText: 'Cancel'
+                    });
+
+                    if (!confirmed) return;
+
+                    // Show Loading
+                    showModernAlert({
+                        title: 'Processing Import',
+                        message: 'Parsing enrollment list and updating database. Please wait...',
+                        icon: 'loading',
+                        showCancel: false,
+                        confirmText: 'Processing...'
+                    });
+
+                    try {
+                        const response = await fetch(`${apiBase}?action=import`, {
+                            method: 'POST'
+                        });
+                        const result = await response.json();
+
+                        if (result.success) {
+                            const { created, updated, skipped } = result.data;
+                            await showModernAlert({
+                                title: 'Import Successful',
+                                message: 'The student database has been synchronized with the latest enrollment records.',
+                                icon: 'success',
+                                showCancel: false,
+                                confirmText: 'Great!',
+                                stats: { created, updated, skipped }
+                            });
+                            loadStudents(); // Refresh the list
+                        } else {
+                            await showModernAlert({
+                                title: 'Import Failed',
+                                message: result.message || 'An error occurred while processing the enrollment list.',
+                                icon: 'error',
+                                showCancel: false,
+                                confirmText: 'Try Again'
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Import error:', error);
+                        await showModernAlert({
+                            title: 'Connection Error',
+                            message: 'Could not connect to the server. Please check your network.',
+                            icon: 'error',
+                            showCancel: false,
+                            confirmText: 'Dismiss'
+                        });
                     }
                 });
             }

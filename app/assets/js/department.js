@@ -13,7 +13,13 @@ function initDepartmentModule() {
   const departmentForm = document.getElementById('departmentForm');
   const searchInput = document.getElementById('searchDepartment');
   const filterSelect = document.getElementById('departmentFilter');
-  const printBtn = document.getElementById('btnPrintDepartments');
+  const exportBtn = document.getElementById('btnExport');
+  const exportModal = document.getElementById('ExportDepartmentsModal');
+  const closeExportBtn = document.getElementById('closeExportModal');
+  const exportModalOverlay = document.getElementById('ExportModalOverlay');
+  const exportPDFBtn = document.getElementById('exportPDF');
+  const exportExcelBtn = document.getElementById('exportExcel');
+  const exportWordBtn = document.getElementById('exportWord');
 
   // Check for essential elements
   if (!tableBody) {
@@ -292,6 +298,183 @@ function initDepartmentModule() {
     }
   }
 
+  // --- Export Functions ---
+  function csvEscape(value) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (/[",\n]/.test(str)) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  }
+
+  async function loadImage(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => {
+        console.warn('Could not load image:', url);
+        resolve(null);
+      }
+      img.src = url;
+    });
+  }
+
+  async function downloadDepartmentsPDF() {
+    if (!window.jspdf) {
+      alert('PDF library not loaded. Please refresh the page.');
+      return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const now = new Date();
+    
+    const logoPath = '/OSAS_WEB/app/assets/img/default.png';
+    const logoData = await loadImage(logoPath);
+
+    if (logoData) {
+      doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
+      doc.setFontSize(18);
+      doc.setTextColor(44, 62, 80); 
+      doc.setFont("helvetica", "bold");
+      doc.text("E-OSAS SYSTEM", 40, 18);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(127, 140, 141); 
+      doc.text("Office of Student Affairs and Services", 40, 24);
+    } else {
+      doc.setFontSize(22);
+      doc.setTextColor(44, 62, 80);
+      doc.setFont("helvetica", "bold");
+      doc.text("E-OSAS SYSTEM", 14, 20);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(127, 140, 141);
+      doc.text("Office of Student Affairs and Services", 14, 28);
+    }
+
+    doc.setFontSize(14);
+    doc.setTextColor(41, 128, 185); 
+    doc.setFont("helvetica", "bold");
+    doc.text("DEPARTMENT LIST REPORT", 196, 18, { align: 'right' });
+
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.5);
+    doc.line(14, 35, 196, 35);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Total Records: ${departments.length}`, 14, 45);
+    
+    const tableColumn = ["ID", "Code", "Department Name", "HOD", "Students", "Status"];
+    const tableRows = departments.map(d => [
+      d.id,
+      d.code,
+      d.name,
+      d.hod,
+      d.studentCount,
+      d.status.charAt(0).toUpperCase() + d.status.slice(1)
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80], fontStyle: 'bold' }
+    });
+
+    doc.save(`Departments_${now.toISOString().slice(0, 10)}.pdf`);
+  }
+
+  function downloadDepartmentsExcel() {
+    const lines = [];
+    const now = new Date();
+    lines.push('Department List Report');
+    lines.push('Generated,' + csvEscape(now.toLocaleString()));
+    lines.push('');
+    lines.push(['ID', 'Code', 'Department Name', 'HOD', 'Student Count', 'Status'].map(csvEscape).join(','));
+
+    departments.forEach(d => {
+      lines.push([
+        d.id,
+        d.code,
+        d.name,
+        d.hod,
+        d.studentCount,
+        d.status
+      ].map(csvEscape).join(','));
+    });
+
+    const csvContent = lines.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const fileName = 'departments_export_' + now.toISOString().slice(0, 10) + '.csv';
+    saveAs(blob, fileName);
+  }
+
+  async function downloadDepartmentsWord() {
+    if (!window.docx) {
+      alert('DOCX library not loaded. Please refresh the page.');
+      return;
+    }
+    
+    const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
+    const now = new Date();
+    
+    const tableHeader = new TableRow({
+      children: ["ID", "Code", "Department Name", "HOD", "Students", "Status"].map(text => new TableCell({
+        children: [new Paragraph({ text, bold: true, size: 20 })],
+        shading: { fill: "E0E0E0" }
+      }))
+    });
+    
+    const tableRows = departments.map(d => new TableRow({
+      children: [
+        String(d.id),
+        d.code,
+        d.name,
+        d.hod,
+        String(d.studentCount),
+        d.status
+      ].map(text => new TableCell({
+        children: [new Paragraph({ text: text || "", size: 18 })]
+      }))
+    }));
+
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ text: "DEPARTMENT LIST REPORT", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+          new Paragraph({ text: `Office of Student Affairs and Services`, alignment: AlignmentType.CENTER }),
+          new Paragraph({ text: `Generated: ${now.toLocaleString()}`, alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
+          new Table({
+            rows: [tableHeader, ...tableRows],
+            width: { size: 100, type: WidthType.PERCENTAGE }
+          })
+        ]
+      }]
+    });
+
+    Packer.toBlob(doc).then(blob => {
+      saveAs(blob, `Departments_${now.toISOString().slice(0, 10)}.docx`);
+    });
+  }
+
   // Initial load - fetch from database
   loadDepartments('active');
 
@@ -381,6 +564,59 @@ function initDepartmentModule() {
     btnAddDepartment.addEventListener('click', () => {
       openModal();
     });
+
+    // Export button
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        if (exportModal) {
+          exportModal.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    }
+
+    if (closeExportBtn) {
+      closeExportBtn.addEventListener('click', () => {
+        if (exportModal) {
+          exportModal.classList.remove('active');
+          document.body.style.overflow = 'auto';
+        }
+      });
+    }
+
+    if (exportModalOverlay) {
+      exportModalOverlay.addEventListener('click', () => {
+        if (exportModal) {
+          exportModal.classList.remove('active');
+          document.body.style.overflow = 'auto';
+        }
+      });
+    }
+
+    // Export formats
+    if (exportPDFBtn) {
+      exportPDFBtn.addEventListener('click', async () => {
+        await downloadDepartmentsPDF();
+        if (exportModal) exportModal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      });
+    }
+
+    if (exportExcelBtn) {
+      exportExcelBtn.addEventListener('click', () => {
+        downloadDepartmentsExcel();
+        if (exportModal) exportModal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      });
+    }
+
+    if (exportWordBtn) {
+      exportWordBtn.addEventListener('click', async () => {
+        await downloadDepartmentsWord();
+        if (exportModal) exportModal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      });
+    }
 
     // Add First Department button (empty state)
     if (btnAddFirstDept) {

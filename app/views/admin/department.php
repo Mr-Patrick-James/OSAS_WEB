@@ -42,17 +42,9 @@ include '../../config/db_connect.php';
             <i class='bx bx-archive'></i>
             <span>Archived</span>
           </button>
-          <button class="action-btn outline small" id="btnImport">
-            <i class='bx bx-upload'></i>
-            <span>Import</span>
-          </button>
           <button class="action-btn outline small" id="btnExport">
             <i class='bx bx-download'></i>
             <span>Export</span>
-          </button>
-          <button class="action-btn outline small" id="btnPrintDepartments">
-            <i class='bx bx-printer'></i>
-            <span>Print</span>
           </button>
         </div>
         <button class="action-btn primary" id="btnAddDepartment">
@@ -227,6 +219,39 @@ include '../../config/db_connect.php';
       </div>
     </div>
 
+    <!-- Export Modal -->
+    <div id="ExportDepartmentsModal" class="modal">
+      <div class="modal-overlay" id="ExportModalOverlay"></div>
+      <div class="modal-container" style="max-width: 400px;">
+        <div class="modal-header">
+          <h2>
+            <i class='bx bx-download'></i>
+            <span>Export Departments</span>
+          </h2>
+          <button class="close-btn" id="closeExportModal">
+            <i class='bx bx-x'></i>
+          </button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the department records.</p>
+          <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="exportPDF" class="action-btn outline" style="justify-content: flex-start; width: 100%;">
+              <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
+              <span style="margin-left: 10px;">Export as PDF</span>
+            </button>
+            <button id="exportExcel" class="action-btn outline" style="justify-content: flex-start; width: 100%;">
+              <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
+              <span style="margin-left: 10px;">Export as Excel (CSV)</span>
+            </button>
+            <button id="exportWord" class="action-btn outline" style="justify-content: flex-start; width: 100%;">
+              <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
+              <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Empty State (hidden by default) -->
     <div class="empty-state" id="emptyState" style="display: none;">
       <div class="empty-icon">
@@ -239,6 +264,11 @@ include '../../config/db_connect.php';
       </button>
     </div>
   </main>
+  <!-- Load Libraries for Export -->
+  <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
+  <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
   <script src="<?= View::asset('js/department.js') ?>?v=<?= time() ?>"></script>
 </body>
 

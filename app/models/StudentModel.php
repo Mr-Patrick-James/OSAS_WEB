@@ -408,6 +408,174 @@ class StudentModel extends Model {
     }
 
     /**
+     * Import all students from data array
+     */
+    public function importAll($data) {
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+        
+        // --- Process Departments First ---
+        if (isset($data['departments'])) {
+            foreach ($data['departments'] as $code => $dept) {
+                $this->upsertDepartment($code, $dept['name']);
+            }
+        }
+        
+        // --- Process Sections ---
+        if (isset($data['sections'])) {
+            foreach ($data['sections'] as $sec) {
+                $this->upsertSection($sec['code'], $sec['name'], $sec['department_code']);
+            }
+        }
+        
+        // --- Process Students ---
+        if (isset($data['students'])) {
+            foreach ($data['students'] as $s) {
+                try {
+                    $studentId = trim($s['student_id']);
+                    if (empty($studentId)) { $skipped++; continue; }
+                    
+                    // Check if student exists
+                    $existing = $this->query("SELECT id, email, first_name, last_name FROM students WHERE student_id = ?", [$studentId]);
+                    
+                    // Get section ID from code
+                    $sectionId = $this->getSectionIdByCode($s['section_code']);
+                    
+                    // Year level from section code (e.g. BSIS-1A -> 1st Year)
+                    $yearLevelStr = 'N/A';
+                    if (preg_match('/-(\d)/', $s['section_code'], $matches)) {
+                        $yearLevelStr = $matches[1];
+                        if ($yearLevelStr == '1') $yearLevelStr .= 'st Year';
+                        elseif ($yearLevelStr == '2') $yearLevelStr .= 'nd Year';
+                        elseif ($yearLevelStr == '3') $yearLevelStr .= 'rd Year';
+                        else $yearLevelStr .= 'th Year';
+                    }
+
+                    if (!empty($existing)) {
+                        $id = $existing[0]['id'];
+                        $email = $existing[0]['email'];
+                        
+                        // If student exists but email is missing, generate it
+                        if (empty($email)) {
+                            $email = $this->generateEmail($s['first_name'], $s['last_name']);
+                        }
+                        
+                        // Update existing student
+                        $updateData = [
+                            'department' => $s['department_code'],
+                            'section_id' => $sectionId,
+                            'yearlevel' => $yearLevelStr,
+                            'email' => $email,
+                            'status' => 'active', // Reset to active if they are in the new list
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ];
+                        $this->update($id, $updateData);
+                        $updated++;
+                        
+                        // Sync User
+                        $this->syncUser($studentId, $email, $s['first_name'] . ' ' . $s['last_name']);
+                    } else {
+                        // Create new student
+                        $email = $this->generateEmail($s['first_name'], $s['last_name']);
+                        $insertData = [
+                            'student_id' => $studentId,
+                            'first_name' => $s['first_name'],
+                            'middle_name' => $s['middle_name'] ?: null,
+                            'last_name' => $s['last_name'],
+                            'email' => $email,
+                            'department' => $s['department_code'],
+                            'section_id' => $sectionId,
+                            'yearlevel' => $yearLevelStr,
+                            'status' => 'active',
+                            'created_at' => date('Y-m-d H:i:s')
+                        ];
+                        $this->create($insertData);
+                        $created++;
+                        
+                        // Create User
+                        $this->syncUser($studentId, $email, $s['first_name'] . ' ' . $s['last_name']);
+                    }
+                } catch (Exception $e) {
+                    error_log("Error importing student: " . $e->getMessage());
+                    $skipped++;
+                }
+            }
+        }
+        
+        return [
+            'created' => $created,
+            'updated' => $updated,
+            'skipped' => $skipped
+        ];
+    }
+
+    private function generateEmail($firstName, $lastName) {
+        $cleanFirst = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
+        $cleanLast = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastName));
+        $baseEmail = $cleanFirst . '.' . $cleanLast . '@colegiodenaujan.edu.ph';
+        
+        // Check for duplicates
+        $email = $baseEmail;
+        $counter = 1;
+        while ($this->emailExists($email)) {
+            $email = $cleanFirst . '.' . $cleanLast . $counter . '@colegiodenaujan.edu.ph';
+            $counter++;
+        }
+        return $email;
+    }
+
+    private function syncUser($studentId, $email, $fullName) {
+        if (empty($email)) return;
+        
+        $defaultPassword = password_hash('password123', PASSWORD_DEFAULT);
+        
+        // Check if user exists
+        $user = $this->query("SELECT id FROM users WHERE student_id = ? OR email = ?", [$studentId, $email]);
+        
+        if (!empty($user)) {
+            // Update existing user to active and role user
+            $this->conn->query("UPDATE users SET is_active = 1, role = 'user' WHERE id = " . $user[0]['id']);
+        } else {
+            // Create new user
+            $sql = "INSERT INTO users (username, email, password, role, full_name, student_id, is_active, created_at) 
+                    VALUES (?, ?, ?, 'user', ?, ?, 1, NOW())";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param("sssss", $studentId, $email, $defaultPassword, $fullName, $studentId);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+
+    private function upsertDepartment($code, $name) {
+        if (!$this->tableExists('departments')) return;
+        
+        $existing = $this->query("SELECT id FROM departments WHERE department_code = ?", [$code]);
+        if (!empty($existing)) {
+            $this->conn->query("UPDATE departments SET department_name = '{$this->conn->real_escape_string($name)}' WHERE id = " . $existing[0]['id']);
+        } else {
+            $this->conn->query("INSERT INTO departments (department_code, department_name) VALUES ('{$this->conn->real_escape_string($code)}', '{$this->conn->real_escape_string($name)}')");
+        }
+    }
+
+    private function upsertSection($code, $name, $deptCode) {
+        if (!$this->tableExists('sections')) return;
+        
+        $existing = $this->query("SELECT id FROM sections WHERE section_code = ?", [$code]);
+        if (!empty($existing)) {
+            $this->conn->query("UPDATE sections SET section_name = '{$this->conn->real_escape_string($name)}', department_code = '{$this->conn->real_escape_string($deptCode)}' WHERE id = " . $existing[0]['id']);
+        } else {
+            $this->conn->query("INSERT INTO sections (section_code, section_name, department_code) VALUES ('{$this->conn->real_escape_string($code)}', '{$this->conn->real_escape_string($name)}', '{$this->conn->real_escape_string($deptCode)}')");
+        }
+    }
+
+    private function getSectionIdByCode($code) {
+        if (!$this->tableExists('sections')) return null;
+        $res = $this->query("SELECT id FROM sections WHERE section_code = ?", [$code]);
+        return !empty($res) ? $res[0]['id'] : null;
+    }
+
+    /**
      * Check if table exists
      */
     private function tableExists($tableName) {

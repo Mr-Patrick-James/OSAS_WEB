@@ -379,6 +379,36 @@ require_once '../../config/db_connect.php';
     </div>
   </div>
 
+  <!-- Modern Alert/Confirm Modal -->
+  <div id="ModernAlertModal" class="Students-modal">
+    <div class="Students-modal-overlay" id="ModernAlertOverlay"></div>
+    <div class="Modern-modal-container">
+      <div id="ModernAlertIcon" class="Modern-modal-icon warning">
+        <i class='bx bx-help-circle'></i>
+      </div>
+      <h2 id="ModernAlertTitle" class="Modern-modal-title">Confirm Action</h2>
+      <p id="ModernAlertMessage" class="Modern-modal-message">Are you sure you want to proceed?</p>
+      <div id="ModernAlertStats" class="result-stats" style="display: none;">
+        <div class="stat-item">
+          <span class="stat-value" id="statNew">0</span>
+          <span class="stat-label">New</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="statUpdated">0</span>
+          <span class="stat-label">Updated</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="statSkipped">0</span>
+          <span class="stat-label">Skipped</span>
+        </div>
+      </div>
+      <div class="Modern-modal-actions" id="ModernAlertActions">
+        <button id="ModernAlertCancel" class="Modern-modal-btn cancel">Cancel</button>
+        <button id="ModernAlertConfirm" class="Modern-modal-btn confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <!-- Load Libraries for Export -->

@@ -201,6 +201,158 @@ body.dark {
   background: var(--grey);
 }
 
+.Students-btn-primary:active {
+  background: var(--dark-grey);
+}
+
+/* ========================================= */
+/*         MODERN ALERT/CONFIRM MODAL       */
+/* ========================================= */
+.Modern-modal-container {
+  position: relative;
+  background: var(--light);
+  width: 380px;
+  max-width: calc(100vw - 40px);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 11001;
+}
+
+@keyframes modalPopIn {
+  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.Modern-modal-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 36px;
+  transition: all 0.5s ease;
+}
+
+.Modern-modal-icon.warning {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--gold);
+}
+
+.Modern-modal-icon.success {
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+}
+
+.Modern-modal-icon.error {
+  background: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+}
+
+.Modern-modal-icon.loading {
+  background: rgba(52, 152, 219, 0.15);
+  color: #3498db;
+}
+
+.Modern-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 12px;
+}
+
+.Modern-modal-message {
+  font-size: 0.9rem;
+  color: var(--dark-grey);
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+.Modern-modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.Modern-modal-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: var(--poppins);
+}
+
+.Modern-modal-btn.cancel {
+  background: var(--grey);
+  color: var(--dark);
+}
+
+.Modern-modal-btn.confirm {
+  background: var(--gold);
+  color: var(--dark);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+
+.Modern-modal-btn:hover {
+  transform: translateY(-2px);
+}
+
+.Modern-modal-btn.cancel:hover {
+  background: #e0e0e0;
+}
+
+.Modern-modal-btn.confirm:hover {
+  background: #ffcc00;
+  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+}
+
+/* Loading Animation */
+.Modern-modal-icon.loading i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Result specific styling */
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 15px 0;
+  padding: 15px;
+  background: var(--grey);
+  border-radius: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--dark);
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--dark-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .Students-btn.outline.active {
   background: var(--gold);
   color: var(--dark);
