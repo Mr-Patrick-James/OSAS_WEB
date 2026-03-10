@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Mar 02, 2026 at 12:01 PM
+-- Generation Time: Mar 10, 2026 at 05:54 AM
 -- Server version: 8.3.0
 -- PHP Version: 8.3.14
 
@@ -162,57 +162,36 @@ CREATE TABLE IF NOT EXISTS `announcements` (
   KEY `idx_status` (`status`),
   KEY `idx_type` (`type`),
   KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `announcements`
 --
 
 INSERT INTO `announcements` (`id`, `title`, `message`, `type`, `status`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'System Maintenance', 'The system will undergo maintenance tonight at 10 PM.', '', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 18:03:17', NULL),
-(2, 'Enrollment Open', 'Enrollment for the next semester is now open.', 'info', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 18:03:25', NULL),
-(3, 'Holiday Notice', 'Classes are suspended due to a public holiday.', 'info', 'active', 2, '2025-12-15 16:25:36', '2025-12-15 18:03:35', NULL),
-(4, 'Exam Schedule', 'The final exam schedule has been posted.', '', 'archived', 2, '2025-12-15 16:25:36', '2026-01-08 20:55:52', NULL),
+(1, 'System Maintenance', 'The system will undergo maintenance tonight at 10 PM.', '', 'active', 1, '2025-12-15 16:25:36', '2026-03-02 21:35:57', '2026-03-02 13:35:57'),
+(2, 'White t shirt', 'Enrollment for the next semester is now open.', 'info', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:12:27', '2026-03-09 17:12:27'),
+(3, 'Holiday Notice', 'Classes are suspended due to a public holiday.', 'info', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:43', '2026-03-09 17:12:43'),
+(4, 'Exam Schedule', 'The final exam schedule has been posted.', '', 'archived', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:39', '2026-03-09 17:12:39'),
 (5, 'Server Downtime', 'Temporary server downtime may occur this weekend.', 'warning', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
 (6, 'New Policy Update', 'Please review the updated student handbook.', 'info', 'active', 3, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(7, 'Payment Deadline', 'Tuition payment deadline is on Friday.', 'warning', 'active', 3, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(8, 'Library Closed', 'The library will be closed for renovation.', '', 'active', 2, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(9, 'Seminar Announcement', 'A leadership seminar will be held in the auditorium.', '', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
+(7, 'Payment Deadline', 'Tuition payment deadline is on Friday.', 'warning', 'active', 3, '2025-12-15 16:25:36', '2026-03-10 01:13:13', '2026-03-09 17:13:13'),
+(8, 'Library Closed', 'The library will be closed for renovation.', '', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:47', '2026-03-09 17:12:47'),
+(9, 'Seminar Announcement', 'A leadership seminar will be held in the auditorium.', '', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:12:37', '2026-03-09 17:12:37'),
 (10, 'System Upgrade', 'New system features have been deployed.', 'info', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
 (11, 'Network Issue', 'Some users may experience network interruptions.', 'warning', '', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(12, 'Sports Fest', 'Annual sports fest starts next week.', '', 'active', 2, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(13, 'ID Registration', 'Student ID registration is ongoing.', 'info', 'active', 3, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(14, 'Class Resumption', 'Classes will resume on Monday.', 'info', 'active', 2, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(15, 'Fire Drill', 'A campus-wide fire drill will be conducted.', '', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
+(12, 'Sports Fest', 'Annual sports fest starts next week.', '', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:31', '2026-03-09 17:12:31'),
+(13, 'ID Registration', 'Student ID registration is ongoing.', 'info', 'active', 3, '2025-12-15 16:25:36', '2026-03-10 01:12:51', '2026-03-09 17:12:51'),
+(14, 'Class Resumption', 'Classes will resume on Monday.', 'info', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:12:57', '2026-03-09 17:12:57'),
+(15, 'Fire Drill', 'A campus-wide fire drill will be conducted.', '', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:13:01', '2026-03-09 17:13:01'),
 (16, 'Parking Advisory', 'Limited parking slots available today.', 'warning', 'active', 3, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
 (17, 'System Bug Fix', 'Reported bugs have been fixed.', '', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(18, 'Workshop Invite', 'Join the career development workshop.', '', 'active', 2, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(19, 'Account Security', 'Enable two-factor authentication for security.', 'warning', 'active', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
-(20, 'Announcement Test', 'This is a test announcement record.', 'info', '', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `dashcontents`
---
-
-DROP TABLE IF EXISTS `dashcontents`;
-CREATE TABLE IF NOT EXISTS `dashcontents` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content_type` enum('tip','guideline','statistic','announcement','widget') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'tip',
-  `target_audience` enum('admin','user','both') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'both',
-  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
-  `display_order` int NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `deleted_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `dashcontents_status_index` (`status`),
-  KEY `dashcontents_target_audience_index` (`target_audience`),
-  KEY `dashcontents_display_order_index` (`display_order`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+(18, 'Workshop Invite', 'Join the career development workshop.', '', 'active', 2, '2025-12-15 16:25:36', '2026-03-10 01:13:07', '2026-03-09 17:13:07'),
+(19, 'Account Security', 'Enable two-factor authentication for security.', 'warning', 'active', 1, '2025-12-15 16:25:36', '2026-03-10 01:13:19', '2026-03-09 17:13:19'),
+(20, 'Announcement Test', 'This is a test announcement record.', 'info', '', 1, '2025-12-15 16:25:36', '2025-12-15 16:25:36', NULL),
+(21, 'Uniform', 'Alway were proper uniform', 'info', 'active', 2572, '2026-03-09 17:01:12', '2026-03-10 01:12:24', '2026-03-09 17:12:24'),
+(22, 'Uniform black', 'black month', 'info', 'active', 2572, '2026-03-09 17:08:02', '2026-03-10 01:12:23', '2026-03-09 17:12:23'),
+(23, 'Uniform black', 'tesy', 'info', 'active', 2572, '2026-03-10 01:13:32', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -244,56 +223,6 @@ INSERT INTO `departments` (`id`, `department_name`, `department_code`, `head_of_
 (1, 'Bachelor of Technical-Vocational Teacher Education', 'BTVTED', NULL, NULL, 'active', '2026-02-22 22:29:58', NULL, NULL),
 (2, 'Bachelor of Public Administration', 'BPA', NULL, NULL, 'active', '2026-02-22 22:29:58', NULL, NULL),
 (3, 'Bachelor of Science in Information Systems', 'BSIS', NULL, NULL, 'active', '2026-02-22 22:29:58', NULL, NULL);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `email_configs`
---
-
-DROP TABLE IF EXISTS `email_configs`;
-CREATE TABLE IF NOT EXISTS `email_configs` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `smtp_host` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `smtp_port` int NOT NULL,
-  `smtp_username` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `smtp_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `from_email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `from_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `is_default` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_email_configs_active` (`is_active`),
-  KEY `idx_email_configs_default` (`is_default`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `email_configs`
---
-
-INSERT INTO `email_configs` (`id`, `name`, `smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`, `from_email`, `from_name`, `is_active`, `is_default`, `created_at`, `updated_at`) VALUES
-(1, 'OSAS Primary Gmail', 'smtp.gmail.com', 587, 'belugaw6@gmail.com', 'chrqrylpqhrtqytl', 'belugaw6@gmail.com', 'OSAS', 1, 1, '2026-02-04 21:42:49', '2026-02-04 21:42:49');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `failed_jobs`
---
-
-DROP TABLE IF EXISTS `failed_jobs`;
-CREATE TABLE IF NOT EXISTS `failed_jobs` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `connection` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `queue` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `exception` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `failed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -350,62 +279,6 @@ INSERT INTO `messages` (`id`, `announcement_id`, `sender_id`, `sender_role`, `se
 -- --------------------------------------------------------
 
 --
--- Table structure for table `migrations`
---
-
-DROP TABLE IF EXISTS `migrations`;
-CREATE TABLE IF NOT EXISTS `migrations` (
-  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
-  `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `batch` int NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `migrations`
---
-
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
-(1, '2014_10_12_000000_create_users_table', 1),
-(2, '2014_10_12_100000_create_password_resets_table', 2),
-(3, '2019_08_19_000000_create_failed_jobs_table', 3),
-(4, '2019_12_14_000001_create_personal_access_tokens_table', 4),
-(5, '2026_01_12_143205_create_departments_table', 5),
-(6, '2026_01_12_143215_create_sections_table', 5),
-(7, '2026_01_12_143226_create_students_table', 5),
-(8, '2026_01_12_143236_create_violations_table', 5),
-(9, '2026_01_12_143246_create_announcements_table', 5),
-(10, '2026_01_12_143255_create_reports_table', 5),
-(11, '2026_01_12_143305_create_dashcontents_table', 5),
-(12, '2026_01_12_143325_create_settings_table', 5),
-(13, '2026_01_12_143905_add_fields_to_users_table', 5),
-(15, '2026_01_12_144409_add_soft_deletes_to_tables', 6),
-(16, '2026_01_13_021322_add_custom_fields_to_users_table', 7);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `otps`
---
-
-DROP TABLE IF EXISTS `otps`;
-CREATE TABLE IF NOT EXISTS `otps` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `expires_at` datetime NOT NULL,
-  `used` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `pending_data` json DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_otps_email` (`email`),
-  KEY `idx_otps_code` (`code`),
-  KEY `idx_otps_expires` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `password_resets`
 --
 
@@ -414,26 +287,6 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `token` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `personal_access_tokens`
---
-
-DROP TABLE IF EXISTS `personal_access_tokens`;
-CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `tokenable_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `tokenable_id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `token` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `abilities` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `last_used_at` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -476,15 +329,14 @@ CREATE TABLE IF NOT EXISTS `reports` (
   KEY `idx_report_period` (`report_period_start`,`report_period_end`),
   KEY `idx_reports_student_dept` (`student_id`,`department_code`),
   KEY `idx_reports_status_date` (`status`,`generated_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `reports`
 --
 
 INSERT INTO `reports` (`id`, `report_id`, `student_id`, `student_name`, `student_contact`, `department`, `department_code`, `section`, `section_id`, `yearlevel`, `uniform_count`, `footwear_count`, `no_id_count`, `total_violations`, `status`, `last_violation_date`, `report_period_start`, `report_period_end`, `generated_at`, `updated_at`, `deleted_at`) VALUES
-(8, 'R491', '2023-0206', 'Patrick James U Romasanta', NULL, 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3', 0, 2, 0, 2, 'permitted', '2026-03-01', '2026-02-24', '2026-03-01', '2026-02-22 23:04:26', '2026-03-01 12:38:22', NULL),
-(9, 'R018', '2025-0799', 'Khyn C Delos Reyes', NULL, 'Bachelor of Technical-Vocational Teacher Education', 'BTVTED', 'BTVTED-WFT1', 1, '1', 0, 1, 0, 1, 'permitted', '2026-02-26', '2026-02-26', '2026-02-26', '2026-02-26 12:47:54', NULL, NULL);
+(12, 'R491', '2023-0206', 'Patrick James V Romasanta', 'N/A', 'Bachelor of Science in Information Systems', 'BSIS', 'BSIS3', 12, '3rd Year', 1, 2, 1, 4, 'permitted', '2026-03-08', '2026-03-08', '2026-03-08', '2026-03-08 11:15:04', '2026-03-08 12:31:57', NULL);
 
 -- --------------------------------------------------------
 
@@ -501,17 +353,16 @@ CREATE TABLE IF NOT EXISTS `report_recommendations` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_report_id` (`report_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=299 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=330 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `report_recommendations`
 --
 
 INSERT INTO `report_recommendations` (`id`, `report_id`, `recommendation`, `priority`, `created_at`) VALUES
-(295, 8, 'Remind student about dress code policies', 'medium', '2026-03-01 12:38:22'),
-(296, 8, 'Monitor compliance for 2 weeks', 'medium', '2026-03-01 12:38:22'),
-(297, 9, 'Remind student about dress code policies', 'low', '2026-03-01 12:38:22'),
-(298, 9, 'Monitor compliance for 2 weeks', 'low', '2026-03-01 12:38:22');
+(327, 12, 'Issue written warning', 'medium', '2026-03-10 07:18:17'),
+(328, 12, 'Monitor uniform compliance', 'medium', '2026-03-10 07:18:17'),
+(329, 12, 'Schedule follow-up meeting', 'medium', '2026-03-10 07:18:17');
 
 -- --------------------------------------------------------
 
@@ -535,19 +386,17 @@ CREATE TABLE IF NOT EXISTS `report_violations` (
   KEY `idx_report_id` (`report_id`),
   KEY `idx_violation_id` (`violation_id`),
   KEY `idx_violation_date` (`violation_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=199 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=215 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `report_violations`
 --
 
 INSERT INTO `report_violations` (`id`, `report_id`, `violation_id`, `violation_type`, `violation_level`, `violation_date`, `violation_time`, `status`, `notes`, `created_at`) VALUES
-(193, 8, 87, 'Improper Footwear', 'Permitted 1', '2026-02-22', '23:04:00', 'permitted', NULL, '2026-02-24 09:02:52'),
-(194, 8, 88, 'Improper Footwear', 'Permitted 2', '2026-02-22', '23:17:00', 'permitted', NULL, '2026-02-24 09:02:52'),
-(195, 8, 89, 'Improper Uniform', 'Permitted 1', '2026-02-22', '23:18:00', 'permitted', NULL, '2026-02-24 09:02:52'),
-(196, 8, 90, 'Improper Footwear', 'Permitted 1', '2026-02-24', '10:47:00', 'permitted', NULL, '2026-02-24 10:47:58'),
-(197, 9, 91, 'Improper Footwear', 'Permitted 1', '2026-02-26', '12:47:00', 'permitted', NULL, '2026-02-26 12:47:55'),
-(198, 8, 92, 'Improper Footwear', 'Permitted 1', '2026-03-01', '12:35:00', 'permitted', 'sdadsas', '2026-03-01 12:38:22');
+(211, 12, 97, 'Improper Footwear', 'Permitted 1', '2026-03-08', '11:14:00', 'permitted', NULL, '2026-03-10 07:18:17'),
+(212, 12, 98, 'Improper Footwear', 'Permitted 2', '2026-03-08', '12:16:00', 'permitted', NULL, '2026-03-10 07:18:17'),
+(213, 12, 99, 'Improper Uniform', 'Permitted 1', '2026-03-08', '12:26:00', 'permitted', NULL, '2026-03-10 07:18:17'),
+(214, 12, 100, 'No ID', 'Permitted 1', '2026-03-08', '12:31:00', 'permitted', NULL, '2026-03-10 07:18:17');
 
 -- --------------------------------------------------------
 
@@ -1176,7 +1025,7 @@ INSERT INTO `students` (`id`, `student_id`, `first_name`, `middle_name`, `last_n
 (488, '2023-0162', 'Rhaven', 'G', 'Magmanlac', 'rhaven.magmanlac@colegiodenaujan.edu.ph', NULL, NULL, 'BSIS', 12, '3', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (489, '2023-0195', 'Jumyr', 'M', 'Moreno', 'jumyr.moreno@colegiodenaujan.edu.ph', NULL, NULL, 'BSIS', 12, '3', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (490, '2023-0176', 'Dan Lloyd', 'B', 'Paala', 'dan.lloyd.paala@colegiodenaujan.edu.ph', NULL, NULL, 'BSIS', 12, '3', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
-(491, '2023-0206', 'Patrick James', 'U', 'Romasanta', 'patrick.james.romasanta@colegiodenaujan.edu.ph', NULL, NULL, 'BSIS', 12, '3', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
+(491, '2023-0206', 'Patrick James', 'V', 'Romasanta', 'patrick.james.romasanta@colegiodenaujan.edu.ph', 'N/A', NULL, 'BSIS', 12, '3rd Year', '1st Year', 'https://ui-avatars.com/api/?name=Patrick+James+U+Romasanta&amp;background=ffd700&amp;color=333&amp;size=40', 'active', '2026-02-22 22:29:58', '2026-03-06 19:27:43', NULL),
 (492, '2023-0186', 'Jereck', 'M', 'Roxas', 'jereck.roxas@colegiodenaujan.edu.ph', NULL, NULL, 'BSIS', 12, '3', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (493, '2023-0217', 'Jan Denmark', 'C', 'Santos', 'jan.denmark.santos@colegiodenaujan.edu.ph', NULL, NULL, 'BSIS', 12, '3', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (494, '2023-0267', 'John Paolo', 'N', 'Torralba', 'john.paolo.torralba@colegiodenaujan.edu.ph', NULL, NULL, 'BSIS', 12, '3', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
@@ -1199,9 +1048,9 @@ INSERT INTO `students` (`id`, `student_id`, `first_name`, `middle_name`, `last_n
 (511, '2022-0118', 'IC Pamela', 'M', 'Gutierrez', 'ic.pamela.gutierrez@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (512, '2022-0096', 'Jane Monica', 'P', 'Mansalapus', 'jane.monica.mansalapus@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (513, '2022-0097', 'Hanna Yesha Mae', 'D', 'Mercado', 'hanna.yesha.mae.mercado@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
-(514, '2022-0098', 'Abegail', 'D', 'Moong', 'abegail.moong@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
-(515, '2022-0125', 'Laiza Marie', 'M', 'Pole', 'laiza.marie.pole@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL);
+(514, '2022-0098', 'Abegail', 'D', 'Moong', 'abegail.moong@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL);
 INSERT INTO `students` (`id`, `student_id`, `first_name`, `middle_name`, `last_name`, `email`, `contact_number`, `address`, `department`, `section_id`, `yearlevel`, `year_level`, `avatar`, `status`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(515, '2022-0125', 'Laiza Marie', 'M', 'Pole', 'laiza.marie.pole@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (516, '2022-0142', 'Jarryfel', 'N', 'Tembrevilla', 'jarryfel.tembrevilla@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (517, '2022-0136', 'Jay Mark', 'G', 'Avelino', 'jay.mark.avelino@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
 (518, '2022-0072', 'Jairus', 'A', 'Cabales', 'jairus.cabales@colegiodenaujan.edu.ph', NULL, NULL, 'BTVTED', 13, '4', '1st Year', NULL, 'active', '2026-02-22 22:29:58', '2026-02-24 09:51:29', NULL),
@@ -1267,6 +1116,87 @@ CREATE TABLE IF NOT EXISTS `student_violation_levels` (
   KEY `idx_status` (`status`),
   KEY `idx_last_violation_date` (`last_violation_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_logs`
+--
+
+DROP TABLE IF EXISTS `system_logs`;
+CREATE TABLE IF NOT EXISTS `system_logs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `action` varchar(255) NOT NULL,
+  `details` text,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `created_at` (`created_at`)
+) ENGINE=MyISAM AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `system_logs`
+--
+
+INSERT INTO `system_logs` (`id`, `user_id`, `username`, `action`, `details`, `ip_address`, `user_agent`, `created_at`) VALUES
+(1, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 02:10:21'),
+(2, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 02:10:49'),
+(3, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 02:11:00'),
+(4, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 02:15:48'),
+(5, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 02:20:38'),
+(6, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 02:23:22'),
+(7, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 02:40:55'),
+(8, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 03:12:44'),
+(9, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 03:15:17'),
+(10, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:15:46'),
+(11, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:18:53'),
+(12, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:26:05'),
+(13, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:27:40'),
+(14, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:27:53'),
+(15, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:30:16'),
+(16, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:33:24'),
+(17, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:35:48'),
+(18, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:44:04'),
+(19, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:58:36'),
+(20, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 04:59:33'),
+(21, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 05:04:16'),
+(22, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 05:27:42'),
+(23, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 05:31:30'),
+(24, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 05:35:26'),
+(25, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 05:43:34'),
+(26, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-08 06:18:05'),
+(27, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 15:35:50'),
+(28, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 15:49:02'),
+(29, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 16:00:29'),
+(30, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 16:05:33'),
+(31, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 16:13:07'),
+(32, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 16:20:43'),
+(33, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 16:25:23'),
+(34, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 16:53:21'),
+(35, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 17:04:39'),
+(36, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 17:12:13'),
+(37, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 17:16:24'),
+(38, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 17:17:33'),
+(39, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 17:17:42'),
+(40, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 17:23:24'),
+(41, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 17:26:10'),
+(42, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-09 23:27:36'),
+(43, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 02:48:52'),
+(44, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 02:49:29'),
+(45, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 03:49:55'),
+(46, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1 Edg/145.0.0.0', '2026-03-10 04:00:19'),
+(47, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 04:01:06'),
+(48, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1 Edg/145.0.0.0', '2026-03-10 04:01:29'),
+(49, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1 Edg/145.0.0.0', '2026-03-10 04:01:45'),
+(50, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 04:09:11'),
+(51, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 04:10:44'),
+(52, 2572, 'adminOsas@colegio.edu', 'Login', 'User logged in: adminOsas@colegio.edu (Role: admin)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 04:10:52'),
+(53, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 04:11:39'),
+(54, 3053, '2023-0206', 'Login', 'User logged in: 2023-0206 (Role: user)', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', '2026-03-10 04:13:22');
 
 -- --------------------------------------------------------
 
@@ -1741,7 +1671,7 @@ INSERT INTO `users` (`id`, `username`, `email`, `google_id`, `facebook_id`, `pro
 (2591, '2025-0616', 'jericho.delmundo@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Jericho Del Mundo', '2025-0616', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (2592, '2025-0799', 'khyn.delosreyes@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Khyn Delos Reyes', '2025-0799', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (2593, '2025-0604', 'gian.dominic.riza.dudas@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Gian Dominic Riza Dudas', '2025-0604', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
-(3053, '2023-0206', 'patrick.james.romasanta@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Patrick James Romasanta', '2023-0206', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
+(3053, '2023-0206', 'patrick.james.romasanta@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$10$M55A.dIw8kb.X.uBFXznL.vzMHNgLhXwslJQTYVs01LHLcpI/OXRq', 'user', 'Patrick James Romasanta', '2023-0206', 1, 'active', '2026-02-24 02:12:16', '2026-03-08 02:40:37', NULL),
 (3052, '2023-0176', 'dan.lloyd.paala@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Dan Lloyd Paala', '2023-0176', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (3051, '2023-0195', 'jumyr.moreno@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Jumyr Moreno', '2023-0195', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (3050, '2023-0162', 'rhaven.magmanlac@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Rhaven Magmanlac', '2023-0162', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
@@ -1786,7 +1716,7 @@ INSERT INTO `users` (`id`, `username`, `email`, `google_id`, `facebook_id`, `pro
 (2575, '2025-0760', 'jerlyn.aday@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Jerlyn Aday', '2025-0760', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (2573, '111', 'ventiletos@gmail.com', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', '1 1', '2023-0206', 1, 'active', '2026-02-22 20:28:47', '2026-02-24 02:07:34', NULL),
 (2574, '1', 'admin@gmail.com', NULL, NULL, NULL, '$2y$10$hBNUdr9u8zu.f7zVAUNYG.l7a8lKrpIZeEBZsEjkWYOYNEmDjARDe', 'admin', 'test', '1111', 0, 'archived', '2026-02-24 01:05:02', '2026-02-24 14:09:45', '2026-02-24 06:09:45'),
-(2572, 'admin_demo@colegio.edu', 'admin_demo@gmail.com', NULL, NULL, NULL, '$2y$10$Dez.fBRnI1D4rgiSGoPgDeg4HGJtolHkjbnuZdaV9ziDVt.ra2Q1y', 'admin', 'admin admin', '2023-0206', 1, 'active', '2026-02-22 20:25:51', '2026-02-22 20:26:09', NULL),
+(2572, 'adminOsas@colegio.edu', 'adminOsas@gmail.com', NULL, NULL, NULL, '$2y$10$Dez.fBRnI1D4rgiSGoPgDeg4HGJtolHkjbnuZdaV9ziDVt.ra2Q1y', 'admin', 'adminOsas@colegio.edu', '2023-0206', 1, 'active', '2026-02-22 20:25:51', '2026-03-08 01:05:19', NULL),
 (3054, '2023-0186', 'jereck.roxas@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Jereck Roxas', '2023-0186', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (3055, '2023-0217', 'jan.denmark.santos@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Jan Denmark Santos', '2023-0217', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (3056, '2023-0267', 'john.paolo.torralba@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'John Paolo Torralba', '2023-0267', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
@@ -1844,7 +1774,7 @@ INSERT INTO `users` (`id`, `username`, `email`, `google_id`, `facebook_id`, `pro
 (3108, '2022-0132', 'john.paul.teves@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'John Paul Teves', '2022-0132', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (3109, '2022-0131', 'john.xavier.villanueva@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'John Xavier Villanueva', '2022-0131', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
 (3110, '2022-0114', 'reinier.aron.visayana@colegiodenaujan.edu.ph', NULL, NULL, NULL, '$2y$12$95ivuxDsbXnvq.o.nhD8W.c8CWA9LpLQvO/7ThprttW8qa6WPh2oy', 'user', 'Reinier Aron Visayana', '2022-0114', 1, 'active', '2026-02-24 02:12:16', '2026-02-24 02:12:16', NULL),
-(3111, 'test1', 'geraldinegaran70@gmail.com', NULL, NULL, NULL, '$2y$10$tCEmQ8UneG8IcZxBlnOABuqpuhQhSGH4NURKZRUzPYvy9xIXg8VLy', 'admin', 'test', '1212', 1, 'active', '2026-02-26 04:51:21', '2026-02-26 04:51:21', NULL);
+(3111, 'test1', 'geraldinegaran70@gmail.com', NULL, NULL, NULL, '$2y$10$tCEmQ8UneG8IcZxBlnOABuqpuhQhSGH4NURKZRUzPYvy9xIXg8VLy', 'user', 'test', '1212', 1, 'active', '2026-02-26 04:51:21', '2026-03-08 00:38:20', NULL);
 
 -- --------------------------------------------------------
 
@@ -1884,45 +1814,17 @@ CREATE TABLE IF NOT EXISTS `violations` (
   KEY `idx_violation_level` (`violation_level_id`),
   KEY `idx_is_archived` (`is_archived`),
   KEY `idx_is_read` (`is_read`)
-) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `violations`
 --
 
 INSERT INTO `violations` (`id`, `case_id`, `student_id`, `violation_type_id`, `violation_level_id`, `department`, `section`, `violation_date`, `violation_time`, `location`, `reported_by`, `notes`, `status`, `attachments`, `created_at`, `updated_at`, `deleted_at`, `is_archived`, `is_read`) VALUES
-(90, 'VIOL-2026-001', '2023-0206', 3, 13, 'Bachelor of Science in Information Systems', '12', '2026-02-24', '10:47:00', 'gate_1', 'Ser', NULL, 'permitted', NULL, '2026-02-23 18:47:57', '2026-03-01 04:19:33', NULL, 1, 0),
-(91, 'VIOL-2026-002', '2025-0799', 3, 13, 'Bachelor of Technical-Vocational Teacher Education', '1', '2026-02-26', '12:47:00', 'others', 'sca', NULL, 'permitted', NULL, '2026-02-25 20:47:54', '2026-03-01 04:19:33', NULL, 1, 0),
-(92, 'VIOL-2026-003', '2023-0206', 3, 13, 'Bachelor of Science in Information Systems', '12', '2026-03-01', '12:35:00', 'library', 'sca', 'sdadsas', 'permitted', '[\"app/assets/img/violations/viol_1772339901_69a3c2bde468c.jpeg\"]', '2026-02-28 20:38:22', '2026-03-01 04:38:22', NULL, 0, 0);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `violation_history`
---
-
-DROP TABLE IF EXISTS `violation_history`;
-CREATE TABLE IF NOT EXISTS `violation_history` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `student_violation_level_id` int NOT NULL,
-  `student_id` varchar(50) NOT NULL,
-  `violation_type` varchar(50) NOT NULL,
-  `previous_level` varchar(50) DEFAULT NULL,
-  `new_level` varchar(50) NOT NULL,
-  `violation_date` date NOT NULL,
-  `violation_time` time NOT NULL,
-  `location` varchar(50) NOT NULL,
-  `reported_by` varchar(100) NOT NULL,
-  `notes` text,
-  `case_id` varchar(50) NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_student_violation_level_id` (`student_violation_level_id`),
-  KEY `idx_student_id` (`student_id`),
-  KEY `idx_violation_type` (`violation_type`),
-  KEY `idx_violation_date` (`violation_date`),
-  KEY `idx_case_id` (`case_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+(97, 'VIOL-2026-001', '2023-0206', 3, 13, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '11:14:00', 'gate_2', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-07 19:15:04', '2026-03-08 03:15:04', NULL, 0, 0),
+(98, 'VIOL-2026-002', '2023-0206', 3, 14, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '12:16:00', 'gate_1', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-07 20:16:29', '2026-03-08 04:16:29', NULL, 0, 0),
+(99, 'VIOL-2026-003', '2023-0206', 1, 1, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '12:26:00', 'gate_2', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-08 04:27:06', '2026-03-08 04:27:06', NULL, 0, 0),
+(100, 'VIOL-2026-004', '2023-0206', 2, 7, 'Bachelor of Science in Information Systems', '12', '2026-03-08', '12:31:00', 'gate_2', 'adminOsas@colegio.edu', NULL, 'permitted', NULL, '2026-03-08 04:31:57', '2026-03-08 04:31:57', NULL, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -2039,12 +1941,6 @@ ALTER TABLE `students`
 ALTER TABLE `violations`
   ADD CONSTRAINT `fk_violations_level` FOREIGN KEY (`violation_level_id`) REFERENCES `violation_levels` (`id`),
   ADD CONSTRAINT `fk_violations_type` FOREIGN KEY (`violation_type_id`) REFERENCES `violation_types` (`id`);
-
---
--- Constraints for table `violation_history`
---
-ALTER TABLE `violation_history`
-  ADD CONSTRAINT `fk_violation_history_level_id` FOREIGN KEY (`student_violation_level_id`) REFERENCES `student_violation_levels` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `violation_levels`
