@@ -571,7 +571,7 @@ function initDepartmentModule() {
           showModernAlert({
             title: 'Permanent Delete',
             message: `Permanently delete department "${dept.name}"? This action cannot be undone.`,
-            icon: 'danger',
+            icon: 'error',
             confirmText: 'Delete Permanently'
           }).then(confirmed => {
             if (confirmed) deleteDepartment(dept.dbId);
@@ -583,7 +583,7 @@ function initDepartmentModule() {
             icon: 'warning',
             confirmText: 'Yes, Archive'
           }).then(confirmed => {
-            if (confirmed) archiveDepartment(dept.dbId);
+            if (confirmed) deleteDepartment(dept.dbId);
           });
         }
       }

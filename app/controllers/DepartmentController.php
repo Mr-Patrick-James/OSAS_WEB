@@ -136,10 +136,19 @@ class DepartmentController extends Controller {
         }
 
         try {
-            $this->model->archive($id);
-            $this->success('Department archived successfully!');
+            // Check if department is already archived
+            $dept = $this->model->getById($id);
+            if ($dept && $dept['status'] === 'archived') {
+                // If archived, perform permanent delete
+                $this->model->delete($id);
+                $this->success('Department permanently deleted!');
+            } else {
+                // Otherwise just archive it
+                $this->model->archive($id);
+                $this->success('Department archived successfully!');
+            }
         } catch (Exception $e) {
-            $this->error('Failed to archive department: ' . $e->getMessage());
+            $this->error('Operation failed: ' . $e->getMessage());
         }
     }
 
