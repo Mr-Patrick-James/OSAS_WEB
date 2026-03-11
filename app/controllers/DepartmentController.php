@@ -57,8 +57,10 @@ class DepartmentController extends Controller {
             $this->error('Invalid request method');
         }
 
-        $name = $this->sanitize($this->getPost('departmentName', $this->getPost('deptName', '')));
-        $code = $this->sanitize($this->getPost('departmentCode', $this->getPost('deptCode', '')));
+        $name = $this->sanitize($this->getPost('deptName', ''));
+        $code = $this->sanitize($this->getPost('deptCode', ''));
+        $hod = $this->sanitize($this->getPost('hodName', ''));
+        $description = $this->sanitize($this->getPost('deptDescription', ''));
 
         if (empty($name) || empty($code)) {
             $this->error('Department name and code are required.');
@@ -72,6 +74,8 @@ class DepartmentController extends Controller {
             $data = [
                 'department_name' => $name,
                 'department_code' => $code,
+                'head_of_department' => $hod,
+                'description' => $description,
                 'status' => 'active',
                 'created_at' => date('Y-m-d H:i:s')
             ];
@@ -88,13 +92,16 @@ class DepartmentController extends Controller {
             $this->error('Invalid request method');
         }
 
-        $id = intval($this->getPost('departmentId', $this->getPost('deptId', $this->getGet('id', 0))));
+        $id = intval($this->getPost('deptId', $this->getGet('id', 0)));
         if ($id === 0) {
             $this->error('Invalid department ID');
         }
 
-        $name = $this->sanitize($this->getPost('departmentName', $this->getPost('deptName', '')));
-        $code = $this->sanitize($this->getPost('departmentCode', $this->getPost('deptCode', '')));
+        $name = $this->sanitize($this->getPost('deptName', ''));
+        $code = $this->sanitize($this->getPost('deptCode', ''));
+        $hod = $this->sanitize($this->getPost('hodName', ''));
+        $description = $this->sanitize($this->getPost('deptDescription', ''));
+        $status = $this->sanitize($this->getPost('deptStatus', 'active'));
 
         if (empty($name) || empty($code)) {
             $this->error('Department name and code are required.');
@@ -108,6 +115,9 @@ class DepartmentController extends Controller {
             $data = [
                 'department_name' => $name,
                 'department_code' => $code,
+                'head_of_department' => $hod,
+                'description' => $description,
+                'status' => $status,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 

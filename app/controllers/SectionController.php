@@ -141,6 +141,21 @@ class SectionController extends Controller {
         }
     }
 
+    public function destroy() {
+        $id = intval($this->getGet('id', $this->getPost('id', 0)));
+        
+        if ($id === 0) {
+            $this->error('Invalid section ID');
+        }
+
+        try {
+            $this->model->delete($id);
+            $this->success('Section permanently deleted!');
+        } catch (Exception $e) {
+            $this->error('Failed to delete section: ' . $e->getMessage());
+        }
+    }
+
     public function restore() {
         $id = intval($this->getGet('id', $this->getPost('id', 0)));
         

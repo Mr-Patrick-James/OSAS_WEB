@@ -208,11 +208,11 @@ function initSectionsModule() {
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    showSuccess(data.message || 'Section archived successfully!');
+                    showSuccess(data.message || 'Section permanently deleted!');
                     await fetchSections();
                     await fetchStats();
                 } else {
-                    showError(data.message || 'Failed to archive section');
+                    showError(data.message || 'Failed to delete section');
                 }
             } catch (error) {
                 console.error('Error deleting section:', error);
@@ -262,7 +262,15 @@ function initSectionsModule() {
 
         async function loadDepartments() {
             try {
-                const response = await fetch('../api/departments.php');
+                let deptApi;
+                const path = window.location.pathname;
+                if (path.includes('admin_page') || path.includes('/views/admin/')) {
+                    deptApi = '../../api/departments.php';
+                } else {
+                    deptApi = '../api/departments.php';
+                }
+
+                const response = await fetch(deptApi);
                 const data = await response.json();
 
                 if (data.status === 'success') {
@@ -275,13 +283,17 @@ function initSectionsModule() {
                             select.appendChild(firstOption);
                         }
                         
-                        // Add departments
-                        data.data.forEach(dept => {
-                            const option = document.createElement('option');
-                            option.value = dept.id;
-                            option.textContent = dept.name;
-                            select.appendChild(option);
-                        });
+                        // Add departments from API
+                        // Use correct mapping for department data
+                        const depts = data.data.departments || data.data;
+                        if (Array.isArray(depts)) {
+                            depts.forEach(dept => {
+                                const option = document.createElement('option');
+                                option.value = dept.id || dept.dbId;
+                                option.textContent = dept.name || dept.department_name;
+                                select.appendChild(option);
+                            });
+                        }
                     }
                 }
             } catch (error) {
@@ -564,15 +576,22 @@ function initSectionsModule() {
                 } else {
                     modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>Edit Section</span>';
                 }
-                const section = sections.find(s => s.id == editId);
+                
+                // Robust matching for ID (compare as strings)
+                const section = sections.find(s => String(s.id) === String(editId));
+                
                 if (section) {
+                    console.log('📝 Filling section modal with data:', section);
                     document.getElementById('sectionName').value = section.name || '';
                     document.getElementById('sectionCode').value = section.code || '';
                     document.getElementById('sectionDepartment').value = section.department_id || '';
                     document.getElementById('academicYear').value = section.academic_year || '';
                     document.getElementById('sectionStatus').value = section.status || 'active';
+                    
+                    modal.dataset.editingId = editId;
+                } else {
+                    console.error('❌ Could not find section with ID:', editId);
                 }
-                modal.dataset.editingId = editId;
             } else {
                 const span = modalTitle.querySelector('span');
                 if (span) {
@@ -611,17 +630,42 @@ function initSectionsModule() {
 
             if (restoreBtn) {
                 const id = restoreBtn.dataset.id;
-                const section = sections.find(s => s.id == id);
-                if (section && confirm(`Restore section "${section.name}"?`)) {
-                    restoreSection(id);
+                const section = sections.find(s => String(s.id) === String(id));
+                if (section) {
+                    showModernAlert({
+                        title: 'Restore Section',
+                        message: `Restore section "${section.name}"?`,
+                        icon: 'info',
+                        confirmText: 'Yes, Restore'
+                    }).then(confirmed => {
+                        if (confirmed) restoreSection(id);
+                    });
                 }
             }
 
             if (deleteBtn) {
                 const id = deleteBtn.dataset.id;
-                const section = sections.find(s => s.id == id);
-                if (section && confirm(`Archive section "${section.name}"? This will move it to archived.`)) {
-                    deleteSection(id);
+                const section = sections.find(s => String(s.id) === String(id));
+                if (section) {
+                    if (section.status === 'archived') {
+                        showModernAlert({
+                            title: 'Permanent Delete',
+                            message: `Permanently delete section "${section.name}"? This action cannot be undone.`,
+                            icon: 'danger',
+                            confirmText: 'Delete Permanently'
+                        }).then(confirmed => {
+                            if (confirmed) deleteSection(id);
+                        });
+                    } else {
+                        showModernAlert({
+                            title: 'Archive Section',
+                            message: `Archive section "${section.name}"? This will move it to archived.`,
+                            icon: 'warning',
+                            confirmText: 'Yes, Archive'
+                        }).then(confirmed => {
+                            if (confirmed) archiveSection(id);
+                        });
+                    }
                 }
             }
         }
@@ -634,11 +678,19 @@ function initSectionsModule() {
         }
 
         function showSuccess(message) {
-            alert(message); // You can replace this with a better notification system
+            if (typeof showNotification === 'function') {
+                showNotification(message, 'success');
+            } else {
+                alert(message);
+            }
         }
 
         function showError(message) {
-            alert(message); // You can replace this with a better notification system
+            if (typeof showNotification === 'function') {
+                showNotification(message, 'error');
+            } else {
+                alert(message);
+            }
         }
 
         // --- Initialize ---
@@ -745,7 +797,7 @@ function initSectionsModule() {
                     const sectionStatus = document.getElementById('sectionStatus').value;
                     
                     if (!sectionName || !sectionCode || !sectionDepartment || !academicYear) {
-                        alert('Please fill in all required fields.');
+                        showError('Please fill in all required fields.');
                         return;
                     }
 

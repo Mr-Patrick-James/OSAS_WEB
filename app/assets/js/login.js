@@ -67,38 +67,157 @@ function togglePasswordVisibility() {
     }
 }
 
-// Toast Notification Function
-function showToast(message, type = 'info') {
-    // Remove existing toasts
-    const existingToasts = document.querySelectorAll('.toast');
-    existingToasts.forEach(toast => toast.remove());
+/**
+ * Modern Alert/Confirm Modal System
+ */
+function showModernAlert({ 
+    title = 'Are you sure?', 
+    message = '', 
+    icon = 'warning', 
+    confirmText = 'Confirm', 
+    cancelText = 'Cancel',
+    showCancel = true
+}) {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('modernAlertModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modernAlertModal';
+            modal.className = 'modern-alert';
+            document.body.appendChild(modal);
+        }
+
+        const iconMap = {
+            warning: 'fa-exclamation-triangle',
+            danger: 'fa-trash',
+            success: 'fa-check-circle',
+            info: 'fa-info-circle',
+            loading: 'fa-spinner fa-spin'
+        };
+
+        const iconClass = iconMap[icon] || iconMap.warning;
+        const isDanger = icon === 'danger';
+
+        modal.innerHTML = `
+            <div class="modern-alert-content">
+                <div class="modern-alert-icon ${icon}">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <h2>${title}</h2>
+                <p>${message}</p>
+                <div class="modern-alert-actions">
+                    ${showCancel ? `<button class="modern-alert-btn cancel" id="modernAlertCancel">${cancelText}</button>` : ''}
+                    <button class="modern-alert-btn confirm ${isDanger ? 'danger' : ''}" id="modernAlertConfirm">${confirmText}</button>
+                </div>
+            </div>
+        `;
+
+        setTimeout(() => modal.classList.add('active'), 10);
+        document.body.style.overflow = 'hidden';
+
+        const cleanup = (result) => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                document.body.style.overflow = '';
+                resolve(result);
+            }, 300);
+        };
+
+        if (showCancel) {
+            document.getElementById('modernAlertCancel').onclick = () => cleanup(false);
+        }
+        document.getElementById('modernAlertConfirm').onclick = () => cleanup(true);
+        
+        modal.onclick = (e) => {
+            if (e.target === modal && showCancel) cleanup(false);
+        };
+    });
+}
+
+// Modern Toast Notification System (Synced with Dashboard)
+function showToast(message, type = 'info', title = null) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
 
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    toast.className = `toast-notification toast-${type}`;
+    
+    const icon = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    }[type] || 'fa-info-circle';
 
-    let iconClass = 'fa-info-circle';
-    if (type === 'success') iconClass = 'fa-check-circle';
-    if (type === 'error') iconClass = 'fa-exclamation-circle';
+    const defaultTitle = {
+        success: 'Success',
+        error: 'Error',
+        warning: 'Warning',
+        info: 'Information'
+    }[type] || 'Notice';
 
     toast.innerHTML = `
-        <i class="fas ${iconClass}"></i>
-        <span>${message}</span>
+        <div class="toast-icon">
+            <i class="fas ${icon}"></i>
+        </div>
+        <div class="toast-content">
+            <span class="toast-title">${title || defaultTitle}</span>
+            <span class="toast-message">${message}</span>
+        </div>
+        <div class="toast-close">
+            <i class="fas fa-times"></i>
+        </div>
+        <div class="toast-progress">
+            <div class="toast-progress-bar"></div>
+        </div>
     `;
 
-    document.body.appendChild(toast);
+    container.appendChild(toast);
 
-    // Trigger animation
-    setTimeout(() => toast.classList.add('show'), 100);
-
-    // Auto remove after 5 seconds
+    // Animate progress bar
+    const progressBar = toast.querySelector('.toast-progress-bar');
+    progressBar.style.transition = 'transform 5s linear';
+    
+    // Show toast
     setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, 400);
+        toast.classList.add('show');
+        progressBar.style.transform = 'scaleX(0)';
+    }, 100);
+
+    // Auto remove
+    const timeout = setTimeout(() => {
+        removeToast(toast);
     }, 5000);
+
+    // Close button
+    toast.querySelector('.toast-close').onclick = () => {
+        clearTimeout(timeout);
+        removeToast(toast);
+    };
+}
+
+// Global Form Validation Interceptor (Synced with Dashboard)
+document.addEventListener('invalid', (function() {
+    return function(e) {
+        // Prevent the browser from showing default error bubbles
+        e.preventDefault();
+        
+        // Show custom modern notification instead
+        const fieldName = e.target.getAttribute('placeholder') || e.target.getAttribute('name') || 'This field';
+        const message = e.target.validationMessage || 'Please fill out this field.';
+        
+        showToast(`${message} (${fieldName})`, 'warning', 'Validation Error');
+    };
+})(), true);
+
+function removeToast(toast) {
+    toast.classList.remove('show');
+    toast.style.transform = 'translateX(120%)';
+    setTimeout(() => toast.remove(), 500);
 }
 
 // Form validation

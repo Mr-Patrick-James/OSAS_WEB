@@ -529,6 +529,21 @@ body.dark {
   background: var(--light);
 }
 
+/* Validation Styles */
+.Students-form-group input.is-invalid,
+.Students-form-group select.is-invalid,
+.Students-form-group textarea.is-invalid {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.1) !important;
+  background-color: rgba(231, 76, 60, 0.02) !important;
+}
+
+.Students-form-group input.is-invalid:focus,
+.Students-form-group select.is-invalid:focus,
+.Students-form-group textarea.is-invalid:focus {
+  box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.2) !important;
+}
+
 .Students-filter-group {
   display: flex;
   align-items: center;

@@ -1114,7 +1114,11 @@ class DashboardData {
         console.log('📄 Preparing Dashboard PDF...');
         
         if (!window.jspdf) {
-            alert('PDF library not loaded. Please refresh the page.');
+            if (typeof showNotification === 'function') {
+                showNotification('PDF library not loaded. Please refresh the page.', 'error');
+            } else {
+                alert('PDF library not loaded. Please refresh the page.');
+            }
             return;
         }
 

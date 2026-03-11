@@ -145,10 +145,11 @@ class SectionModel extends Model {
     }
 
     /**
-     * Check if section code exists
+     * Check if section code exists among active sections
      */
     public function codeExists($code, $excludeId = null) {
-        $query = "SELECT id FROM sections WHERE section_code = ?";
+        // Only check for sections that are NOT archived
+        $query = "SELECT id FROM sections WHERE section_code = ? AND status != 'archived'";
         if ($excludeId) {
             $query .= " AND id != ?";
             $result = $this->query($query, [$code, $excludeId]);
@@ -170,6 +171,18 @@ class SectionModel extends Model {
      */
     public function restore($id) {
         return $this->update($id, ['status' => 'active', 'updated_at' => date('Y-m-d H:i:s')]);
+    }
+
+    /**
+     * Permanently delete section
+     */
+    public function delete($id) {
+        $query = "DELETE FROM sections WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
     }
 
     /**

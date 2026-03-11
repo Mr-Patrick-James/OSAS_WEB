@@ -493,16 +493,23 @@ function initDepartmentModule() {
       } else {
         modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Edit Department</span>';
       }
-      const dept = departments.find(d => d.id === editId);
+      
+      // Ensure IDs are compared as strings or numbers correctly
+      const dept = departments.find(d => String(d.id) === String(editId));
+      
       if (dept) {
-        document.getElementById('deptName').value = dept.name;
-        document.getElementById('deptCode').value = dept.code;
-        document.getElementById('hodName').value = dept.hod === 'N/A' ? '' : dept.hod;
+        console.log('📝 Filling modal with dept data:', dept);
+        document.getElementById('deptName').value = dept.name || '';
+        document.getElementById('deptCode').value = dept.code || '';
+        document.getElementById('hodName').value = (dept.hod === 'N/A' || !dept.hod) ? '' : dept.hod;
         document.getElementById('deptDescription').value = dept.description || '';
-        document.getElementById('deptStatus').value = dept.status;
+        document.getElementById('deptStatus').value = dept.status || 'active';
+        
+        modal.dataset.editingId = editId;
+        modal.dataset.editingDbId = dept.dbId;
+      } else {
+        console.error('❌ Could not find department with ID:', editId);
       }
-      modal.dataset.editingId = editId;
-      modal.dataset.editingDbId = dept ? dept.dbId : null;
     } else {
       // Add mode
       const span = modalTitle.querySelector('span');
@@ -544,16 +551,41 @@ function initDepartmentModule() {
     if (restoreBtn) {
       const id = restoreBtn.dataset.id;
       const dept = departments.find(d => d.id === id);
-      if (dept && confirm(`Restore department "${dept.name}"?`)) {
-        restoreDepartment(dept.dbId);
+      if (dept) {
+        showModernAlert({
+          title: 'Restore Department',
+          message: `Restore department "${dept.name}"?`,
+          icon: 'info',
+          confirmText: 'Yes, Restore'
+        }).then(confirmed => {
+          if (confirmed) restoreDepartment(dept.dbId);
+        });
       }
     }
 
     if (deleteBtn) {
       const id = deleteBtn.dataset.id;
-      const dept = departments.find(d => d.id === id);
-      if (dept && confirm(`Archive department "${dept.name}"? This will move it to archived.`)) {
-        deleteDepartment(dept.dbId);
+      const dept = departments.find(d => String(d.id) === String(id));
+      if (dept) {
+        if (dept.status === 'archived') {
+          showModernAlert({
+            title: 'Permanent Delete',
+            message: `Permanently delete department "${dept.name}"? This action cannot be undone.`,
+            icon: 'danger',
+            confirmText: 'Delete Permanently'
+          }).then(confirmed => {
+            if (confirmed) deleteDepartment(dept.dbId);
+          });
+        } else {
+          showModernAlert({
+            title: 'Archive Department',
+            message: `Archive department "${dept.name}"? This will move it to the archived list.`,
+            icon: 'warning',
+            confirmText: 'Yes, Archive'
+          }).then(confirmed => {
+            if (confirmed) archiveDepartment(dept.dbId);
+          });
+        }
       }
     }
   });
@@ -657,7 +689,11 @@ function initDepartmentModule() {
         const deptStatus = document.getElementById('deptStatus').value;
         
         if (!deptName || !deptCode) {
-          alert('Please fill in Department Name and Department Code.');
+          if (typeof showNotification === 'function') {
+            showNotification('Department name and code are required.', 'warning');
+          } else {
+            alert('Department name and code are required.');
+          }
           return;
         }
 
@@ -746,10 +782,20 @@ function initDepartmentModule() {
   // --- API Functions ---
   async function addDepartment(data) {
     try {
+      let apiPath;
+      const path = window.location.pathname;
+      if (path.includes('admin_page')) {
+        apiPath = '../../api/departments.php';
+      } else if (path.includes('/views/admin/')) {
+        apiPath = '../../api/departments.php';
+      } else {
+        apiPath = '../api/departments.php';
+      }
+
       const formData = new FormData();
       Object.keys(data).forEach(key => formData.append(key, data[key]));
 
-      const response = await fetch('../api/departments.php?action=add', {
+      const response = await fetch(`${apiPath}?action=add`, {
         method: 'POST',
         body: formData
       });
@@ -772,11 +818,21 @@ function initDepartmentModule() {
 
   async function updateDepartment(dbId, data) {
     try {
+      let apiPath;
+      const path = window.location.pathname;
+      if (path.includes('admin_page')) {
+        apiPath = '../../api/departments.php';
+      } else if (path.includes('/views/admin/')) {
+        apiPath = '../../api/departments.php';
+      } else {
+        apiPath = '../api/departments.php';
+      }
+
       const formData = new FormData();
       formData.append('deptId', dbId);
       Object.keys(data).forEach(key => formData.append(key, data[key]));
 
-      const response = await fetch('../api/departments.php?action=update', {
+      const response = await fetch(`${apiPath}?action=update`, {
         method: 'POST',
         body: formData
       });
@@ -784,64 +840,130 @@ function initDepartmentModule() {
       const result = await response.json();
       
       if (result.status === 'success') {
-        alert(result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'success');
+        } else {
+          alert(result.message);
+        }
         closeModal();
         loadDepartments(currentView);
         loadStats();
       } else {
-        alert('Error: ' + result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'error');
+        } else {
+          alert('Error: ' + result.message);
+        }
       }
     } catch (error) {
       console.error('Error updating department:', error);
-      alert('Error updating department. Please try again.');
+      if (typeof showNotification === 'function') {
+        showNotification('Error updating department. Please try again.', 'error');
+      } else {
+        alert('Error updating department. Please try again.');
+      }
     }
   }
 
   async function deleteDepartment(dbId) {
     try {
-      const response = await fetch(`../api/departments.php?action=delete&id=${dbId}`, {
+      let apiPath;
+      const path = window.location.pathname;
+      if (path.includes('admin_page')) {
+        apiPath = '../../api/departments.php';
+      } else if (path.includes('/views/admin/')) {
+        apiPath = '../../api/departments.php';
+      } else {
+        apiPath = '../api/departments.php';
+      }
+
+      const response = await fetch(`${apiPath}?action=delete&id=${dbId}`, {
         method: 'GET'
       });
 
       const result = await response.json();
       
       if (result.status === 'success') {
-        alert(result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'success');
+        } else {
+          alert(result.message);
+        }
         loadDepartments(currentView);
         loadStats();
       } else {
-        alert('Error: ' + result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'error');
+        } else {
+          alert('Error: ' + result.message);
+        }
       }
     } catch (error) {
       console.error('Error deleting department:', error);
-      alert('Error deleting department. Please try again.');
+      if (typeof showNotification === 'function') {
+        showNotification('Error deleting department. Please try again.', 'error');
+      } else {
+        alert('Error deleting department. Please try again.');
+      }
     }
   }
 
   async function archiveDepartment(dbId) {
     try {
-      const response = await fetch(`../api/departments.php?action=archive&id=${dbId}`, {
+      let apiPath;
+      const path = window.location.pathname;
+      if (path.includes('admin_page')) {
+        apiPath = '../../api/departments.php';
+      } else if (path.includes('/views/admin/')) {
+        apiPath = '../../api/departments.php';
+      } else {
+        apiPath = '../api/departments.php';
+      }
+
+      const response = await fetch(`${apiPath}?action=archive&id=${dbId}`, {
         method: 'GET'
       });
 
       const result = await response.json();
       
       if (result.status === 'success') {
-        alert(result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'success');
+        } else {
+          alert(result.message);
+        }
         loadDepartments(currentView);
         loadStats();
       } else {
-        alert('Error: ' + result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'error');
+        } else {
+          alert('Error: ' + result.message);
+        }
       }
     } catch (error) {
       console.error('Error archiving department:', error);
-      alert('Error archiving department. Please try again.');
+      if (typeof showNotification === 'function') {
+        showNotification('Error archiving department. Please try again.', 'error');
+      } else {
+        alert('Error archiving department. Please try again.');
+      }
     }
   }
 
   async function restoreDepartment(dbId) {
     try {
-      const response = await fetch(`../api/departments.php?action=restore&id=${dbId}`, {
+      let apiPath;
+      const path = window.location.pathname;
+      if (path.includes('admin_page')) {
+        apiPath = '../../api/departments.php';
+      } else if (path.includes('/views/admin/')) {
+        apiPath = '../../api/departments.php';
+      } else {
+        apiPath = '../api/departments.php';
+      }
+
+      const response = await fetch(`${apiPath}?action=restore&id=${dbId}`, {
         method: 'GET'
       });
 

@@ -95,6 +95,25 @@ class StudentController extends Controller {
         $status = $this->sanitize($this->getPost('studentStatus', 'active'));
         $avatar = $this->sanitize($this->getPost('studentAvatar', ''));
 
+        // Handle Image Upload if present
+        if (isset($_FILES['studentImage']) && $_FILES['studentImage']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['studentImage'];
+            $uploadDir = __DIR__ . '/../assets/img/students/';
+            
+            // Create directory if not exists
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'student_' . time() . '_' . uniqid() . '.' . $ext;
+            $filepath = $uploadDir . $filename;
+
+            if (move_uploaded_file($file['tmp_name'], $filepath)) {
+                $avatar = 'app/assets/img/students/' . $filename;
+            }
+        }
+
         if (empty($studentId) || empty($firstName) || empty($lastName) || empty($email)) {
             $this->error('Student ID, First Name, Last Name, and Email are required.');
         }
@@ -153,6 +172,25 @@ class StudentController extends Controller {
         $yearlevel = $this->sanitize($this->getPost('studentYearlevel', ''));
         $status = $this->sanitize($this->getPost('studentStatus', 'active'));
         $avatar = $this->sanitize($this->getPost('studentAvatar', ''));
+
+        // Handle Image Upload if present
+        if (isset($_FILES['studentImage']) && $_FILES['studentImage']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['studentImage'];
+            $uploadDir = __DIR__ . '/../assets/img/students/';
+            
+            // Create directory if not exists
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'student_' . time() . '_' . uniqid() . '.' . $ext;
+            $filepath = $uploadDir . $filename;
+
+            if (move_uploaded_file($file['tmp_name'], $filepath)) {
+                $avatar = 'app/assets/img/students/' . $filename;
+            }
+        }
 
         if (empty($studentId) || empty($firstName) || empty($lastName) || empty($email)) {
             $this->error('Student ID, First Name, Last Name, and Email are required.');

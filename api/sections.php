@@ -25,9 +25,11 @@ switch ($action) {
     case 'update':
         $controller->update();
         break;
-    case 'delete':
     case 'archive':
         $controller->delete();
+        break;
+    case 'delete':
+        $controller->destroy();
         break;
     case 'restore':
         $controller->restore();

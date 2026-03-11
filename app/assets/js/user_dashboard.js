@@ -544,6 +544,167 @@ function deleteCookie(name) {
   document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/OSAS_WEB/app/entry/;';
 }
 
+/**
+ * Modern Alert/Confirm Modal System
+ */
+window.showModernAlert = function({ 
+  title = 'Are you sure?', 
+  message = '', 
+  icon = 'warning', 
+  confirmText = 'Confirm', 
+  cancelText = 'Cancel',
+  showCancel = true
+}) {
+  return new Promise((resolve) => {
+    let modal = document.getElementById('modernAlertModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modernAlertModal';
+      modal.className = 'modern-alert';
+      document.body.appendChild(modal);
+    }
+
+    const iconMap = {
+      warning: 'bx-error',
+      danger: 'bx-trash',
+      success: 'bx-check-circle',
+      info: 'bx-info-circle',
+      loading: 'bx-loader-alt bx-spin'
+    };
+
+    const iconClass = iconMap[icon] || iconMap.warning;
+    const isDanger = icon === 'danger';
+
+    modal.innerHTML = `
+      <div class="modern-alert-content">
+        <div class="modern-alert-icon ${icon}">
+          <i class='bx ${iconClass}'></i>
+        </div>
+        <h2>${title}</h2>
+        <p>${message}</p>
+        <div class="modern-alert-actions">
+          ${showCancel ? `<button class="modern-alert-btn cancel" id="modernAlertCancel">${cancelText}</button>` : ''}
+          <button class="modern-alert-btn confirm ${isDanger ? 'danger' : ''}" id="modernAlertConfirm">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    setTimeout(() => modal.classList.add('active'), 10);
+    document.body.style.overflow = 'hidden';
+
+    const cleanup = (result) => {
+      modal.classList.remove('active');
+      setTimeout(() => {
+        document.body.style.overflow = '';
+        resolve(result);
+      }, 300);
+    };
+
+    if (showCancel) {
+      document.getElementById('modernAlertCancel').onclick = () => cleanup(false);
+    }
+    document.getElementById('modernAlertConfirm').onclick = () => cleanup(true);
+    
+    modal.onclick = (e) => {
+      if (e.target === modal && showCancel) cleanup(false);
+    };
+  });
+};
+
+/**
+ * Modern Toast Notification System
+ */
+window.showNotification = function(message, type = 'info', title = null) {
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast-notification toast-${type}`;
+  
+  const icon = {
+    success: 'bx-check-circle',
+    error: 'bx-error-circle',
+    warning: 'bx-error',
+    info: 'bx-info-circle'
+  }[type] || 'bx-info-circle';
+
+  const defaultTitle = {
+    success: 'Success',
+    error: 'Error',
+    warning: 'Warning',
+    info: 'Information'
+  }[type] || 'Notice';
+
+  toast.innerHTML = `
+    <div class="toast-icon">
+      <i class='bx ${icon}'></i>
+    </div>
+    <div class="toast-content">
+      <span class="toast-title">${title || defaultTitle}</span>
+      <span class="toast-message">${message}</span>
+    </div>
+    <div class="toast-close">
+      <i class='bx bx-x'></i>
+    </div>
+    <div class="toast-progress">
+      <div class="toast-progress-bar"></div>
+    </div>
+  `;
+
+  container.appendChild(toast);
+
+  // Animate progress bar
+  const progressBar = toast.querySelector('.toast-progress-bar');
+  progressBar.style.transition = 'transform 4s linear';
+  
+  // Show toast
+  setTimeout(() => {
+    toast.classList.add('show');
+    progressBar.style.transform = 'scaleX(0)';
+  }, 100);
+
+  // Auto remove
+  const timeout = setTimeout(() => {
+    removeToast(toast);
+  }, 4000);
+
+  // Close button
+  toast.querySelector('.toast-close').onclick = () => {
+    clearTimeout(timeout);
+    removeToast(toast);
+  };
+};
+
+// Global Form Validation Interceptor
+document.addEventListener('invalid', (function() {
+  return function(e) {
+    // Prevent the browser from showing default error bubbles
+    e.preventDefault();
+    
+    // Show custom modern notification instead
+    const fieldName = e.target.getAttribute('placeholder') || e.target.getAttribute('name') || 'This field';
+    const message = e.target.validationMessage || 'Please fill out this field.';
+    
+    if (typeof showNotification === 'function') {
+      showNotification(`${message} (${fieldName})`, 'warning', 'Validation Error');
+    }
+  };
+})(), true);
+
+function removeToast(toast) {
+  toast.classList.remove('show');
+  toast.style.transform = 'translateX(120%)';
+  setTimeout(() => toast.remove(), 500);
+}
+
+// Global alias for compatibility
+window.showSuccess = (msg) => showNotification(msg, 'success');
+window.showError = (msg) => showNotification(msg, 'error');
+
 // ===============================
 // SIDEBAR HANDLING
 // ===============================

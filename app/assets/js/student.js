@@ -94,37 +94,85 @@ function initStudentsModule() {
         console.log('📡 Departments API:', departmentsApiBase);
         console.log('📡 Sections API:', sectionsApiBase);
 
+        // --- Validation Functions ---
+        function validateStudentForm() {
+            const requiredFields = [
+                { id: 'studentId', name: 'Student ID' },
+                { id: 'firstName', name: 'First Name' },
+                { id: 'lastName', name: 'Last Name' },
+                { id: 'studentEmail', name: 'Email' },
+                { id: 'studentDept', name: 'Department' },
+                { id: 'studentSection', name: 'Section' },
+                { id: 'studentYearlevel', name: 'Year Level' }
+            ];
+
+            let isValid = true;
+            let firstInvalidField = null;
+
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (element) {
+                    if (!element.value.trim()) {
+                        element.classList.add('is-invalid');
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = element;
+                        
+                        // Add listener to remove invalid class on input
+                        element.addEventListener('input', function removeInvalid() {
+                            element.classList.remove('is-invalid');
+                            element.removeEventListener('input', removeInvalid);
+                        });
+                    } else {
+                        element.classList.remove('is-invalid');
+                    }
+                }
+            });
+
+            if (!isValid) {
+                showError('Please fill out all required fields.');
+                if (firstInvalidField) firstInvalidField.focus();
+            }
+
+            return isValid;
+        }
+
         // --- Modern Alert Function ---
-        function showModernAlert({ title, message, icon = 'warning', showCancel = true, confirmText = 'Confirm', cancelText = 'Cancel', stats = null }) {
+        function showModernAlert(options) {
+            // Prefer global function from dashboard.js if available
+            if (window.showModernAlert && typeof window.showModernAlert === 'function') {
+                return window.showModernAlert(options);
+            }
+
+            // Fallback to local implementation
             return new Promise((resolve) => {
                 if (!modernAlertModal) return resolve(false);
 
                 // Reset
-                modernAlertTitle.textContent = title;
-                modernAlertMessage.textContent = message;
-                modernAlertIcon.className = `Modern-modal-icon ${icon}`;
+                modernAlertTitle.textContent = options.title;
+                modernAlertMessage.textContent = options.message;
+                modernAlertIcon.className = `Modern-modal-icon ${options.icon || 'warning'}`;
                 
                 // Set Icon
                 let iconHtml = "<i class='bx bx-help-circle'></i>";
-                if (icon === 'success') iconHtml = "<i class='bx bx-check-circle'></i>";
-                if (icon === 'error') iconHtml = "<i class='bx bx-x-circle'></i>";
-                if (icon === 'loading') iconHtml = "<i class='bx bx-loader-alt bx-spin'></i>";
+                if (options.icon === 'success') iconHtml = "<i class='bx bx-check-circle'></i>";
+                if (options.icon === 'error') iconHtml = "<i class='bx bx-x-circle'></i>";
+                if (options.icon === 'loading') iconHtml = "<i class='bx bx-loader-alt bx-spin'></i>";
                 modernAlertIcon.innerHTML = iconHtml;
 
                 // Stats
-                if (stats) {
+                if (options.stats) {
                     modernAlertStats.style.display = 'grid';
-                    document.getElementById('statNew').textContent = stats.created || 0;
-                    document.getElementById('statUpdated').textContent = stats.updated || 0;
-                    document.getElementById('statSkipped').textContent = stats.skipped || 0;
+                    document.getElementById('statNew').textContent = options.stats.created || 0;
+                    document.getElementById('statUpdated').textContent = options.stats.updated || 0;
+                    document.getElementById('statSkipped').textContent = options.stats.skipped || 0;
                 } else {
                     modernAlertStats.style.display = 'none';
                 }
 
                 // Buttons
-                modernAlertCancel.style.display = showCancel ? 'block' : 'none';
-                modernAlertCancel.textContent = cancelText;
-                modernAlertConfirm.textContent = confirmText;
+                modernAlertCancel.style.display = options.showCancel !== false ? 'block' : 'none';
+                modernAlertCancel.textContent = options.cancelText || 'Cancel';
+                modernAlertConfirm.textContent = options.confirmText || 'Confirm';
                 modernAlertConfirm.style.display = 'block';
 
                 // Show
@@ -1091,7 +1139,11 @@ function initStudentsModule() {
                 const student = allStudents.find(s => s.id === id);
                 if (student) {
                     const fullName = `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`;
-                    alert(`Viewing ${fullName}\nStudent ID: ${student.studentId}\nEmail: ${student.email}\nDepartment: ${student.department}\nSection: ${student.section}`);
+                    if (typeof showNotification === 'function') {
+                        showNotification(`Viewing Profile: ${fullName}\nStudent ID: ${student.studentId}`, 'info');
+                    } else {
+                        alert(`Viewing Profile: ${fullName}\nStudent ID: ${student.studentId}`);
+                    }
                 }
             }
 
@@ -1103,19 +1155,38 @@ function initStudentsModule() {
             if (deleteBtn) {
                 const id = parseInt(deleteBtn.dataset.id);
                 const student = allStudents.find(s => s.id === id);
-                if (student && confirm(`Archive student "${student.firstName} ${student.lastName}"?`)) {
-                    deleteStudent(id);
+                if (student) {
+                    showModernAlert({
+                        title: 'Archive Student',
+                        message: `Archive student "${student.firstName} ${student.lastName}"?`,
+                        icon: 'warning',
+                        confirmText: 'Yes, Archive'
+                    }).then(confirmed => {
+                        if (confirmed) deleteStudent(id);
+                    });
                 }
             }
         }
 
         // Utility functions
         function showError(message) {
-            alert(message); // You can replace this with a better notification system
+            if (window.showNotification && typeof window.showNotification === 'function') {
+                window.showNotification(message, 'error');
+            } else if (typeof showNotification === 'function') {
+                showNotification(message, 'error');
+            } else {
+                alert(message);
+            }
         }
 
         function showSuccess(message) {
-            alert(message); // You can replace this with a better notification system
+            if (window.showNotification && typeof window.showNotification === 'function') {
+                window.showNotification(message, 'success');
+            } else if (typeof showNotification === 'function') {
+                showNotification(message, 'success');
+            } else {
+                alert(message);
+            }
         }
 
         // --- Initialize ---
@@ -1333,16 +1404,12 @@ function initStudentsModule() {
                 studentsForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
 
-                    const studentIdCode = (document.getElementById('studentId')?.value || '').trim();
-                    const firstName = (document.getElementById('firstName')?.value || '').trim();
-                    const lastName = (document.getElementById('lastName')?.value || '').trim();
-                    const studentEmail = (document.getElementById('studentEmail')?.value || '').trim();
-
-                    if (!studentIdCode || !firstName || !lastName || !studentEmail) {
-                        showError('Student ID, First Name, Last Name, and Email are required.');
+                    // Modern validation with highlighting
+                    if (!validateStudentForm()) {
                         return;
                     }
 
+                    const studentIdCode = (document.getElementById('studentId')?.value || '').trim();
                     const formData = new FormData(studentsForm);
 
                     // Ensure backend gets the expected student ID field

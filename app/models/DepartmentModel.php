@@ -126,10 +126,11 @@ class DepartmentModel extends Model {
     }
 
     /**
-     * Check if department code exists
+     * Check if department code exists among active departments
      */
     public function codeExists($code, $excludeId = null) {
-        $query = "SELECT id FROM departments WHERE department_code = ?";
+        // Only check for departments that are NOT archived
+        $query = "SELECT id FROM departments WHERE department_code = ? AND status != 'archived'";
         if ($excludeId) {
             $query .= " AND id != ?";
             $result = $this->query($query, [$code, $excludeId]);
