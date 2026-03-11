@@ -50,12 +50,14 @@ class StudentController extends Controller {
         // Otherwise, get all students (paginated)
         $filter = $this->getGet('filter', 'all');
         $search = $this->getGet('search', '');
+        $department = $this->getGet('department', 'all');
+        $section = $this->getGet('section', 'all');
         $page = intval($this->getGet('page', 1));
         $limit = intval($this->getGet('limit', 10));
 
         try {
-            $students = $this->model->getAllWithDetails($filter, $search, $page, $limit);
-            $totalCount = $this->model->getCountWithFilters($filter, $search);
+            $students = $this->model->getAllWithDetails($filter, $search, $page, $limit, $department, $section);
+            $totalCount = $this->model->getCountWithFilters($filter, $search, $department, $section);
             $this->success('Students retrieved successfully', [
                 'students' => $students,
                 'total' => $totalCount,

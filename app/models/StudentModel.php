@@ -8,7 +8,7 @@ class StudentModel extends Model {
     /**
      * Get all students with filters and search
      */
-    public function getAllWithDetails($filter = 'all', $search = '', $page = null, $limit = null) {
+    public function getAllWithDetails($filter = 'all', $search = '', $page = null, $limit = null, $department = 'all', $sectionId = 'all') {
         // Check if sections and departments tables exist
         $sectionsExist = $this->tableExists('sections');
         $deptExist = $this->tableExists('departments');
@@ -61,22 +61,42 @@ class StudentModel extends Model {
         } else {
             $query .= " AND s.status != 'archived'";
         }
+
+        // Add department filter
+        if ($department !== 'all') {
+            $query .= " AND s.department = ?";
+            $params[] = $department;
+            $types .= "s";
+        }
+
+        // Add section filter
+        if ($sectionId !== 'all') {
+            $query .= " AND s.section_id = ?";
+            $params[] = (int)$sectionId;
+            $types .= "i";
+        }
         
         // Add search
         if (!empty($search)) {
             $searchTerm = "%$search%";
             if ($sectionsExist && $deptExist) {
                 $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR d.department_name LIKE ? OR sec.section_code LIKE ? OR sec.section_name LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) LIKE ? OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ?)";
-                $params = array_fill(0, 11, $searchTerm);
-                $types = "sssssssssss";
+                for($i=0; $i<11; $i++) {
+                    $params[] = $searchTerm;
+                    $types .= "s";
+                }
             } elseif ($sectionsExist) {
                 $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR sec.section_code LIKE ? OR sec.section_name LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) LIKE ? OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ?)";
-                $params = array_fill(0, 10, $searchTerm);
-                $types = "ssssssssss";
+                for($i=0; $i<10; $i++) {
+                    $params[] = $searchTerm;
+                    $types .= "s";
+                }
             } else {
                 $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) LIKE ? OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ?)";
-                $params = array_fill(0, 8, $searchTerm);
-                $types = "ssssssss";
+                for($i=0; $i<8; $i++) {
+                    $params[] = $searchTerm;
+                    $types .= "s";
+                }
             }
         }
         
@@ -138,6 +158,7 @@ class StudentModel extends Model {
                 'contact' => $row['contact_number'] ?: 'N/A',
                 'address' => $row['address'] ?: '',
                 'department' => $row['department_name'] ?? ($row['department'] ?? 'N/A'),
+                'department_code' => $row['department'] ?? '',
                 'section' => $row['section_code'] ?? 'N/A',
                 'section_id' => $row['section_id'] ?? null,
                 'yearlevel' => $row['yearlevel'] ?? 'N/A',
@@ -164,7 +185,7 @@ class StudentModel extends Model {
         return 0;
     }
 
-    public function getCountWithFilters($filter = 'all', $search = '') {
+    public function getCountWithFilters($filter = 'all', $search = '', $department = 'all', $sectionId = 'all') {
         $sectionsExist = $this->tableExists('sections');
         $deptExist = $this->tableExists('departments');
 
@@ -200,20 +221,40 @@ class StudentModel extends Model {
             $query .= " AND s.status != 'archived'";
         }
 
+        // Add department filter
+        if ($department !== 'all') {
+            $query .= " AND s.department = ?";
+            $params[] = $department;
+            $types .= "s";
+        }
+
+        // Add section filter
+        if ($sectionId !== 'all') {
+            $query .= " AND s.section_id = ?";
+            $params[] = (int)$sectionId;
+            $types .= "i";
+        }
+
         if (!empty($search)) {
             $searchTerm = "%$search%";
             if ($sectionsExist && $deptExist) {
                 $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR d.department_name LIKE ? OR sec.section_code LIKE ? OR sec.section_name LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) LIKE ? OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ?)";
-                $params = array_fill(0, 11, $searchTerm);
-                $types = "sssssssssss";
+                for($i=0; $i<11; $i++) {
+                    $params[] = $searchTerm;
+                    $types .= "s";
+                }
             } elseif ($sectionsExist) {
                 $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR sec.section_code LIKE ? OR sec.section_name LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) LIKE ? OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ?)";
-                $params = array_fill(0, 10, $searchTerm);
-                $types = "ssssssssss";
+                for($i=0; $i<10; $i++) {
+                    $params[] = $searchTerm;
+                    $types .= "s";
+                }
             } else {
                 $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.middle_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.department LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name) LIKE ? OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ?)";
-                $params = array_fill(0, 8, $searchTerm);
-                $types = "ssssssss";
+                for($i=0; $i<8; $i++) {
+                    $params[] = $searchTerm;
+                    $types .= "s";
+                }
             }
         }
 

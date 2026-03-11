@@ -119,11 +119,21 @@ require_once '../../config/db_connect.php';
 
         <div class="Students-filter-group">
           <select id="StudentsFilterSelect" class="Students-filter-select">
-            <option value="all">All Students</option>
+            <option value="all">All Status</option>
             <option value="active">Active Only</option>
             <option value="inactive">Inactive</option>
             <option value="graduating">Graduating</option>
             <option value="archived">Archived</option>
+          </select>
+
+          <select id="StudentsDepartmentFilter" class="Students-filter-select">
+            <option value="all">All Departments</option>
+            <!-- Departments will be loaded via JS -->
+          </select>
+
+          <select id="StudentsSectionFilter" class="Students-filter-select">
+            <option value="all">All Sections</option>
+            <!-- Sections will be loaded via JS based on department -->
           </select>
 
           <button class="Students-filter-btn" title="More filters">

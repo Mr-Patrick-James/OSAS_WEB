@@ -15,6 +15,8 @@ function initStudentsModule() {
         const studentsForm = document.getElementById('StudentsForm');
         const searchInput = document.getElementById('searchStudent');
         const filterSelect = document.getElementById('StudentsFilterSelect');
+        const deptFilterSelect = document.getElementById('StudentsDepartmentFilter');
+        const sectionFilterSelect = document.getElementById('StudentsSectionFilter');
         const exportBtn = document.getElementById('btnExportStudents');
         const importBtn = document.getElementById('btnImportStudents');
         const exportModal = document.getElementById('ExportStudentsModal');
@@ -232,8 +234,10 @@ function initStudentsModule() {
             try {
                 const filter = filterSelect ? filterSelect.value : 'all';
                 const search = searchInput ? searchInput.value : '';
+                const department = deptFilterSelect ? deptFilterSelect.value : 'all';
+                const section = sectionFilterSelect ? sectionFilterSelect.value : 'all';
                 
-                let url = `${apiBase}?action=get&filter=${filter}&page=${currentPage}&limit=${itemsPerPage}`;
+                let url = `${apiBase}?action=get&filter=${filter}&page=${currentPage}&limit=${itemsPerPage}&department=${encodeURIComponent(department)}&section=${encodeURIComponent(section)}`;
                 if (search) {
                     url += `&search=${encodeURIComponent(search)}`;
                 }
@@ -554,6 +558,28 @@ function initStudentsModule() {
             }
         }
 
+        async function loadFilterDepartments() {
+            if (!deptFilterSelect) return;
+            
+            try {
+                const response = await fetch(departmentsApiBase);
+                const result = await response.json();
+                
+                deptFilterSelect.innerHTML = '<option value="all">All Departments</option>';
+                
+                if (result.status === 'success' && result.data && result.data.length > 0) {
+                    result.data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.code;
+                        option.textContent = dept.name;
+                        deptFilterSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading filter departments:', error);
+            }
+        }
+
         async function loadSectionsByDepartment(departmentCode) {
             if (!departmentCode || !studentSectionSelect) {
                 console.warn('Missing departmentCode or studentSectionSelect');
@@ -591,10 +617,35 @@ function initStudentsModule() {
             }
         }
 
+        async function loadFilterSections(departmentCode) {
+            if (!sectionFilterSelect) return;
+            
+            try {
+                const url = `${sectionsApiBase}?action=getByDepartment&department_code=${encodeURIComponent(departmentCode)}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                sectionFilterSelect.innerHTML = '<option value="all">All Sections</option>';
+                
+                if (result.status === 'success' && result.data && result.data.length > 0) {
+                    result.data.forEach(section => {
+                        const option = document.createElement('option');
+                        option.value = section.id;
+                        option.textContent = `${section.section_code} - ${section.section_name}`;
+                        sectionFilterSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading filter sections:', error);
+            }
+        }
+
         // --- Render function ---
         function renderStudents() {
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             const filterValue = filterSelect ? filterSelect.value : 'all';
+            const deptFilter = deptFilterSelect ? deptFilterSelect.value : 'all';
+            const sectionFilter = sectionFilterSelect ? sectionFilterSelect.value : 'all';
             
             const list = Array.isArray(students) ? students : [];
             const filteredStudents = list.filter(s => {
@@ -611,6 +662,16 @@ function initStudentsModule() {
                     matchesFilter = s.status === 'archived';
                 } else {
                     matchesFilter = s.status !== 'archived' && (filterValue === 'all' || s.status === filterValue);
+                }
+
+                // Filter by department
+                if (deptFilter !== 'all' && s.department_code !== deptFilter) {
+                    matchesFilter = false;
+                }
+
+                // Filter by section
+                if (sectionFilter !== 'all' && String(s.section_id) !== String(sectionFilter)) {
+                    matchesFilter = false;
                 }
                 
                 return matchesSearch && matchesFilter;
@@ -1306,6 +1367,9 @@ function initStudentsModule() {
                 filterSelect.value = 'active';
             }
 
+            // Load filters
+            await loadFilterDepartments();
+
             // Initial load - only active students
             await fetchStudents();
 
@@ -1340,6 +1404,34 @@ function initStudentsModule() {
                          }
                          if (btnAddStudent) btnAddStudent.style.display = 'inline-flex';
                      }
+                    currentPage = 1;
+                    fetchStudents();
+                });
+            }
+
+            // Department filter listener
+            if (deptFilterSelect) {
+                deptFilterSelect.addEventListener('change', async () => {
+                    const deptCode = deptFilterSelect.value;
+                    
+                    // Reset section filter when department changes
+                    if (sectionFilterSelect) {
+                        sectionFilterSelect.innerHTML = '<option value="all">All Sections</option>';
+                        sectionFilterSelect.value = 'all';
+                    }
+                    
+                    if (deptCode !== 'all') {
+                        await loadFilterSections(deptCode);
+                    }
+                    
+                    currentPage = 1;
+                    fetchStudents();
+                });
+            }
+
+            // Section filter listener
+            if (sectionFilterSelect) {
+                sectionFilterSelect.addEventListener('change', () => {
                     currentPage = 1;
                     fetchStudents();
                 });
