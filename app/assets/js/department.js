@@ -235,7 +235,11 @@ function initDepartmentModule() {
           meta.total_pages = typeof payload.total_pages === 'number' ? payload.total_pages : Math.ceil(meta.total / meta.limit);
         } else {
           console.error('Unexpected API data shape:', payload);
-          alert('Unexpected response from server while loading departments.');
+          if (typeof showNotification === 'function') {
+            showNotification('Unexpected response from server while loading departments.', 'error');
+          } else {
+            console.error('Unexpected response from server while loading departments.');
+          }
           return;
         }
 
@@ -258,12 +262,20 @@ function initDepartmentModule() {
         loadStats();
       } else {
         console.error('Error loading departments:', result.message);
-        alert('Error loading departments: ' + result.message);
+        if (typeof showNotification === 'function') {
+          showNotification('Error loading departments: ' + result.message, 'error');
+        } else {
+          console.error('Error loading departments: ' + result.message);
+        }
       }
     } catch (error) {
       console.error('Error fetching departments:', error);
       console.error('Full error details:', error.message, error.stack);
-      alert('Error fetching departments. Please check your connection and console for details.');
+      if (typeof showNotification === 'function') {
+        showNotification('Error fetching departments. Please check console.', 'error');
+      } else {
+        console.error('Error fetching departments. Please check your connection and console for details.');
+      }
     }
   }
 
@@ -330,7 +342,11 @@ function initDepartmentModule() {
 
   async function downloadDepartmentsPDF() {
     if (!window.jspdf) {
-      alert('PDF library not loaded. Please refresh the page.');
+      if (typeof showNotification === 'function') {
+        showNotification('PDF library not loaded. Please refresh.', 'warning');
+      } else {
+        console.warn('PDF library not loaded. Please refresh the page.');
+      }
       return;
     }
     
@@ -429,7 +445,11 @@ function initDepartmentModule() {
 
   async function downloadDepartmentsWord() {
     if (!window.docx) {
-      alert('DOCX library not loaded. Please refresh the page.');
+      if (typeof showNotification === 'function') {
+        showNotification('DOCX library not loaded. Please refresh.', 'warning');
+      } else {
+        console.warn('DOCX library not loaded. Please refresh the page.');
+      }
       return;
     }
     
@@ -692,7 +712,7 @@ function initDepartmentModule() {
           if (typeof showNotification === 'function') {
             showNotification('Department name and code are required.', 'warning');
           } else {
-            alert('Department name and code are required.');
+            console.warn('Department name and code are required.');
           }
           return;
         }
@@ -803,16 +823,28 @@ function initDepartmentModule() {
       const result = await response.json();
       
       if (result.status === 'success') {
-        alert(result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'success');
+        } else {
+          console.log(result.message);
+        }
         closeModal();
         loadDepartments(currentView);
         loadStats();
       } else {
-        alert('Error: ' + result.message);
+        if (typeof showNotification === 'function') {
+          showNotification('Error: ' + result.message, 'error');
+        } else {
+          console.error('Error: ' + result.message);
+        }
       }
     } catch (error) {
       console.error('Error adding department:', error);
-      alert('Error adding department. Please try again.');
+      if (typeof showNotification === 'function') {
+        showNotification('Error adding department. Please try again.', 'error');
+      } else {
+        console.error('Error adding department. Please try again.');
+      }
     }
   }
 
@@ -843,7 +875,7 @@ function initDepartmentModule() {
         if (typeof showNotification === 'function') {
           showNotification(result.message, 'success');
         } else {
-          alert(result.message);
+          console.log(result.message);
         }
         closeModal();
         loadDepartments(currentView);
@@ -852,7 +884,7 @@ function initDepartmentModule() {
         if (typeof showNotification === 'function') {
           showNotification(result.message, 'error');
         } else {
-          alert('Error: ' + result.message);
+          console.error('Error: ' + result.message);
         }
       }
     } catch (error) {
@@ -860,7 +892,7 @@ function initDepartmentModule() {
       if (typeof showNotification === 'function') {
         showNotification('Error updating department. Please try again.', 'error');
       } else {
-        alert('Error updating department. Please try again.');
+        console.error('Error updating department. Please try again.');
       }
     }
   }
@@ -887,7 +919,7 @@ function initDepartmentModule() {
         if (typeof showNotification === 'function') {
           showNotification(result.message, 'success');
         } else {
-          alert(result.message);
+          console.log(result.message);
         }
         loadDepartments(currentView);
         loadStats();
@@ -895,7 +927,7 @@ function initDepartmentModule() {
         if (typeof showNotification === 'function') {
           showNotification(result.message, 'error');
         } else {
-          alert('Error: ' + result.message);
+          console.error('Error: ' + result.message);
         }
       }
     } catch (error) {
@@ -903,7 +935,7 @@ function initDepartmentModule() {
       if (typeof showNotification === 'function') {
         showNotification('Error deleting department. Please try again.', 'error');
       } else {
-        alert('Error deleting department. Please try again.');
+        console.error('Error deleting department. Please try again.');
       }
     }
   }
@@ -930,7 +962,7 @@ function initDepartmentModule() {
         if (typeof showNotification === 'function') {
           showNotification(result.message, 'success');
         } else {
-          alert(result.message);
+          console.log(result.message);
         }
         loadDepartments(currentView);
         loadStats();
@@ -938,7 +970,7 @@ function initDepartmentModule() {
         if (typeof showNotification === 'function') {
           showNotification(result.message, 'error');
         } else {
-          alert('Error: ' + result.message);
+          console.error('Error: ' + result.message);
         }
       }
     } catch (error) {
@@ -946,7 +978,7 @@ function initDepartmentModule() {
       if (typeof showNotification === 'function') {
         showNotification('Error archiving department. Please try again.', 'error');
       } else {
-        alert('Error archiving department. Please try again.');
+        console.error('Error archiving department. Please try again.');
       }
     }
   }
@@ -970,15 +1002,27 @@ function initDepartmentModule() {
       const result = await response.json();
       
       if (result.status === 'success') {
-        alert(result.message);
+        if (typeof showNotification === 'function') {
+          showNotification(result.message, 'success');
+        } else {
+          console.log(result.message);
+        }
         loadDepartments(currentView);
         loadStats();
       } else {
-        alert('Error: ' + result.message);
+        if (typeof showNotification === 'function') {
+          showNotification('Error: ' + result.message, 'error');
+        } else {
+          console.error('Error: ' + result.message);
+        }
       }
     } catch (error) {
       console.error('Error restoring department:', error);
-      alert('Error restoring department. Please try again.');
+      if (typeof showNotification === 'function') {
+        showNotification('Error restoring department. Please try again.', 'error');
+      } else {
+        console.error('Error restoring department. Please try again.');
+      }
     }
   }
 

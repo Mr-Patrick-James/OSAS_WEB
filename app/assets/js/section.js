@@ -333,7 +333,11 @@ function initSectionsModule() {
 
         async function downloadSectionsPDF() {
             if (!window.jspdf) {
-                alert('PDF library not loaded. Please refresh the page.');
+                if (typeof showNotification === 'function') {
+                    showNotification('PDF library not loaded. Please refresh.', 'warning');
+                } else {
+                    alert('PDF library not loaded. Please refresh the page.');
+                }
                 return;
             }
             
@@ -432,7 +436,11 @@ function initSectionsModule() {
 
         async function downloadSectionsWord() {
             if (!window.docx) {
-                alert('DOCX library not loaded. Please refresh the page.');
+                if (typeof showNotification === 'function') {
+                    showNotification('DOCX library not loaded. Please refresh.', 'warning');
+                } else {
+                    console.warn('DOCX library not loaded. Please refresh the page.');
+                }
                 return;
             }
             
@@ -681,7 +689,7 @@ function initSectionsModule() {
             if (typeof showNotification === 'function') {
                 showNotification(message, 'success');
             } else {
-                alert(message);
+                console.log(message);
             }
         }
 
@@ -689,7 +697,7 @@ function initSectionsModule() {
             if (typeof showNotification === 'function') {
                 showNotification(message, 'error');
             } else {
-                alert(message);
+                console.error(message);
             }
         }
 

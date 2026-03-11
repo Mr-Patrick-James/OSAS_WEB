@@ -253,10 +253,19 @@ class StudentController extends Controller {
         }
 
         try {
-            $this->model->archive($id);
-            $this->success('Student archived successfully!');
+            // Check if student is already archived
+            $student = $this->model->getById($id);
+            if ($student && $student['status'] === 'archived') {
+                // If archived, perform permanent delete
+                $this->model->delete($id);
+                $this->success('Student permanently deleted!');
+            } else {
+                // Otherwise just archive it
+                $this->model->archive($id);
+                $this->success('Student archived successfully!');
+            }
         } catch (Exception $e) {
-            $this->error('Failed to archive student: ' . $e->getMessage());
+            $this->error('Operation failed: ' . $e->getMessage());
         }
     }
 

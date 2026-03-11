@@ -404,6 +404,28 @@ class StudentModel extends Model {
     }
 
     /**
+     * Permanent delete student and associated user account
+     */
+    public function delete($id) {
+        try {
+            // Get student info before deleting to find associated user
+            $student = $this->getById($id);
+            if ($student) {
+                $studentIdCode = $student['student_id'];
+                // Delete associated user first
+                if (!empty($studentIdCode)) {
+                    $this->conn->query("DELETE FROM users WHERE student_id = '$studentIdCode' OR username = '$studentIdCode'");
+                }
+            }
+            // Delete student record
+            return parent::delete($id);
+        } catch (Exception $e) {
+            error_log("StudentModel::delete error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Import all students from data array
      */
     public function importAll($data) {

@@ -680,9 +680,12 @@ function initStudentsModule() {
                                 <button class="Students-action-btn edit" data-id="${s.id}" title="Edit">
                                     <i class='bx bx-edit'></i>
                                 </button>
-                                ${(s.status && s.status.toLowerCase() === 'archived') ? `
+                                ${ (s.status && s.status.toLowerCase() === 'archived') ? `
                                     <button class="Students-action-btn restore" data-id="${s.id}" title="Restore">
                                         <i class='bx bx-undo'></i>
+                                    </button>
+                                    <button class="Students-action-btn delete permanent" data-id="${s.id}" title="Delete Permanently">
+                                        <i class='bx bx-trash'></i>
                                     </button>
                                 ` : `
                                     <button class="Students-action-btn delete" data-id="${s.id}" title="Archive">
@@ -767,7 +770,11 @@ function initStudentsModule() {
 
         async function downloadStudentsPDF() {
             if (!window.jspdf) {
-                alert('PDF library not loaded. Please refresh the page.');
+                if (typeof showNotification === 'function') {
+                    showNotification('PDF library not loaded. Please refresh.', 'warning');
+                } else {
+                    console.warn('PDF library not loaded. Please refresh the page.');
+                }
                 return;
             }
             
@@ -924,7 +931,11 @@ function initStudentsModule() {
 
         async function downloadStudentsWord() {
             if (!window.docx) {
-                alert('DOCX library not loaded. Please refresh the page.');
+                if (typeof showNotification === 'function') {
+                    showNotification('DOCX library not loaded. Please refresh.', 'warning');
+                } else {
+                    console.warn('DOCX library not loaded. Please refresh the page.');
+                }
                 return;
             }
             
@@ -1009,7 +1020,11 @@ function initStudentsModule() {
                     saveAs(blob, `Student_List_${now.toISOString().slice(0, 10)}.docx`);
                 } else {
                     console.error('FileSaver.js not loaded');
-                    alert('Error: FileSaver.js not loaded');
+                    if (typeof showNotification === 'function') {
+                        showNotification('Error: FileSaver.js not loaded', 'error');
+                    } else {
+                        console.error('Error: FileSaver.js not loaded');
+                    }
                 }
             });
         }
@@ -1120,6 +1135,48 @@ function initStudentsModule() {
             document.body.style.overflow = 'hidden';
         }
 
+        function openProfileModal(student) {
+            const profileModal = document.getElementById('StudentProfileModal');
+            if (!profileModal) return;
+
+            // Fill details
+            const fullName = `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`;
+            document.getElementById('profileFullName').textContent = fullName;
+            document.getElementById('profileId').textContent = student.studentId || 'N/A';
+            document.getElementById('profileDept').textContent = student.department || 'N/A';
+            document.getElementById('profileSection').textContent = student.section || 'N/A';
+            document.getElementById('profileYear').textContent = student.yearlevel || 'N/A';
+            document.getElementById('profileEmail').textContent = student.email || 'N/A';
+            document.getElementById('profileContact').textContent = student.contact || 'N/A';
+            document.getElementById('profileDate').textContent = student.date || 'N/A';
+            document.getElementById('profileAddress').textContent = student.address || 'No address provided.';
+            
+            // Avatar
+            const avatarImg = document.getElementById('profileAvatar');
+            if (avatarImg) {
+                avatarImg.src = student.avatar || '../app/assets/img/default.png';
+            }
+
+            // Status Badge
+            const statusBadge = document.getElementById('profileStatusBadge');
+            if (statusBadge) {
+                const status = student.status || 'active';
+                statusBadge.className = `status-badge ${status.toLowerCase()}`;
+                statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            }
+
+            profileModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProfileModal() {
+            const profileModal = document.getElementById('StudentProfileModal');
+            if (profileModal) {
+                profileModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
         function closeModal() {
             if (!modal) return;
             
@@ -1155,12 +1212,7 @@ function initStudentsModule() {
                 const id = parseInt(viewBtn.dataset.id);
                 const student = allStudents.find(s => s.id === id);
                 if (student) {
-                    const fullName = `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`;
-                    if (typeof showNotification === 'function') {
-                        showNotification(`Viewing Profile: ${fullName}\nStudent ID: ${student.studentId}`, 'info');
-                    } else {
-                        alert(`Viewing Profile: ${fullName}\nStudent ID: ${student.studentId}`);
-                    }
+                    openProfileModal(student);
                 }
             }
 
@@ -1173,14 +1225,25 @@ function initStudentsModule() {
                 const id = parseInt(deleteBtn.dataset.id);
                 const student = allStudents.find(s => s.id === id);
                 if (student) {
-                    showModernAlert({
-                        title: 'Archive Student',
-                        message: `Archive student "${student.firstName} ${student.lastName}"?`,
-                        icon: 'warning',
-                        confirmText: 'Yes, Archive'
-                    }).then(confirmed => {
-                        if (confirmed) deleteStudent(id);
-                    });
+                    if (student.status && student.status.toLowerCase() === 'archived') {
+                        showModernAlert({
+                            title: 'Permanent Delete',
+                            message: `Permanently delete student "${student.firstName} ${student.lastName}"? This action cannot be undone.`,
+                            icon: 'error',
+                            confirmText: 'Delete Permanently'
+                        }).then(confirmed => {
+                            if (confirmed) deleteStudent(id);
+                        });
+                    } else {
+                        showModernAlert({
+                            title: 'Archive Student',
+                            message: `Archive student "${student.firstName} ${student.lastName}"? This will move them to the archived list.`,
+                            icon: 'warning',
+                            confirmText: 'Yes, Archive'
+                        }).then(confirmed => {
+                            if (confirmed) deleteStudent(id);
+                        });
+                    }
                 }
             }
 
@@ -1207,7 +1270,7 @@ function initStudentsModule() {
             } else if (typeof showNotification === 'function') {
                 showNotification(message, 'error');
             } else {
-                alert(message);
+                console.error(message);
             }
         }
 
@@ -1217,7 +1280,7 @@ function initStudentsModule() {
             } else if (typeof showNotification === 'function') {
                 showNotification(message, 'success');
             } else {
-                alert(message);
+                console.log(message);
             }
         }
 
@@ -1425,10 +1488,25 @@ function initStudentsModule() {
             if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
             if (modalOverlay) modalOverlay.addEventListener('click', closeModal);
 
-            // Escape key to close modal
+            // Profile Modal close listeners
+            const closeProfileModalBtn = document.getElementById('closeProfileModal');
+            const closeProfileBtn = document.getElementById('closeProfileBtn');
+            const profileModalOverlay = document.getElementById('ProfileModalOverlay');
+
+            if (closeProfileModalBtn) closeProfileModalBtn.addEventListener('click', closeProfileModal);
+            if (closeProfileBtn) closeProfileBtn.addEventListener('click', closeProfileModal);
+            if (profileModalOverlay) profileModalOverlay.addEventListener('click', closeProfileModal);
+
+            // Escape key to close modals
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
-                    closeModal();
+                if (e.key === 'Escape') {
+                    if (modal && modal.classList.contains('active')) {
+                        closeModal();
+                    }
+                    const profileModal = document.getElementById('StudentProfileModal');
+                    if (profileModal && profileModal.classList.contains('active')) {
+                        closeProfileModal();
+                    }
                 }
             });
 

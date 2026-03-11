@@ -380,6 +380,71 @@ require_once '../../config/db_connect.php';
     </div>
   </div>
 
+  <!-- Student Profile Modal -->
+  <div id="StudentProfileModal" class="Students-modal">
+    <div class="Students-modal-overlay" id="ProfileModalOverlay"></div>
+    <div class="Students-modal-container" style="max-width: 600px;">
+      <div class="Students-modal-header">
+        <h2>
+          <i class='bx bx-user-circle'></i>
+          <span>Student Profile</span>
+        </h2>
+        <button class="Students-close-btn" id="closeProfileModal">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+      <div class="Students-modal-body">
+        <div class="profile-details-wrapper" style="padding: 20px;">
+          <div class="profile-header" style="display: flex; gap: 20px; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+            <div class="profile-avatar-large">
+              <img id="profileAvatar" src="" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold);">
+            </div>
+            <div class="profile-main-info">
+              <h3 id="profileFullName" style="font-size: 1.5rem; color: var(--dark); margin-bottom: 5px;"></h3>
+              <p id="profileId" style="color: var(--gold); font-weight: 600; font-size: 1rem;"></p>
+              <span id="profileStatusBadge" class="status-badge"></span>
+            </div>
+          </div>
+          
+          <div class="profile-info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+            <div class="info-group">
+              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Department</label>
+              <p id="profileDept" style="font-weight: 500; color: var(--dark);"></p>
+            </div>
+            <div class="info-group">
+              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Section</label>
+              <p id="profileSection" style="font-weight: 500; color: var(--dark);"></p>
+            </div>
+            <div class="info-group">
+              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Year Level</label>
+              <p id="profileYear" style="font-weight: 500; color: var(--dark);"></p>
+            </div>
+            <div class="info-group">
+              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Email</label>
+              <p id="profileEmail" style="font-weight: 500; color: var(--dark);"></p>
+            </div>
+            <div class="info-group">
+              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Contact</label>
+              <p id="profileContact" style="font-weight: 500; color: var(--dark);"></p>
+            </div>
+            <div class="info-group">
+              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Enrollment Date</label>
+              <p id="profileDate" style="font-weight: 500; color: var(--dark);"></p>
+            </div>
+          </div>
+          
+          <div class="info-group" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+            <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Address</label>
+            <p id="profileAddress" style="font-weight: 500; color: var(--dark); line-height: 1.5;"></p>
+          </div>
+        </div>
+      </div>
+      <div class="Students-modal-footer" style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end;">
+        <button type="button" class="Students-btn outline" id="closeProfileBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modern Alert/Confirm Modal -->
   <div id="ModernAlertModal" class="Students-modal">
     <div class="Students-modal-overlay" id="ModernAlertOverlay"></div>
