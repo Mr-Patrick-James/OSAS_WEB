@@ -16,7 +16,7 @@ class StudentModel extends Model {
         // Build query with JOINs
         if ($sectionsExist && $deptExist) {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel, s.year_level,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              COALESCE(sec.section_name, 'N/A') as section_name, 
                              COALESCE(sec.section_code, 'N/A') as section_code, 
@@ -27,7 +27,7 @@ class StudentModel extends Model {
                       WHERE 1=1";
         } elseif ($sectionsExist) {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel, s.year_level,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              COALESCE(sec.section_name, 'N/A') as section_name, 
                              COALESCE(sec.section_code, 'N/A') as section_code, 
@@ -37,7 +37,7 @@ class StudentModel extends Model {
                       WHERE 1=1";
         } else {
             $query = "SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, 
-                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel,
+                             s.email, s.contact_number, s.address, s.department, s.section_id, s.yearlevel, s.year_level,
                              s.avatar, s.status, s.created_at, s.updated_at,
                              'N/A' as section_name, 
                              'N/A' as section_code, 

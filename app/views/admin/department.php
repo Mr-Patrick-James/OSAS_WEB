@@ -171,7 +171,7 @@ include '../../config/db_connect.php';
     <!-- Modal -->
     <div id="departmentModal" class="modal">
       <div class="modal-overlay" id="modalOverlay"></div>
-      <div class="modal-container">
+      <div class="modal-container" style="max-width: 450px;">
         <div class="modal-header">
           <h2 id="modalTitle">
             <i class='bx bxs-building'></i>

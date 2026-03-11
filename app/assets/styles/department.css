@@ -761,7 +761,7 @@ body.dark #departmentModal .close-btn:hover {
   position: relative;
   background: var(--light);
   width: 90%;
-  max-width: 500px;
+  max-width: 450px !important;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
