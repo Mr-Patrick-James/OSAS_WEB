@@ -306,6 +306,10 @@
     background: var(--gold);
 }
 
+#content main .table-data .order table tr td .status.permitted {
+    background: var(--green);
+}
+
 #content main .table-data .order table tr td .status.process {
     background: var(--yellow);
 }

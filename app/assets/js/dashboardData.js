@@ -838,7 +838,8 @@ class DashboardData {
             const status = (violation.status || 'pending').toLowerCase();
             const avatar = violation.studentImage || violation.avatar || '../app/assets/img/default.png';
 
-            const statusClass = status === 'completed' || status === 'resolved' || status === 'permitted' ? 'completed' :
+            const statusClass = status === 'permitted' ? 'permitted' :
+                               (status === 'completed' || status === 'resolved') ? 'completed' :
                                status === 'warning' ? 'process' : 'pending';
             const statusText = status === 'completed' || status === 'resolved' ? 'Resolved' :
                               status === 'warning' ? 'Warning' :
