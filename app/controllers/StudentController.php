@@ -138,12 +138,20 @@ class StudentController extends Controller {
                 'department' => $department ?: null,
                 'section_id' => $sectionId ?: null,
                 'yearlevel' => $yearlevel ?: null,
+                'year_level' => $yearlevel ?: '1st Year', // Include underscore version for DB compatibility
                 'avatar' => $avatar ?: null,
                 'status' => $status,
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
             $id = $this->model->create($data);
+            
+            // Sync user account for the student
+            if ($id) {
+                $fullName = $firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName;
+                $this->model->syncUser($studentId, $email, $fullName);
+            }
+            
             $this->success('Student added successfully!', ['id' => $id]);
         } catch (Exception $e) {
             $this->error('Failed to add student: ' . $e->getMessage());
@@ -216,12 +224,21 @@ class StudentController extends Controller {
                 'department' => $department ?: null,
                 'section_id' => $sectionId ?: null,
                 'yearlevel' => $yearlevel ?: null,
-                'avatar' => $avatar ?: null,
+                'year_level' => $yearlevel ?: '1st Year', // Include underscore version for DB compatibility
                 'status' => $status,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 
+            if ($avatar !== '') {
+                $data['avatar'] = $avatar;
+            }
+
             $this->model->update($id, $data);
+            
+            // Sync user account for the student
+            $fullName = $firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName;
+            $this->model->syncUser($studentId, $email, $fullName);
+            
             $this->success('Student updated successfully!');
         } catch (Exception $e) {
             $this->error('Failed to update student: ' . $e->getMessage());

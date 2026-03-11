@@ -521,7 +521,10 @@ class StudentModel extends Model {
         return $email;
     }
 
-    private function syncUser($studentId, $email, $fullName) {
+    /**
+     * Sync user account for a student
+     */
+    public function syncUser($studentId, $email, $fullName) {
         if (empty($email)) return;
         
         $defaultPassword = password_hash('password123', PASSWORD_DEFAULT);

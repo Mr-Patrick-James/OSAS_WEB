@@ -1122,26 +1122,15 @@ function initChatbot() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initChatbot();
-        setupSidebarButtons();
     });
 } else {
     initChatbot();
-    setupSidebarButtons();
 }
 
 // Also try on window load as fallback
 window.addEventListener('load', function() {
     if (!window.chatbotInstance) {
         initChatbot();
-    }
-    // Re-setup buttons in case they weren't found earlier
-    const existingButtons = document.querySelectorAll('.chatbot-sidebar-btn');
-    if (existingButtons.length > 0) {
-        existingButtons.forEach(btn => {
-            if (!btn.hasAttribute('data-listener-attached')) {
-                setupSidebarButtons();
-            }
-        });
     }
 });
 
