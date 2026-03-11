@@ -1,4 +1,10 @@
 <?php
+// Check if user wants to see login page (bypass auto-redirect)
+$forceLogin = isset($_GET['force_login']) && $_GET['force_login'] === 'true';
+
+// Check if user wants to see login page (bypass auto-redirect)
+$forceLogin = isset($_GET['force_login']) && $_GET['force_login'] === 'true';
+
 // Session is already started in index.php, no need to start again
 if (!$forceLogin && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
     // Restore session from cookies
@@ -286,6 +292,14 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     </button>
 
     <script src="service-worker.js"></script>
+    <script src="app/assets/js/pwa.js"></script>
+    <script src="app/assets/js/session.js"></script>
+    <script src="app/assets/js/login.js"></script>
+
+</body>
+
+</html>
+s"></script>
     <script src="app/assets/js/pwa.js"></script>
     <script src="app/assets/js/session.js"></script>
     <script src="app/assets/js/login.js"></script>
