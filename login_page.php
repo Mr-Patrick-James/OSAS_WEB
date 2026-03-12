@@ -273,7 +273,7 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
                         <span class="checkmark"></span>
                         Remember me
                     </label>
-                    <a href="./includes/forgot_password.php" class="forgot-password">Forgot password?</a>
+                    <a href="#" class="forgot-password" id="forgotPasswordBtn">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="login-button" id="loginButton">
@@ -286,6 +286,171 @@ if (!$forceLogin && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             </div>
         </div>
     </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-key"></i>
+                </div>
+                <h2>Reset Password</h2>
+                <button class="close-modal" id="closeForgotModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p>You need to go to <strong>admin</strong> and request to reset the password.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-primary" id="gotItBtn">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Forgot Password Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-card, #ffffff);
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(212, 175, 55, 0.1);
+            color: #D4AF37;
+            font-size: 24px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 15px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary, #333);
+            margin: 0;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #666;
+        }
+
+        .modal-body {
+            margin-bottom: 25px;
+        }
+
+        .info-box {
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 4px solid #D4AF37;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .info-box i {
+            color: #D4AF37;
+            font-size: 1.2rem;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: var(--text-secondary, #666);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .modal-btn-primary {
+            background: #D4AF37;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .modal-btn-primary:hover {
+            background: #b8962d;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Dark mode overrides */
+        body.dark-mode .modal-content {
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .modal-header h2 {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .info-box {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        body.dark-mode .info-box p {
+            color: #ccc;
+        }
+    </style>
 
     <button id="installPWA" class="pwa-install-btn">
         Install App

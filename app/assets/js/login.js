@@ -354,6 +354,39 @@ function initApp() {
         console.log('Password toggle event listener added');
     }
 
+    // Forgot Password Modal Logic
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+    const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+    const closeForgotModal = document.getElementById('closeForgotModal');
+    const gotItBtn = document.getElementById('gotItBtn');
+
+    if (forgotPasswordBtn && forgotPasswordModal) {
+        forgotPasswordBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotPasswordModal.style.display = 'flex';
+            setTimeout(() => {
+                forgotPasswordModal.classList.add('show');
+            }, 10);
+        });
+
+        const closeModal = () => {
+            forgotPasswordModal.classList.remove('show');
+            setTimeout(() => {
+                forgotPasswordModal.style.display = 'none';
+            }, 300);
+        };
+
+        if (closeForgotModal) closeForgotModal.addEventListener('click', closeModal);
+        if (gotItBtn) gotItBtn.addEventListener('click', closeModal);
+
+        // Close on overlay click
+        forgotPasswordModal.addEventListener('click', (e) => {
+            if (e.target === forgotPasswordModal) {
+                closeModal();
+            }
+        });
+    }
+
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', function (e) {

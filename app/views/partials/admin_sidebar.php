@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 // Get user profile image or default
 $userImage = View::asset('img/user.jpg');
