@@ -258,13 +258,26 @@ function updateUserInfo(session) {
 }
 
 // Enhanced logout function
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        console.log('👋 User logging out...');
+window.logout = function(e) {
+    if (e) e.preventDefault();
+    if (typeof openLogoutModal === 'function') {
+        openLogoutModal();
+    } else if (typeof window.openLogoutModal === 'function') {
+        window.openLogoutModal();
+    } else {
+        // Fallback to confirm if modal fails
+        if (confirm('Are you sure you want to logout?')) {
+            executeLogout();
+        }
+    }
+}
 
-        // Clear all client-side storage
-        localStorage.removeItem('userSession');
-        sessionStorage.removeItem('userSession');
+window.executeLogout = function() {
+    console.log('👋 User logging out...');
+
+    // Clear all client-side storage
+    localStorage.removeItem('userSession');
+    sessionStorage.removeItem('userSession');
 
         // Delete all authentication cookies on client side
         document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -290,7 +303,6 @@ function logout() {
         
         console.log('Redirecting to logout:', logoutPath);
         window.location.href = logoutPath;
-    }
 }
 
 // Enhanced content loading with error handling and loading states

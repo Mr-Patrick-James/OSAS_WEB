@@ -81,6 +81,7 @@ if ($_SESSION['role'] !== 'admin') {
   <script src="../app/assets/js/reports.js"></script>
   <script src="../app/assets/js/announcement.js"></script>
   <script src="../app/assets/js/chatbot.js"></script>
+  <?php View::partial('logout_modal'); ?>
 </body>
 
 </html>

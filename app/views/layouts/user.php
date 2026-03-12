@@ -69,6 +69,7 @@ $notificationCount = 7; // Can be dynamic later
   <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <script src="<?= View::asset('js/pwa.js') ?>"></script>
+  <?php View::partial('logout_modal'); ?>
 </body>
 
 </html>

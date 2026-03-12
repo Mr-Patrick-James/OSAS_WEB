@@ -481,8 +481,21 @@ function updateUserInfo(session) {
 // ===============================
 // LOGOUT FUNCTION
 // ===============================
-function logout() {
-  if (confirm('Are you sure you want to logout?')) {
+window.logout = function(e) {
+  if (e) e.preventDefault();
+  if (typeof openLogoutModal === 'function') {
+      openLogoutModal();
+  } else if (typeof window.openLogoutModal === 'function') {
+      window.openLogoutModal();
+  } else {
+      // Fallback to confirm if modal fails
+      if (confirm('Are you sure you want to logout?')) {
+          executeLogout();
+      }
+  }
+}
+
+window.executeLogout = function() {
     console.log('👋 Logging out...');
     
     try {
@@ -524,7 +537,6 @@ function logout() {
       // Fallback: direct redirect to login page
       window.location.href = 'index.php?direct=true';
     }
-  }
 }
 
 // ===============================

@@ -157,6 +157,7 @@ if (!$student_id) {
     <script src="../app/assets/js/userViolations.js?v=<?= time() ?>"></script>
     <script src="../app/assets/js/userAnnouncements.js"></script>
     <script src="../app/assets/js/chatbot.js"></script>
+    <?php View::partial('logout_modal'); ?>
 
     <!-- Download Format Modal -->
     <div id="DownloadFormatModal" class="download-modal" style="display: none;">
