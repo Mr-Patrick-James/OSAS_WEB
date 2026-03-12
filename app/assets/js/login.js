@@ -264,11 +264,13 @@ function handleLoginFormSubmit(e) {
         },
         body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&rememberMe=${rememberMe}`
     })
-        .then(res => {
+        .then(async res => {
+            const data = await res.json();
             if (!res.ok) {
-                throw new Error('Network response was not ok');
+                // If the response is not ok, we still want to show the message from JSON if available
+                throw new Error(data.message || 'Login failed');
             }
-            return res.json();
+            return data;
         })
         .then(data => {
             loginButton.disabled = false;
@@ -315,7 +317,7 @@ function handleLoginFormSubmit(e) {
             console.error('Login error:', err);
             loginButton.disabled = false;
             loginButton.innerHTML = `<span>Login</span>`;
-            showToast('Server error. Please try again later.', 'error');
+            showToast(err.message || 'Server error. Please try again later.', 'error');
         });
 }
 

@@ -110,7 +110,17 @@ class AuthController extends Controller {
                 $this->success('Login successful', $responseData);
             } else {
                 error_log("Login failed for username: " . $username . " - invalid credentials");
-                $this->error('Invalid username or password.');
+                
+                // Get the user record to check why it failed
+                $userCheck = $this->model->query("SELECT is_active FROM users WHERE username = ? OR email = ? LIMIT 1", [$username, $username]);
+                
+                if (empty($userCheck)) {
+                    $this->error('The email or username you entered doesn\'t exist.');
+                } else if ($userCheck[0]['is_active'] == 0) {
+                    $this->error('Your account is currently inactive. Please contact the administrator.');
+                } else {
+                    $this->error('Invalid password. Please try again.');
+                }
             }
         } catch (Exception $e) {
             error_log("Login method exception: " . $e->getMessage());
