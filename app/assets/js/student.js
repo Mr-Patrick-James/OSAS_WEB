@@ -899,23 +899,15 @@ function initStudentsModule() {
                 const now = new Date();
                 
                 // --- Header Design ---
-                const logoPath = '/OSAS_WEB/app/assets/img/default.png';
-                const logoData = await loadImage(logoPath);
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
 
-                // Left Side: Logo & Institution Name
-                if (logoData) {
-                    doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
-                    
-                    doc.setFontSize(18);
-                    doc.setTextColor(44, 62, 80); 
-                    doc.setFont("helvetica", "bold");
-                    doc.text("E-OSAS SYSTEM", 40, 18);
-                    
-                    doc.setFontSize(10);
-                    doc.setFont("helvetica", "normal");
-                    doc.setTextColor(127, 140, 141); 
-                    doc.text("Office of Student Affairs and Services", 40, 24);
+                if (headerData) {
+                    // Reduce width to 140mm (from 180mm) to fix stretching, height to 25mm
+                    // Shift slightly right (38mm) to align visually with centered title
+                    doc.addImage(headerData, 'PNG', 38, 5, 140, 25);
                 } else {
+                    // Fallback header if image fails to load
                     doc.setFontSize(22);
                     doc.setTextColor(44, 62, 80);
                     doc.setFont("helvetica", "bold");
@@ -927,28 +919,28 @@ function initStudentsModule() {
                     doc.text("Office of Student Affairs and Services", 14, 28);
                 }
 
-                // Right Side: Report Title & Date
-                doc.setFontSize(14);
+                // Report Title & Date (Positioned below the header image)
+                doc.setFontSize(12); // Reduced from 14
                 doc.setTextColor(41, 128, 185); 
                 doc.setFont("helvetica", "bold");
-                doc.text("STUDENT LIST REPORT", 196, 18, { align: 'right' });
+                doc.text("STUDENT LIST REPORT", 105, 38, { align: 'center' });
 
-                doc.setFontSize(9);
+                doc.setFontSize(8); // Reduced from 9
                 doc.setTextColor(100, 100, 100);
                 doc.setFont("helvetica", "normal");
-                doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+                doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 105, 43, { align: 'center' });
 
                 // Divider Line
                 doc.setDrawColor(220, 220, 220);
                 doc.setLineWidth(0.5);
-                doc.line(14, 35, 196, 35);
+                doc.line(14, 50, 196, 50);
                 
                 // Summary Stats
                 doc.setFontSize(10);
                 doc.setTextColor(60, 60, 60);
-                doc.text(`Total Records: ${exportStudents.length}`, 14, 45);
+                doc.text(`Total Records: ${exportStudents.length}`, 14, 60);
                 
-                let startY = 50;
+                let startY = 65;
 
                 // Table
                 const tableColumn = ["ID", "Student ID", "Name", "Dept", "Section", "Year Level", "Contact No", "Status"];
@@ -1010,44 +1002,83 @@ function initStudentsModule() {
                     return;
                 }
 
-                const lines = [];
                 const now = new Date();
-                lines.push('Student List Report');
-                lines.push('Generated,' + csvEscape(now.toLocaleString()));
-                lines.push('');
-                lines.push([
-                    'ID',
-                    'Student ID',
-                    'First Name',
-                    'Middle Name',
-                    'Last Name',
-                    'Email',
-                    'Department',
-                    'Section',
-                    'Year Level',
-                    'Contact No',
-                    'Status'
-                ].map(csvEscape).join(','));
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
+
+                // Create HTML Table for Excel with Header Image
+                let html = `
+                    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            .title { font-size: 14pt; font-weight: bold; color: #2980b9; text-align: center; }
+                            .subtitle { font-size: 10pt; color: #7f8c8d; text-align: center; }
+                            .stats { font-size: 9pt; color: #333; text-align: center; }
+                            .data-table th { background-color: #f2f2f2; font-weight: bold; border: 0.5pt solid #000; text-align: center; }
+                            .data-table td { border: 0.5pt solid #000; padding: 5px; }
+                        </style>
+                    </head>
+                    <body>
+                        <table width="1330" style="width: 1330px; border-collapse: collapse;">
+                            ${headerData ? `
+                            <tr height="100" style="height: 100px;">
+                                <td colspan="11" width="1330" align="center" valign="middle" style="width: 1330px; text-align: center; vertical-align: middle;">
+                                    <center>
+                                        <div align="center" style="text-align: center;">
+                                            <p align="center" style="text-align: center; margin: 0; padding: 0;">
+                                                <img src="${headerData}" width="400" height="80" border="0" style="display: inline-block;">
+                                            </p>
+                                        </div>
+                                    </center>
+                                </td>
+                            </tr>` : ''}
+                            <tr><td colspan="11" class="title" align="center" style="text-align: center;">STUDENT LIST REPORT</td></tr>
+                            <tr><td colspan="11" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
+                            <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
+                            <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Total Records: ${exportStudents.length}</td></tr>
+                            <tr><td colspan="11" style="height: 20px;"></td></tr>
+                            <tr class="data-table">
+                                <th width="40" style="width: 40px; background-color: #e0e0e0; border: 0.5pt solid #000;">ID</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">First Name</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Middle Name</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Last Name</th>
+                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Email</th>
+                                <th width="250" style="width: 250px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
+                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Year Level</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Contact No</th>
+                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Status</th>
+                            </tr>
+                `;
 
                 exportStudents.forEach(s => {
-                    lines.push([
-                        s.id,
-                        s.studentId,
-                        s.firstName,
-                        s.middleName,
-                        s.lastName,
-                        s.email,
-                        s.department,
-                        s.section,
-                        s.yearlevel,
-                        s.contact,
-                        formatStatus(s.status)
-                    ].map(csvEscape).join(','));
+                    html += `
+                        <tr>
+                            <td>${s.id}</td>
+                            <td>${s.studentId || ''}</td>
+                            <td>${s.firstName || ''}</td>
+                            <td>${s.middleName || ''}</td>
+                            <td>${s.lastName || ''}</td>
+                            <td>${s.email || ''}</td>
+                            <td>${s.department || ''}</td>
+                            <td>${s.section || ''}</td>
+                            <td>${s.yearlevel || ''}</td>
+                            <td>${s.contact || ''}</td>
+                            <td>${formatStatus(s.status)}</td>
+                        </tr>
+                    `;
                 });
 
-                const csvContent = lines.join('\r\n');
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const fileName = 'students_export_' + now.toISOString().slice(0, 10) + '.csv';
+                html += `
+                        </table>
+                    </body>
+                    </html>
+                `;
+
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+                const fileName = 'students_export_' + now.toISOString().slice(0, 10) + '.xls';
                 
                 if (typeof saveAs === 'function') {
                     saveAs(blob, fileName);
@@ -1064,6 +1095,9 @@ function initStudentsModule() {
                 
                 if (exportModal) exportModal.classList.remove('active');
                 document.body.style.overflow = 'auto';
+            } catch (error) {
+                console.error('Excel export error:', error);
+                showError('Failed to generate Excel document.');
             } finally {
                 exportExcelBtn.innerHTML = originalText;
                 exportExcelBtn.disabled = false;
@@ -1094,8 +1128,11 @@ function initStudentsModule() {
                     return;
                 }
 
-                const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
+                const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun } = window.docx;
                 const now = new Date();
+                
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
                 
                 // Table Header
                 const tableHeader = new TableRow({
@@ -1128,45 +1165,68 @@ function initStudentsModule() {
                     });
                 });
 
+                const docChildren = [];
+                
+                // Add Header Image if available
+                if (headerData) {
+                    docChildren.push(new Paragraph({
+                        children: [
+                            new ImageRun({
+                                data: headerData,
+                                transformation: {
+                                    width: 400, // Reduced from 500
+                                    height: 80, // Reduced from 100
+                                },
+                            }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                    }));
+                }
+
+                docChildren.push(
+                     new Paragraph({
+                         text: "STUDENT LIST REPORT",
+                         heading: HeadingLevel.HEADING_2, // Reduced from HEADING_1
+                         alignment: AlignmentType.CENTER,
+                         spacing: { before: 200 }
+                     }),
+                     new Paragraph({
+                         children: [
+                             new TextRun({
+                                 text: `Office of Student Affairs and Services`,
+                                 italics: true,
+                                 color: "666666",
+                                 size: 18, // Added size (9pt)
+                             })
+                         ],
+                         alignment: AlignmentType.CENTER
+                     }),
+                     new Paragraph({
+                         children: [
+                             new TextRun({
+                                 text: `Generated: ${now.toLocaleString()}`,
+                                 italics: true,
+                                 color: "999999",
+                                 size: 16, // Added size (8pt)
+                             })
+                         ],
+                         alignment: AlignmentType.CENTER,
+                         spacing: { after: 400 }
+                     }),
+                    new Paragraph({
+                        text: `Total Records: ${exportStudents.length}`,
+                        spacing: { after: 200 }
+                    }),
+                    new Table({
+                        rows: [tableHeader, ...tableRows],
+                        width: { size: 100, type: WidthType.PERCENTAGE }
+                    })
+                );
+
                 const doc = new Document({
                     sections: [{
                         properties: {},
-                        children: [
-                            new Paragraph({
-                                text: "STUDENT LIST REPORT",
-                                heading: HeadingLevel.HEADING_1,
-                                alignment: AlignmentType.CENTER
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: `Office of Student Affairs and Services`,
-                                        italics: true,
-                                        color: "666666"
-                                    })
-                                ],
-                                alignment: AlignmentType.CENTER
-                            }),
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: `Generated: ${now.toLocaleString()}`,
-                                        italics: true,
-                                        color: "999999"
-                                    })
-                                ],
-                                alignment: AlignmentType.CENTER,
-                                spacing: { after: 400 }
-                            }),
-                            new Paragraph({
-                                text: `Total Records: ${exportStudents.length}`,
-                                spacing: { after: 200 }
-                            }),
-                            new Table({
-                                rows: [tableHeader, ...tableRows],
-                                width: { size: 100, type: WidthType.PERCENTAGE }
-                            })
-                        ]
+                        children: docChildren
                     }]
                 });
 

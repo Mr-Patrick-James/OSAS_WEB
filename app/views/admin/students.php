@@ -383,7 +383,7 @@ require_once '../../config/db_connect.php';
           </button>
           <button id="exportExcel" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Excel (CSV)</span>
+            <span style="margin-left: 10px;">Export as Excel (.xls)</span>
           </button>
           <button id="exportWord" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
