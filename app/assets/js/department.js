@@ -39,6 +39,17 @@ function initDepartmentModule() {
   let totalRecords = 0;
   let totalPages = 0;
 
+  function getCurrentAdminName() {
+      const sessionStr = localStorage.getItem('userSession');
+      if (!sessionStr) return 'Admin';
+      try {
+          const session = JSON.parse(sessionStr);
+          return session.full_name || session.name || session.username || 'Admin';
+      } catch (e) {
+          return 'Admin';
+      }
+  }
+
   // Get department icon based on code
   function getDeptIcon(code) {
     const icons = {
@@ -393,18 +404,21 @@ function initDepartmentModule() {
     doc.setFont("helvetica", "bold");
     doc.text("DEPARTMENT LIST REPORT", 196, 18, { align: 'right' });
 
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.setFont("helvetica", "normal");
-    doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+    doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 105, 43, { align: 'center' });
+    doc.text(`Exported by: ${getCurrentAdminName()}`, 105, 47, { align: 'center' });
 
+    // Divider Line
     doc.setDrawColor(220, 220, 220);
     doc.setLineWidth(0.5);
-    doc.line(14, 35, 196, 35);
+    doc.line(14, 52, 196, 52);
     
+    // Summary Stats
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    doc.text(`Total Records: ${departments.length}`, 14, 45);
+    doc.text(`Total Records: ${departments.length}`, 14, 62);
     
     const tableColumn = ["ID", "Code", "Department Name", "HOD", "Students", "Status"];
     const tableRows = departments.map(d => [

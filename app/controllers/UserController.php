@@ -191,12 +191,17 @@ class UserController extends Controller {
             }
 
             $username = $this->sanitize($this->getPost('username', ''));
+            $fullName = $this->sanitize($this->getPost('full_name', ''));
             $currentPassword = $this->getPost('current_password', '');
             $newPassword = $this->getPost('new_password', '');
             $confirmPassword = $this->getPost('confirm_password', '');
 
             if ($username === '') {
                 $this->error('Username is required.');
+            }
+
+            if ($fullName === '') {
+                $this->error('Full name is required.');
             }
 
             // Verify current password only if setting a new password or if provided
@@ -277,6 +282,7 @@ class UserController extends Controller {
 
             $updateData = [
                 'username' => $username,
+                'full_name' => $fullName,
                 'profile_picture' => $profilePicture,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
@@ -290,12 +296,23 @@ class UserController extends Controller {
             }
 
             if ($this->model->update($userId, $updateData)) {
-            // Update session if username changed
-            $_SESSION['username'] = $username;
-            if (isset($profilePicture)) {
+             // Update session if username or full name changed
+             $_SESSION['username'] = $username;
+             $_SESSION['full_name'] = $fullName;
+             
+             // Update cookies as well
+             $expiryTime = time() + (30*24*60*60); // 30 days
+             setcookie("username", $username, $expiryTime, "/", "", false, false);
+             setcookie("full_name", $fullName, $expiryTime, "/", "", false, false);
+
+             if (isset($profilePicture)) {
                 $_SESSION['profile_picture'] = $profilePicture;
             }
-            $this->success('Profile updated successfully.', ['username' => $username, 'profile_picture' => $profilePicture]);
+            $this->success('Profile updated successfully.', [
+                'username' => $username, 
+                'full_name' => $fullName,
+                'profile_picture' => $profilePicture
+            ]);
         } else {
             $this->error('Failed to update profile.');
         }

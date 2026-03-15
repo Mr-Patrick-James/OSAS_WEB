@@ -609,6 +609,61 @@ body.dark {
   background: rgba(255, 215, 0, 0.05);
 }
 
+/* Report Footer and Signature */
+.report-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 2px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.footer-left {
+  flex: 1;
+}
+
+.footer-note {
+  font-size: 0.8rem;
+  color: var(--dark-grey);
+  font-style: italic;
+  margin: 0;
+}
+
+.footer-right {
+  text-align: center;
+  min-width: 200px;
+}
+
+.signature-line {
+  width: 100%;
+  border-bottom: 1px solid var(--dark);
+  margin-bottom: 8px;
+}
+
+.signature-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--dark);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.signature-title {
+  font-size: 0.8rem;
+  color: var(--dark-grey);
+  margin: 0;
+}
+
+@media print {
+  .report-footer {
+    position: fixed;
+    bottom: 20px;
+    width: 100%;
+    border-top: 1px solid #333;
+  }
+}
+
 /* ========================================= */
 /*                TABLE STYLES              */
 /* ========================================= */

@@ -54,9 +54,9 @@ class ReportController extends Controller {
                     $downloadUrl = 'reports.php?' . http_build_query($exportParams);
                 }
                 
-                // If format is PDF or DOCX, fetch data for client-side generation
+                // If format is PDF, DOCX or Excel, fetch data for client-side generation
                 $reportsData = null;
-                if ($format === 'pdf' || $format === 'docx') {
+                if ($format === 'pdf' || $format === 'docx' || $format === 'excel') {
                     $reportFilters = [
                         'department' => $departments ?? 'all',
                         'startDate' => $startDate,

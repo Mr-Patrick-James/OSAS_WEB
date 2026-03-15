@@ -597,26 +597,21 @@ require_once __DIR__ . '/../../core/View.php';
             </div>
             <div class="recommendation-item">
               <i class='bx bx-check-circle'></i>
-              <span>Notify parents about disciplinary status</span>
-            </div>
-            <div class="recommendation-item">
-              <i class='bx bx-check-circle'></i>
-              <span>Monitor student for next 30 days</span>
+              <span>Notify parent or guardian of multiple offenses</span>
             </div>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="report-details-actions">
-          <button class="Reports-btn-outline">
-            <i class='bx bx-edit'></i> Edit Report
-          </button>
-          <button class="Reports-btn-primary">
-            <i class='bx bx-share-alt'></i> Share Report
-          </button>
-          <button class="Reports-btn-secondary">
-            <i class='bx bx-download'></i> Download PDF
-          </button>
+        <!-- Report Footer -->
+        <div class="report-footer">
+          <div class="footer-left">
+            <p class="footer-note">* This report is generated automatically by the E-OSAS System.</p>
+          </div>
+          <div class="footer-right">
+            <div class="signature-line"></div>
+            <p class="signature-name" id="reportAdminName">Administrator</p>
+            <p class="signature-title">OSAS Administrator</p>
+          </div>
         </div>
       </div>
     </div>
@@ -656,7 +651,7 @@ require_once __DIR__ . '/../../core/View.php';
           </button>
           <button id="exportExcel" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Excel (CSV)</span>
+            <span style="margin-left: 10px;">Export as Excel (.xls)</span>
           </button>
           <button id="exportWord" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>

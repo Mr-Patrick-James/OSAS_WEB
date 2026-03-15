@@ -51,6 +51,17 @@ function initSectionsModule() {
         let totalRecords = 0;
         let totalPages = 0;
 
+        function getCurrentAdminName() {
+            const sessionStr = localStorage.getItem('userSession');
+            if (!sessionStr) return 'Admin';
+            try {
+                const session = JSON.parse(sessionStr);
+                return session.full_name || session.name || session.username || 'Admin';
+            } catch (e) {
+                return 'Admin';
+            }
+        }
+
         function renderPagination() {
             const paginationContainer = document.querySelector('.sections-pagination');
             if (!paginationContainer) return;

@@ -5,7 +5,7 @@ $userImage = View::asset('img/user.jpg');
 if (!file_exists(__DIR__ . '/../../assets/img/user.jpg')) {
     $userImage = View::asset('img/default.png');
 }
-$username = $_SESSION['username'] ?? 'Admin';
+$username = $_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Admin');
 $role = $_SESSION['role'] ?? 'admin';
 ?>
 <!-- SIDEBAR -->

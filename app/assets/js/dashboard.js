@@ -719,6 +719,10 @@ function createSettingsModal() {
 
                         <div class="settings-grid">
                             <div class="settings-form-group">
+                                <label class="settings-label" for="profileFullName">Full Name</label>
+                                <input class="settings-input" type="text" id="profileFullName" name="full_name" placeholder="Your full name">
+                            </div>
+                            <div class="settings-form-group">
                                 <label class="settings-label" for="profileUsername">Username</label>
                                 <input class="settings-input" type="text" id="profileUsername" name="username" placeholder="Your username">
                             </div>
@@ -1261,6 +1265,7 @@ async function loadSettingsLogs() {
 
 async function loadUserProfile() {
     const usernameInput = document.getElementById('profileUsername');
+    const fullNameInput = document.getElementById('profileFullName');
     const profileImagePreview = document.getElementById('profileImagePreview');
     const profilePictureInput = document.getElementById('profilePictureInput');
     const profileDisplayName = document.getElementById('profileDisplayName');
@@ -1292,6 +1297,9 @@ async function loadUserProfile() {
         
         if (data.status === 'success') {
             usernameInput.value = data.data.profile.username;
+            if (fullNameInput) {
+                fullNameInput.value = data.data.profile.full_name || '';
+            }
             
             // Update display name
             if (profileDisplayName) {
@@ -1372,10 +1380,16 @@ async function submitProfileForm() {
             if (data.data && data.data.username) {
                  document.getElementById('profileUsername').value = data.data.username;
                  
+                 // Update display name header in modal
+                 const profileDisplayName = document.getElementById('profileDisplayName');
+                 if (profileDisplayName) {
+                     profileDisplayName.textContent = data.data.full_name || data.data.username;
+                 }
+
                  // Update the top navigation username if present
                  const navUsername = document.querySelector('.nav-user-menu .user-name');
                  if (navUsername) {
-                     navUsername.textContent = data.data.username;
+                     navUsername.textContent = data.data.full_name || data.data.username;
                  }
             }
             

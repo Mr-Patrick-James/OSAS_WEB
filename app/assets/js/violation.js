@@ -153,6 +153,17 @@ function initViolationsModule() {
         let totalPages = 0;
         let selectedFiles = []; // To store selected attachment files
 
+        function getCurrentAdminName() {
+            const sessionStr = localStorage.getItem('userSession');
+            if (!sessionStr) return 'Admin';
+            try {
+                const session = JSON.parse(sessionStr);
+                return session.full_name || session.name || session.username || 'Admin';
+            } catch (e) {
+                return 'Admin';
+            }
+        }
+
         // Student data will be loaded dynamically
 
         // ========== DATA LOADING FUNCTIONS ==========
@@ -1292,16 +1303,7 @@ function initViolationsModule() {
             return `VIOL-${year}-${String(lastId + 1).padStart(3, '0')}`;
         }
 
-        // --- Export Functions ---
-        function csvEscape(value) {
-            if (value === null || value === undefined) return '';
-            const str = String(value);
-            if (/[",\n]/.test(str)) {
-                return '"' + str.replace(/"/g, '""') + '"';
-            }
-            return str;
-        }
-
+        // Helper to load image for exports
         async function loadImage(url) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -1322,254 +1324,342 @@ function initViolationsModule() {
             });
         }
 
-        async function downloadViolationsPDF() {
-            if (!window.jspdf) {
-                alert('PDF library not loaded. Please refresh the page.');
-                return;
+        // Helper function to get all violations for export based on current filters
+        async function getFilteredViolationsForExport() {
+            try {
+                const search = searchInput ? searchInput.value : '';
+                const dept = deptFilter ? deptFilter.value : 'all';
+                const status = statusFilter ? statusFilter.value : 'all';
+                const dateFrom = dateFromFilter ? dateFromFilter.value : '';
+                const dateTo = dateToFilter ? dateToFilter.value : '';
+                const isArchived = currentView === 'archive' ? 1 : 0;
+                
+                let url = API_BASE + `violations.php?is_archived=${isArchived}&filter=${status}&department=${encodeURIComponent(dept)}&date_from=${dateFrom}&date_to=${dateTo}&limit=all&t=${new Date().getTime()}`;
+                if (search) {
+                    url += `&search=${encodeURIComponent(search)}`;
+                }
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    return result.violations || result.data || [];
+                }
+                return [];
+            } catch (error) {
+                console.error('Error fetching violations for export:', error);
+                return [];
             }
-            
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const now = new Date();
-            
-            // --- Header Design ---
-            const logoPath = '/OSAS_WEB/app/assets/img/default.png';
-            const logoData = await loadImage(logoPath);
-
-            // Left Side: Logo & Institution Name
-            if (logoData) {
-                doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
-                
-                doc.setFontSize(18);
-                doc.setTextColor(44, 62, 80); 
-                doc.setFont("helvetica", "bold");
-                doc.text("E-OSAS SYSTEM", 40, 18);
-                
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.setTextColor(127, 140, 141); 
-                doc.text("Office of Student Affairs and Services", 40, 24);
-            } else {
-                doc.setFontSize(22);
-                doc.setTextColor(44, 62, 80);
-                doc.setFont("helvetica", "bold");
-                doc.text("E-OSAS SYSTEM", 14, 20);
-                
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.setTextColor(127, 140, 141);
-                doc.text("Office of Student Affairs and Services", 14, 28);
-            }
-
-            // Right Side: Report Title & Date
-            doc.setFontSize(14);
-            doc.setTextColor(41, 128, 185); 
-            doc.setFont("helvetica", "bold");
-            doc.text("VIOLATION LIST REPORT", 196, 18, { align: 'right' });
-
-            doc.setFontSize(9);
-            doc.setTextColor(100, 100, 100);
-            doc.setFont("helvetica", "normal");
-            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
-
-            // Divider Line
-            doc.setDrawColor(220, 220, 220);
-            doc.setLineWidth(0.5);
-            doc.line(14, 35, 196, 35);
-            
-            // Summary Stats
-            doc.setFontSize(10);
-            doc.setTextColor(60, 60, 60);
-            doc.text(`Total Records: ${filteredViolations.length}`, 14, 45);
-            
-            let startY = 50;
-
-            // Table
-            const tableColumn = ["Case ID", "Student ID", "Student Name", "Type", "Level", "Dept", "Date", "Status"];
-            const tableRows = [];
-
-            filteredViolations.forEach(v => {
-                const rowData = [
-                    v.caseId,
-                    v.studentId,
-                    v.studentName,
-                    v.violationTypeLabel,
-                    v.violationLevelLabel,
-                    v.department,
-                    formatDate(v.dateReported),
-                    v.statusLabel
-                ];
-                tableRows.push(rowData);
-            });
-
-            doc.autoTable({
-                head: [tableColumn],
-                body: tableRows,
-                startY: startY,
-                theme: 'grid',
-                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
-                headStyles: { 
-                    fillColor: [245, 245, 245], 
-                    textColor: [44, 62, 80], 
-                    fontStyle: 'bold',
-                    lineWidth: 0.1,
-                    lineColor: [200, 200, 200]
-                },
-                alternateRowStyles: { fillColor: [255, 255, 255] },
-                margin: { top: 60 }
-            });
-
-            doc.save(`Violation_List_${now.toISOString().slice(0, 10)}.pdf`);
         }
 
-        function downloadViolationsExcel() {
-            const lines = [];
-            const now = new Date();
-            lines.push('Violation List Report');
-            lines.push('Generated,' + csvEscape(now.toLocaleString()));
-            lines.push('');
-            lines.push([
-                'Case ID',
-                'Student ID',
-                'Student Name',
-                'Violation Type',
-                'Violation Level',
-                'Department',
-                'Section',
-                'Year Level',
-                'Date Reported',
-                'Time',
-                'Location',
-                'Reported By',
-                'Status',
-                'Notes'
-            ].map(csvEscape).join(','));
+        async function downloadViolationsPDF() {
+            if (!window.jspdf) {
+                showNotification('PDF library not loaded. Please refresh.', 'warning');
+                return;
+            }
 
-            filteredViolations.forEach(v => {
-                lines.push([
+            const exportPDFBtn = document.getElementById('exportPDF');
+            const originalText = exportPDFBtn.innerHTML;
+            exportPDFBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing PDF...</span>";
+            exportPDFBtn.disabled = true;
+
+            try {
+                const exportViolations = await getFilteredViolationsForExport();
+                
+                if (exportViolations.length === 0) {
+                    showNotification('No violation records found to export.', 'warning');
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for more columns
+                const now = new Date();
+                
+                // --- Header Design ---
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
+
+                if (headerData) {
+                    // Center header (A4 Landscape width is 297mm)
+                    // Image is 140x25mm, so (297-140)/2 = 78.5mm
+                    // Visual adjustment: Shift slightly right like student export (e.g. +3mm = 81.5mm)
+                    doc.addImage(headerData, 'PNG', 81.5, 5, 140, 25);
+                } else {
+                    doc.setFontSize(20);
+                    doc.setTextColor(44, 62, 80);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("E-OSAS SYSTEM", 148.5, 15, { align: 'center' });
+                    
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(127, 140, 141);
+                    doc.text("Office of Student Affairs and Services", 148.5, 22, { align: 'center' });
+                }
+
+                // Report Title & Date
+                doc.setFontSize(12);
+                doc.setTextColor(41, 128, 185); 
+                doc.setFont("helvetica", "bold");
+                doc.text("VIOLATION LIST REPORT", 148.5, 38, { align: 'center' });
+
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 148.5, 43, { align: 'center' });
+                doc.text(`Exported by: ${getCurrentAdminName()}`, 148.5, 47, { align: 'center' });
+
+                // Divider Line
+                doc.setDrawColor(220, 220, 220);
+                doc.setLineWidth(0.5);
+                doc.line(14, 52, 283, 52);
+                
+                // Summary Stats
+                doc.setFontSize(10);
+                doc.setTextColor(60, 60, 60);
+                doc.text(`Total Records: ${exportViolations.length}`, 14, 62);
+                
+                let startY = 67;
+
+                // Table
+                const tableColumn = ["Case ID", "Student ID", "Name", "Type", "Level", "Date", "Location", "Status"];
+                const tableRows = exportViolations.map(v => [
                     v.caseId,
                     v.studentId,
                     v.studentName,
                     v.violationTypeLabel,
                     v.violationLevelLabel,
-                    v.department,
-                    v.section,
-                    v.studentYearlevel,
                     v.dateReported,
-                    v.violationTime,
                     v.locationLabel,
-                    v.reportedBy,
-                    v.statusLabel,
-                    v.notes
-                ].map(csvEscape).join(','));
-            });
+                    v.statusLabel
+                ]);
 
-            const csvContent = lines.join('\r\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const fileName = 'violations_export_' + now.toISOString().slice(0, 10) + '.csv';
-            
-            if (typeof saveAs === 'function') {
-                saveAs(blob, fileName);
-            } else {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                doc.autoTable({
+                    head: [tableColumn],
+                    body: tableRows,
+                    startY: startY,
+                    theme: 'grid',
+                    styles: { fontSize: 8, cellPadding: 2, valign: 'middle' },
+                    headStyles: { 
+                        fillColor: [245, 245, 245], 
+                        textColor: [44, 62, 80], 
+                        fontStyle: 'bold'
+                    },
+                    margin: { top: 60 }
+                });
+
+                doc.save(`Violation_List_${now.toISOString().slice(0, 10)}.pdf`);
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } catch (error) {
+                console.error('PDF export error:', error);
+                showNotification('Failed to generate PDF document.', 'error');
+            } finally {
+                exportPDFBtn.innerHTML = originalText;
+                exportPDFBtn.disabled = false;
+            }
+        }
+
+        async function downloadViolationsExcel() {
+            const exportExcelBtn = document.getElementById('exportExcel');
+            const originalText = exportExcelBtn.innerHTML;
+            exportExcelBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Excel...</span>";
+            exportExcelBtn.disabled = true;
+
+            try {
+                const exportViolations = await getFilteredViolationsForExport();
+                
+                if (exportViolations.length === 0) {
+                    showNotification('No violation records found to export.', 'warning');
+                    return;
+                }
+
+                const now = new Date();
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
+
+                let html = `
+                    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            .title { font-size: 14pt; font-weight: bold; color: #2980b9; text-align: center; }
+                            .subtitle { font-size: 10pt; color: #7f8c8d; text-align: center; }
+                            .stats { font-size: 9pt; color: #333; text-align: center; }
+                            .data-table th { background-color: #f2f2f2; font-weight: bold; border: 0.5pt solid #000; text-align: center; }
+                            .data-table td { border: 0.5pt solid #000; padding: 5px; }
+                        </style>
+                    </head>
+                    <body>
+                        <table width="1200" style="width: 1200px; border-collapse: collapse;">
+                            ${headerData ? `
+                            <tr height="100" style="height: 100px;">
+                                <td colspan="8" width="1200" align="center" valign="middle" style="width: 1200px; text-align: center; vertical-align: middle;">
+                                    <center>
+                                        <div align="center" style="text-align: center;">
+                                            <p align="center" style="text-align: center; margin: 0; padding: 0;">
+                                                <img src="${headerData}" width="400" height="80" border="0" style="display: inline-block;">
+                                            </p>
+                                        </div>
+                                    </center>
+                                </td>
+                            </tr>` : ''}
+                            <tr><td colspan="8" class="title" align="center" style="text-align: center;">VIOLATION LIST REPORT</td></tr>
+                            <tr><td colspan="8" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
+                            <tr><td colspan="8" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
+                            <tr><td colspan="8" class="stats" align="center" style="text-align: center;">Exported by: ${getCurrentAdminName()}</td></tr>
+                            <tr><td colspan="8" class="stats" align="center" style="text-align: center;">Total Records: ${exportViolations.length}</td></tr>
+                            <tr><td colspan="8" style="height: 20px;"></td></tr>
+                            <tr class="data-table">
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Case ID</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
+                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student Name</th>
+                                <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Violation Type</th>
+                                <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Violation Level</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Date</th>
+                                <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Location</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Status</th>
+                            </tr>
+                `;
+
+                exportViolations.forEach(v => {
+                    html += `
+                        <tr>
+                            <td>${v.caseId || ''}</td>
+                            <td>${v.studentId || ''}</td>
+                            <td>${v.studentName || ''}</td>
+                            <td>${v.violationTypeLabel || ''}</td>
+                            <td>${v.violationLevelLabel || ''}</td>
+                            <td>${v.dateReported || ''}</td>
+                            <td>${v.locationLabel || ''}</td>
+                            <td>${v.statusLabel || ''}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </table>
+                    </body>
+                    </html>
+                `;
+
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+                const fileName = 'violations_export_' + now.toISOString().slice(0, 10) + '.xls';
+                
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, fileName);
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
+                
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } catch (error) {
+                console.error('Excel export error:', error);
+                showNotification('Failed to generate Excel document.', 'error');
+            } finally {
+                exportExcelBtn.innerHTML = originalText;
+                exportExcelBtn.disabled = false;
             }
         }
 
         async function downloadViolationsWord() {
             if (!window.docx) {
-                alert('DOCX library not loaded. Please refresh the page.');
+                showNotification('DOCX library not loaded. Please refresh.', 'warning');
                 return;
             }
-            
-            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
-            const now = new Date();
-            
-            // Table Header
-            const tableHeader = new TableRow({
-                children: [
-                    "Case ID", "Student", "Type", "Level", "Dept", "Date", "Status"
-                ].map(text => new TableCell({
-                    children: [new Paragraph({ text, bold: true, size: 20 })], 
-                    width: { size: 100 / 7, type: WidthType.PERCENTAGE },
-                    shading: { fill: "E0E0E0" }
-                }))
-            });
-            
-            // Table Rows
-            const tableRows = filteredViolations.map(v => {
-                return new TableRow({
+
+            const exportWordBtn = document.getElementById('exportWord');
+            const originalText = exportWordBtn.innerHTML;
+            exportWordBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Word...</span>";
+            exportWordBtn.disabled = true;
+
+            try {
+                const exportViolations = await getFilteredViolationsForExport();
+                
+                if (exportViolations.length === 0) {
+                    showNotification('No violation records found to export.', 'warning');
+                    return;
+                }
+
+                const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun } = window.docx;
+                const now = new Date();
+                
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
+                
+                const tableHeader = new TableRow({
                     children: [
-                        v.caseId,
-                        v.studentName,
-                        v.violationTypeLabel,
-                        v.violationLevelLabel,
-                        v.department,
-                        formatDate(v.dateReported),
-                        v.statusLabel
+                        "Case ID", "Student ID", "Name", "Type", "Level", "Date", "Location", "Status"
                     ].map(text => new TableCell({
-                        children: [new Paragraph({ text: text || "", size: 16 })],
-                        width: { size: 100 / 7, type: WidthType.PERCENTAGE }
+                        children: [new Paragraph({ text, bold: true, size: 18 })], 
+                        shading: { fill: "E0E0E0" }
                     }))
                 });
-            });
-
-            const doc = new Document({
-                sections: [{
-                    properties: {},
+                
+                const tableRows = exportViolations.map(v => new TableRow({
                     children: [
-                        new Paragraph({
-                            text: "VIOLATION LIST REPORT",
-                            heading: HeadingLevel.HEADING_1,
-                            alignment: AlignmentType.CENTER
-                        }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: `Office of Student Affairs and Services`,
-                                    italics: true,
-                                    color: "666666"
-                                })
-                            ],
-                            alignment: AlignmentType.CENTER
-                        }),
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: `Generated: ${now.toLocaleString()}`,
-                                    italics: true,
-                                    color: "999999"
-                                })
-                            ],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 400 }
-                        }),
-                        new Paragraph({
-                            text: `Total Records: ${filteredViolations.length}`,
-                            spacing: { after: 200 }
-                        }),
-                        new Table({
-                            rows: [tableHeader, ...tableRows],
-                            width: { size: 100, type: WidthType.PERCENTAGE }
-                        })
-                    ]
-                }]
-            });
+                        v.caseId, v.studentId, v.studentName, v.violationTypeLabel, v.violationLevelLabel, v.dateReported, v.locationLabel, v.statusLabel
+                    ].map(text => new TableCell({
+                        children: [new Paragraph({ text: text || "", size: 16 })]
+                    }))
+                }));
 
-            Packer.toBlob(doc).then(blob => {
-                if (typeof saveAs === 'function') {
-                    saveAs(blob, `Violation_List_${now.toISOString().slice(0, 10)}.docx`);
-                } else {
-                    console.error('FileSaver.js not loaded');
-                    alert('Error: FileSaver.js not loaded');
+                const docChildren = [];
+                if (headerData) {
+                    docChildren.push(new Paragraph({
+                        children: [new ImageRun({ data: headerData, transformation: { width: 400, height: 80 } })],
+                        alignment: AlignmentType.CENTER
+                    }));
                 }
-            });
+
+                docChildren.push(
+                    new Paragraph({
+                        text: "VIOLATION LIST REPORT",
+                        heading: HeadingLevel.HEADING_2,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 200 }
+                    }),
+                    new Paragraph({
+                        children: [new TextRun({ text: `Office of Student Affairs and Services`, italics: true, color: "666666", size: 18 })],
+                        alignment: AlignmentType.CENTER
+                    }),
+                    new Paragraph({
+                        children: [new TextRun({ text: `Generated: ${now.toLocaleString()}`, italics: true, color: "999999", size: 16 })],
+                        alignment: AlignmentType.CENTER
+                    }),
+                    new Paragraph({
+                        children: [new TextRun({ text: `Exported by: ${getCurrentAdminName()}`, italics: true, color: "999999", size: 16 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 }
+                    }),
+                    new Paragraph({ text: `Total Records: ${exportViolations.length}`, spacing: { after: 200 } }),
+                    new Table({
+                        rows: [tableHeader, ...tableRows],
+                        width: { size: 100, type: WidthType.PERCENTAGE }
+                    })
+                );
+
+                const doc = new Document({ sections: [{ children: docChildren }] });
+                const blob = await Packer.toBlob(doc);
+                saveAs(blob, `Violation_List_${now.toISOString().slice(0, 10)}.docx`);
+                
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } catch (error) {
+                console.error('Word export error:', error);
+                showNotification('Failed to generate Word document.', 'error');
+            } finally {
+                exportWordBtn.innerHTML = originalText;
+                exportWordBtn.disabled = false;
+            }
         }
 
         // SYNC OFFLINE ACTIONS

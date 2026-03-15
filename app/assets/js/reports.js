@@ -119,6 +119,17 @@ function initReportsModule() {
             return 'none';
         }
 
+        function getCurrentAdminName() {
+            const sessionStr = localStorage.getItem('userSession');
+            if (!sessionStr) return 'Admin';
+            try {
+                const session = JSON.parse(sessionStr);
+                return session.full_name || session.name || session.username || 'Admin';
+            } catch (e) {
+                return 'Admin';
+            }
+        }
+
         function calculateStats(statsData = null) {
             // Use provided stats or calculate from current reports
             let totalViolations, uniformViolations, footwearViolations, noIdViolations, totalStudents;
@@ -560,6 +571,11 @@ function initReportsModule() {
                 })}`;
             }
             
+            const reportAdminName = detailsModal.querySelector('#reportAdminName');
+            if (reportAdminName) {
+                reportAdminName.textContent = getCurrentAdminName();
+            }
+
             // Populate student info
             const studentInfoGrid = detailsModal.querySelector('.student-info-grid');
             if (studentInfoGrid) {
@@ -591,6 +607,10 @@ function initReportsModule() {
                     <div class="info-item">
                         <span class="info-label">Report Period:</span>
                         <span class="info-value">${report.lastUpdated ? new Date(report.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Reported by:</span>
+                        <span class="info-value">${getCurrentAdminName()}</span>
                     </div>
                 `;
             }
@@ -963,8 +983,12 @@ function initReportsModule() {
                     // Use message from server
                     showSuccess(data.message || `Reports generated successfully!`);
                     
-                    // Check for download URL (CSV/Excel)
-                    if (data.downloadUrl) {
+                    // Check for download URL (CSV/Excel) - Handle Excel client-side for branding
+                    if (reportFormat === 'excel' && data.reports && data.reports.length > 0) {
+                        console.log('📊 Exporting Excel report (Branded)...');
+                        await generateExcel(data.reports, (reportName || 'Violation Report') + '.xls');
+                    } else if (data.downloadUrl) {
+                        // Fallback for other formats if any
                         const downloadUrl = API_BASE + data.downloadUrl;
                         console.log('🔗 Redirecting to download:', downloadUrl);
                         window.location.href = downloadUrl;
@@ -1151,22 +1175,15 @@ function initReportsModule() {
             const now = new Date();
             
             // --- Header Design ---
-            const logoPath = '/OSAS_WEB/app/assets/img/default.png';
-            const logoData = await loadImage(logoPath);
+            const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+            const headerData = await loadImage(headerPath);
 
-            // Left Side: Logo & Institution Name
-            if (logoData) {
-                doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
-                
-                doc.setFontSize(18);
-                doc.setTextColor(44, 62, 80); // Dark Blue-Gray
-                doc.setFont("helvetica", "bold");
-                doc.text("E-OSAS SYSTEM", 40, 18);
-                
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.setTextColor(127, 140, 141); // Gray
-                doc.text("Office of Student Affairs and Services", 40, 24);
+            if (headerData) {
+                // Add header image (Smaller: 180mm width, 25mm height, centered)
+                // Center it: (210 - 180) / 2 = 15mm from left. 
+                // But let's use the 140mm version for consistency with others
+                // (210 - 140) / 2 = 35mm. Shifting slightly right (38mm) like student export.
+                doc.addImage(headerData, 'PNG', 38, 5, 140, 25);
             } else {
                 // Fallback Layout
                 doc.setFontSize(22);
@@ -1180,28 +1197,29 @@ function initReportsModule() {
                 doc.text("Office of Student Affairs and Services", 14, 28);
             }
 
-            // Right Side: Report Title & Date
-            doc.setFontSize(14);
-            doc.setTextColor(41, 128, 185); // Accent Blue
+            // Report Title & Date (Positioned below the header image)
+            doc.setFontSize(12); // Reduced from 14
+            doc.setTextColor(41, 128, 185); 
             doc.setFont("helvetica", "bold");
-            doc.text("VIOLATION REPORT", 196, 18, { align: 'right' });
+            doc.text("VIOLATION ANALYSIS REPORT", 105, 38, { align: 'center' });
 
-            doc.setFontSize(9);
+            doc.setFontSize(8); // Reduced from 9
             doc.setTextColor(100, 100, 100);
             doc.setFont("helvetica", "normal");
-            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 105, 43, { align: 'center' });
+            doc.text(`Reported by: ${getCurrentAdminName()}`, 105, 47, { align: 'center' });
 
             // Divider Line
             doc.setDrawColor(220, 220, 220);
             doc.setLineWidth(0.5);
-            doc.line(14, 35, 196, 35);
+            doc.line(14, 52, 196, 52);
             
             // Summary Stats
             doc.setFontSize(10);
             doc.setTextColor(60, 60, 60);
-            doc.text(`Total Records: ${reportsData.length}`, 14, 45);
+            doc.text(`Total Records: ${reportsData.length}`, 14, 62);
             
-            let startY = 50;
+            let startY = 67;
 
             // Table
             const tableColumn = ["Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"];
@@ -1336,42 +1354,77 @@ function initReportsModule() {
             }
             
             console.log('📝 DOCX Request:', { isChecked });
-            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, ImageRun } = window.docx;
+            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun } = window.docx;
             const now = new Date();
             
+            const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+            const headerData = await loadImage(headerPath);
+
             // Children for the document
-            const children = [
+            const children = [];
+
+            // Add Header Image if available
+            if (headerData) {
+                children.push(new Paragraph({
+                    children: [
+                        new ImageRun({
+                            data: headerData,
+                            transformation: {
+                                width: 400,
+                                height: 80,
+                            },
+                        }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                }));
+            }
+
+            children.push(
                 new Paragraph({
                     text: "VIOLATION ANALYSIS REPORT",
-                    heading: HeadingLevel.HEADING_1,
-                    alignment: "center"
+                    heading: HeadingLevel.HEADING_2,
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 200 }
                 }),
                 new Paragraph({
                     children: [
                         new TextRun({
                             text: "Office of Student Affairs and Services",
                             italics: true,
-                            color: "666666"
+                            color: "666666",
+                            size: 18,
                         })
                     ],
-                    alignment: "center"
+                    alignment: AlignmentType.CENTER
                 }),
                 new Paragraph({
                     children: [
                         new TextRun({
                             text: `Generated: ${now.toLocaleString()}`,
                             italics: true,
-                            color: "999999"
+                            color: "999999",
+                            size: 16,
                         })
                     ],
-                    alignment: "center",
+                    alignment: AlignmentType.CENTER,
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: `Reported by: ${getCurrentAdminName()}`,
+                            italics: true,
+                            color: "999999",
+                            size: 16,
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER,
                     spacing: { after: 400 }
                 }),
                 new Paragraph({
                     text: `Total Students: ${reportsData.length}`,
                     spacing: { after: 200 }
                 })
-            ];
+            );
 
             // Add Charts if requested
             if (isChecked === true) {
@@ -1506,116 +1559,109 @@ function initReportsModule() {
             });
         }
 
-        function downloadSingleReport(report) {
-            const lines = [];
+        async function downloadSingleReport(report) {
+            const reportsToExport = [report];
             const now = new Date();
-            lines.push('Student Violation Report');
-            lines.push('Generated,' + csvEscape(now.toLocaleString()));
-            lines.push('');
-            lines.push([
-                'Report ID',
-                'Student ID',
-                'Student Name',
-                'Department',
-                'Section',
-                'Year Level',
-                'Uniform Violations',
-                'Footwear Violations',
-                'No ID Violations',
-                'Total Violations',
-                'Status'
-            ].map(csvEscape).join(','));
-            lines.push([
-                report.reportId,
-                report.studentId,
-                report.studentName,
-                report.department,
-                report.section,
-                report.yearlevel || '',
-                report.uniformCount,
-                report.footwearCount,
-                report.noIdCount,
-                report.totalViolations,
-                report.statusLabel
-            ].map(csvEscape).join(','));
-            lines.push('');
-            lines.push('Violation History');
-            lines.push(['Date', 'Violation', 'Description'].map(csvEscape).join(','));
-            if (Array.isArray(report.history)) {
-                report.history.forEach(item => {
-                    lines.push([
-                        item.date,
-                        item.title,
-                        item.desc
-                    ].map(csvEscape).join(','));
-                });
-            }
-            const csvContent = lines.join('\r\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const fileName = 'report_' + (report.reportId || report.id || 'student') + '.csv';
-            if (typeof saveAs === 'function') {
-                saveAs(blob, fileName);
-            } else {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            }
+            const filename = 'report_' + (report.reportId || report.id || 'student') + '.xls';
+            await generateExcel(reportsToExport, filename);
         }
 
-        function downloadAllReports() {
+        async function downloadAllReports() {
             if (!Array.isArray(reports) || reports.length === 0) return;
-            const lines = [];
             const now = new Date();
-            lines.push('All Student Violation Reports');
-            lines.push('Generated,' + csvEscape(now.toLocaleString()));
-            lines.push('');
-            lines.push([
-                'Report ID',
-                'Student ID',
-                'Student Name',
-                'Department',
-                'Section',
-                'Year Level',
-                'Uniform Violations',
-                'Footwear Violations',
-                'No ID Violations',
-                'Total Violations',
-                'Status'
-            ].map(csvEscape).join(','));
-            reports.forEach(report => {
-                lines.push([
-                    report.reportId,
-                    report.studentId,
-                    report.studentName,
-                    report.department,
-                    report.section,
-                    report.yearlevel || '',
-                    report.uniformCount,
-                    report.footwearCount,
-                    report.noIdCount,
-                    report.totalViolations,
-                    report.statusLabel
-                ].map(csvEscape).join(','));
-            });
-            const csvContent = lines.join('\r\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const fileName = 'reports_export_' + now.toISOString().slice(0, 10) + '.csv';
-            if (typeof saveAs === 'function') {
-                saveAs(blob, fileName);
-            } else {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+            const filename = 'reports_export_' + now.toISOString().slice(0, 10) + '.xls';
+            await generateExcel(reports, filename);
+        }
+
+        async function generateExcel(reportsData, fileName) {
+            try {
+                const now = new Date();
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
+
+                let html = `
+                    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            .title { font-size: 14pt; font-weight: bold; color: #2980b9; text-align: center; }
+                            .subtitle { font-size: 10pt; color: #7f8c8d; text-align: center; }
+                            .stats { font-size: 9pt; color: #333; text-align: center; }
+                            .data-table th { background-color: #f2f2f2; font-weight: bold; border: 0.5pt solid #000; text-align: center; }
+                            .data-table td { border: 0.5pt solid #000; padding: 5px; }
+                        </style>
+                    </head>
+                    <body>
+                        <table width="1060" style="width: 1060px; border-collapse: collapse;">
+                            ${headerData ? `
+                            <tr height="100" style="height: 100px;">
+                                <td colspan="9" width="1060" align="center" valign="middle" style="width: 1060px; text-align: center; vertical-align: middle;">
+                                    <center>
+                                        <div align="center" style="text-align: center;">
+                                            <p align="center" style="text-align: center; margin: 0; padding: 0;">
+                                                <img src="${headerData}" width="400" height="80" border="0" style="display: inline-block;">
+                                            </p>
+                                        </div>
+                                    </center>
+                                </td>
+                            </tr>` : ''}
+                            <tr><td colspan="9" class="title" align="center" style="text-align: center;">VIOLATION ANALYSIS REPORT</td></tr>
+                            <tr><td colspan="9" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
+                            <tr><td colspan="9" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
+                            <tr><td colspan="9" class="stats" align="center" style="text-align: center;">Reported by: ${getCurrentAdminName()}</td></tr>
+                            <tr><td colspan="9" class="stats" align="center" style="text-align: center;">Total Records: ${reportsData.length}</td></tr>
+                            <tr><td colspan="9" style="height: 20px;"></td></tr>
+                            <tr class="data-table">
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Report ID</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
+                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student Name</th>
+                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section</th>
+                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Uniform</th>
+                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Footwear</th>
+                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">No ID</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Total</th>
+                            </tr>
+                `;
+
+                reportsData.forEach(report => {
+                    html += `
+                        <tr>
+                            <td>${report.reportId || ''}</td>
+                            <td>${report.studentId || ''}</td>
+                            <td>${report.studentName || ''}</td>
+                            <td>${report.department || ''}</td>
+                            <td>${report.section || ''}</td>
+                            <td align="center">${report.uniformCount || 0}</td>
+                            <td align="center">${report.footwearCount || 0}</td>
+                            <td align="center">${report.noIdCount || 0}</td>
+                            <td align="center"><b>${report.totalViolations || 0}</b></td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </table>
+                    </body>
+                    </html>
+                `;
+
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, fileName);
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                console.error('Excel export error:', error);
+                showError('Failed to generate Excel document.');
             }
         }
 

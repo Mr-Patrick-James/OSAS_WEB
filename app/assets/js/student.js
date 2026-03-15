@@ -59,6 +59,17 @@ function initStudentsModule() {
         let totalRecords = 0;
         let totalPages = 0;
 
+        function getCurrentAdminName() {
+            const sessionStr = localStorage.getItem('userSession');
+            if (!sessionStr) return 'Admin';
+            try {
+                const session = JSON.parse(sessionStr);
+                return session.full_name || session.name || session.username || 'Admin';
+            } catch (e) {
+                return 'Admin';
+            }
+        }
+
         // ========== DYNAMIC API PATH DETECTION ==========
         // Detect the correct API path based on current page location
         function getAPIBasePath() {
@@ -929,18 +940,19 @@ function initStudentsModule() {
                 doc.setTextColor(100, 100, 100);
                 doc.setFont("helvetica", "normal");
                 doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 105, 43, { align: 'center' });
+                doc.text(`Exported by: ${getCurrentAdminName()}`, 105, 47, { align: 'center' });
 
                 // Divider Line
                 doc.setDrawColor(220, 220, 220);
                 doc.setLineWidth(0.5);
-                doc.line(14, 50, 196, 50);
+                doc.line(14, 52, 196, 52);
                 
                 // Summary Stats
                 doc.setFontSize(10);
                 doc.setTextColor(60, 60, 60);
-                doc.text(`Total Records: ${exportStudents.length}`, 14, 60);
+                doc.text(`Total Records: ${exportStudents.length}`, 14, 62);
                 
-                let startY = 65;
+                let startY = 67;
 
                 // Table
                 const tableColumn = ["ID", "Student ID", "Name", "Dept", "Section", "Year Level", "Contact No", "Status"];
@@ -1036,6 +1048,7 @@ function initStudentsModule() {
                             <tr><td colspan="11" class="title" align="center" style="text-align: center;">STUDENT LIST REPORT</td></tr>
                             <tr><td colspan="11" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
                             <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
+                            <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Exported by: ${getCurrentAdminName()}</td></tr>
                             <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Total Records: ${exportStudents.length}</td></tr>
                             <tr><td colspan="11" style="height: 20px;"></td></tr>
                             <tr class="data-table">
@@ -1208,6 +1221,17 @@ function initStudentsModule() {
                                  italics: true,
                                  color: "999999",
                                  size: 16, // Added size (8pt)
+                             })
+                         ],
+                         alignment: AlignmentType.CENTER,
+                     }),
+                     new Paragraph({
+                         children: [
+                             new TextRun({
+                                 text: `Exported by: ${getCurrentAdminName()}`,
+                                 italics: true,
+                                 color: "999999",
+                                 size: 16,
                              })
                          ],
                          alignment: AlignmentType.CENTER,
