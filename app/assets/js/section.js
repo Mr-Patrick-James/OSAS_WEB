@@ -361,48 +361,51 @@ function initSectionsModule() {
             const doc = new jsPDF();
             const now = new Date();
             
-            const logoPath = '/OSAS_WEB/app/assets/img/default.png';
-            const logoData = await loadImage(logoPath);
+            // --- Header Section ---
+            const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+            const headerData = await loadImage(headerPath);
 
-            if (logoData) {
-                doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
-                doc.setFontSize(18);
-                doc.setTextColor(44, 62, 80); 
-                doc.setFont("helvetica", "bold");
-                doc.text("E-OSAS SYSTEM", 40, 18);
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.setTextColor(127, 140, 141); 
-                doc.text("Office of Student Affairs and Services", 40, 24);
+            if (headerData) {
+                // Reduced width to 140mm (from 180mm) to fix stretching, height to 25mm
+                // Shift slightly right (38mm) to align visually with centered title
+                doc.addImage(headerData, 'PNG', 38, 5, 140, 25);
             } else {
+                // Fallback header if image fails to load
                 doc.setFontSize(22);
                 doc.setTextColor(44, 62, 80);
                 doc.setFont("helvetica", "bold");
                 doc.text("E-OSAS SYSTEM", 14, 20);
+                
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "normal");
                 doc.setTextColor(127, 140, 141);
                 doc.text("Office of Student Affairs and Services", 14, 28);
             }
 
-            doc.setFontSize(14);
+            // Report Title & Date (Positioned below the header image)
+            doc.setFontSize(12);
             doc.setTextColor(41, 128, 185); 
             doc.setFont("helvetica", "bold");
-            doc.text("SECTION LIST REPORT", 196, 18, { align: 'right' });
+            doc.text("SECTION LIST REPORT", 105, 38, { align: 'center' });
 
-            doc.setFontSize(9);
+            doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
             doc.setFont("helvetica", "normal");
-            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+            doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 105, 43, { align: 'center' });
+            doc.text(`Exported by: ${getCurrentAdminName()}`, 105, 47, { align: 'center' });
 
+            // Divider Line
             doc.setDrawColor(220, 220, 220);
             doc.setLineWidth(0.5);
-            doc.line(14, 35, 196, 35);
+            doc.line(14, 52, 196, 52);
             
+            // Summary Stats
             doc.setFontSize(10);
             doc.setTextColor(60, 60, 60);
-            doc.text(`Total Records: ${sections.length}`, 14, 45);
+            doc.text(`Total Records: ${sections.length}`, 14, 62);
             
+            let startY = 67;
+
             const tableColumn = ["ID", "Section Name", "Department", "Academic Year", "Students", "Status"];
             const tableRows = sections.map(s => [
                 s.section_id || 'SEC-' + String(s.id).padStart(3, '0'),
@@ -416,10 +419,11 @@ function initSectionsModule() {
             doc.autoTable({
                 head: [tableColumn],
                 body: tableRows,
-                startY: 50,
+                startY: startY,
                 theme: 'grid',
                 styles: { fontSize: 8, cellPadding: 3 },
-                headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80], fontStyle: 'bold' }
+                headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80], fontStyle: 'bold' },
+                margin: { top: 60 }
             });
 
             doc.save(`Sections_${now.toISOString().slice(0, 10)}.pdf`);

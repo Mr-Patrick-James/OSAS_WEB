@@ -1109,6 +1109,20 @@ class DashboardData {
     }
 
     /**
+     * Get Current Admin Name from session
+     */
+    getCurrentAdminName() {
+        const sessionStr = localStorage.getItem('userSession');
+        if (!sessionStr) return 'Admin';
+        try {
+            const session = JSON.parse(sessionStr);
+            return session.full_name || session.name || session.username || 'Admin';
+        } catch (e) {
+            return 'Admin';
+        }
+    }
+
+    /**
      * Download Dashboard PDF Report
      */
     async downloadDashboardPDF() {
@@ -1146,47 +1160,48 @@ class DashboardData {
         };
 
         // --- Header Section ---
-        const logoData = await loadImage('/OSAS_WEB/app/assets/img/default.png');
-        if (logoData) {
-            doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
-            doc.setFontSize(18);
-            doc.setTextColor(44, 62, 80);
-            doc.setFont("helvetica", "bold");
-            doc.text("E-OSAS SYSTEM", 40, 18);
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(127, 140, 141);
-            doc.text("Office of Student Affairs and Services", 40, 24);
+        const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+        const headerData = await loadImage(headerPath);
+
+        if (headerData) {
+            // Reduced width to 140mm (from 180mm) to fix stretching, height to 25mm
+            // Shift slightly right (38mm) to align visually with centered title
+            doc.addImage(headerData, 'PNG', 38, 5, 140, 25);
         } else {
+            // Fallback header if image fails to load
             doc.setFontSize(22);
             doc.setTextColor(44, 62, 80);
             doc.setFont("helvetica", "bold");
             doc.text("E-OSAS SYSTEM", 14, 20);
+            
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(127, 140, 141);
             doc.text("Office of Student Affairs and Services", 14, 28);
         }
 
-        doc.setFontSize(14);
-        doc.setTextColor(41, 128, 185);
+        // Report Title & Date (Positioned below the header image)
+        doc.setFontSize(12);
+        doc.setTextColor(41, 128, 185); 
         doc.setFont("helvetica", "bold");
-        doc.text("DASHBOARD SUMMARY REPORT", 196, 18, { align: 'right' });
+        doc.text("DASHBOARD SUMMARY REPORT", 105, 38, { align: 'center' });
 
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setTextColor(100, 100, 100);
         doc.setFont("helvetica", "normal");
-        doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 196, 24, { align: 'right' });
+        doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 105, 43, { align: 'center' });
+        doc.text(`Exported by: ${this.getCurrentAdminName()}`, 105, 47, { align: 'center' });
 
+        // Divider Line
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
-        doc.line(14, 35, 196, 35);
+        doc.line(14, 52, 196, 52);
 
         // --- Statistics Overview ---
         doc.setFontSize(12);
         doc.setTextColor(44, 62, 80);
         doc.setFont("helvetica", "bold");
-        doc.text("Statistics Overview", 14, 45);
+        doc.text("Statistics Overview", 14, 62);
 
         const statsData = [
             ["Violators", String(this.stats.violators || 0)],
@@ -1197,7 +1212,7 @@ class DashboardData {
 
         doc.autoTable({
             body: statsData,
-            startY: 50,
+            startY: 67,
             theme: 'grid',
             styles: { fontSize: 10, cellPadding: 5 },
             columnStyles: {

@@ -375,34 +375,32 @@ function initDepartmentModule() {
     const doc = new jsPDF();
     const now = new Date();
     
-    const logoPath = '/OSAS_WEB/app/assets/img/default.png';
-    const logoData = await loadImage(logoPath);
+    // --- Header Section ---
+    const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+    const headerData = await loadImage(headerPath);
 
-    if (logoData) {
-      doc.addImage(logoData, 'PNG', 14, 10, 20, 20);
-      doc.setFontSize(18);
-      doc.setTextColor(44, 62, 80); 
-      doc.setFont("helvetica", "bold");
-      doc.text("E-OSAS SYSTEM", 40, 18);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(127, 140, 141); 
-      doc.text("Office of Student Affairs and Services", 40, 24);
+    if (headerData) {
+      // Reduced width to 140mm (from 180mm) to fix stretching, height to 25mm
+      // Shift slightly right (38mm) to align visually with centered title
+      doc.addImage(headerData, 'PNG', 38, 5, 140, 25);
     } else {
+      // Fallback header if image fails to load
       doc.setFontSize(22);
       doc.setTextColor(44, 62, 80);
       doc.setFont("helvetica", "bold");
       doc.text("E-OSAS SYSTEM", 14, 20);
+      
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(127, 140, 141);
       doc.text("Office of Student Affairs and Services", 14, 28);
     }
 
-    doc.setFontSize(14);
+    // Report Title & Date (Positioned below the header image)
+    doc.setFontSize(12);
     doc.setTextColor(41, 128, 185); 
     doc.setFont("helvetica", "bold");
-    doc.text("DEPARTMENT LIST REPORT", 196, 18, { align: 'right' });
+    doc.text("DEPARTMENT LIST REPORT", 105, 38, { align: 'center' });
 
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
@@ -420,6 +418,8 @@ function initDepartmentModule() {
     doc.setTextColor(60, 60, 60);
     doc.text(`Total Records: ${departments.length}`, 14, 62);
     
+    let startY = 67;
+
     const tableColumn = ["ID", "Code", "Department Name", "HOD", "Students", "Status"];
     const tableRows = departments.map(d => [
       d.id,
@@ -433,10 +433,11 @@ function initDepartmentModule() {
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
-      startY: 50,
+      startY: startY,
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80], fontStyle: 'bold' }
+      headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80], fontStyle: 'bold' },
+      margin: { top: 60 }
     });
 
     doc.save(`Departments_${now.toISOString().slice(0, 10)}.pdf`);
