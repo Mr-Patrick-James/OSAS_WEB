@@ -500,19 +500,6 @@ require_once '../../config/db_connect.php';
             </button>
           </div>
         </form>
-
-        <!-- New: Choose from Assets -->
-        <div class="assets-divider" style="margin: 25px 0; text-align: center; position: relative;">
-          <hr style="border: 0; border-top: 1px solid #eee;">
-          <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 0 15px; color: #999; font-size: 0.8rem; font-weight: 600;">OR CHOOSE FROM ASSETS</span>
-        </div>
-
-        <div id="AssetFilesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
-          <!-- Asset files will be loaded here -->
-          <div style="padding: 15px; text-align: center; color: #999;">
-            <i class='bx bx-loader-alt bx-spin'></i> Loading asset files...
-          </div>
-        </div>
       </div>
     </div>
   </div>

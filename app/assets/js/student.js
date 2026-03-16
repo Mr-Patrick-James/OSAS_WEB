@@ -1693,103 +1693,12 @@ function initStudentsModule() {
             const closeImportBtn = document.getElementById('closeImportModal');
             const cancelImportBtn = document.getElementById('cancelImportBtn');
             const importModalOverlay = document.getElementById('ImportModalOverlay');
-            const assetFilesList = document.getElementById('AssetFilesList');
             let droppedFile = null;
-
-            async function fetchAssets() {
-                if (!assetFilesList) return;
-                
-                assetFilesList.innerHTML = '<div style="padding: 15px; text-align: center; color: #999;"><i class="bx bx-loader-alt bx-spin"></i> Loading assets...</div>';
-                
-                try {
-                    const response = await fetch(`${apiBase}?action=listAssets`);
-                    const result = await response.json();
-                    
-                    if (result.status === 'success' && result.data.length > 0) {
-                        assetFilesList.innerHTML = result.data.map(file => `
-                            <div class="asset-file-item" style="padding: 12px 15px; border-bottom: 1px solid #f5f5f5; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.2s;" onclick="syncFromAsset('${file.name}')">
-                                <div style="display: flex; align-items: center;">
-                                    <i class='bx bxs-file-${file.name.endsWith('csv') ? 'blank' : 'export'}' style="font-size: 24px; color: ${file.name.endsWith('csv') ? '#3498db' : '#27ae60'}; margin-right: 12px;"></i>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 0.9rem; color: #333;">${file.name}</div>
-                                        <div style="font-size: 0.75rem; color: #999;">${file.size} • Modified: ${file.modified}</div>
-                                    </div>
-                                </div>
-                                <i class='bx bx-sync' style="font-size: 18px; color: var(--gold);"></i>
-                            </div>
-                        `).join('');
-                        
-                        // Hover effect
-                        const items = assetFilesList.querySelectorAll('.asset-file-item');
-                        items.forEach(item => {
-                            item.onmouseover = () => item.style.background = '#fff9e6';
-                            item.onmouseout = () => item.style.background = 'transparent';
-                        });
-                    } else {
-                        assetFilesList.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No compatible files found in assets.</div>';
-                    }
-                } catch (error) {
-                    console.error('Error fetching assets:', error);
-                    assetFilesList.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Failed to load assets.</div>';
-                }
-            }
-
-            // Global function for asset sync
-            window.syncFromAsset = async function(filename) {
-                const confirmed = await showModernAlert({
-                    title: 'Sync from Asset',
-                    message: `Sync student data using "${filename}"?`,
-                    confirmText: 'Yes, Sync Now',
-                    cancelText: 'Cancel'
-                });
-
-                if (!confirmed) return;
-
-                closeImportModal();
-                
-                showModernAlert({
-                    title: 'Synchronizing...',
-                    message: `Processing "${filename}"...`,
-                    icon: 'loading',
-                    showCancel: false,
-                    confirmText: 'Processing...'
-                });
-
-                try {
-                    const response = await fetch(`${apiBase}?action=importFromAsset&filename=${encodeURIComponent(filename)}`);
-                    const result = await response.json();
-
-                    if (result.status === 'success') {
-                        const { created, updated, skipped } = result.data;
-                        await showModernAlert({
-                            title: 'Sync Successful',
-                            message: 'Student database updated.',
-                            icon: 'success',
-                            showCancel: false,
-                            confirmText: 'Done',
-                            stats: { created, updated, skipped }
-                        });
-                        fetchStudents();
-                    } else {
-                        await showModernAlert({
-                            title: 'Sync Failed',
-                            message: result.message || 'Error occurred during sync.',
-                            icon: 'error',
-                            showCancel: false,
-                            confirmText: 'Dismiss'
-                        });
-                    }
-                } catch (error) {
-                    console.error('Sync error:', error);
-                    showError('Connection error during sync.');
-                }
-            };
 
             function openImportModal() {
                 if (importModal) {
                     importModal.classList.add('active');
                     document.body.style.overflow = 'hidden';
-                    fetchAssets(); // Refresh assets
                 }
             }
 
