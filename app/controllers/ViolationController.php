@@ -560,8 +560,7 @@ class ViolationController extends Controller
             $xml = $this->injectViolationsIntoTable($xml, 'Improper Foot Wear', $monthlyViolations['Improper Foot Wear']);
             $xml = $this->injectViolationsIntoTable($xml, 'No ID', $monthlyViolations['No ID']);
 
-            // 4.2 Standard Replacements (Sequential)
-            // Process the document for both tables
+            // 4.2 Standard Replacements (Sequential & Safe)
             // Sequence: ID (Left), Course (Left), Name (Left), ID (Right), Course (Right), Name (Right)
             $replacements = [
                 ['label' => 'ID Number', 'value' => $studentId],
@@ -572,29 +571,41 @@ class ViolationController extends Controller
                 ['label' => 'Name', 'value' => $studentName],
             ];
 
-            // Ultra-small font size: sz=2 is 1pt (TINY)
-            // Color: Blue (0000FF) for verification
-            $baseProps = '<w:rPr><w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic" w:cs="Century Gothic"/><w:color w:val="0000FF"/><w:b w:val="0"/><w:bCs w:val="0"/><w:sz w:val="2"/><w:szCs w:val="2"/><w:u w:val="single"/><w:vertAlign w:val="baseline"/></w:rPr>';
+            // Readable font size: sz=18 is 9pt
+            // Black color, Century Gothic
+            $props = '<w:rPr><w:rFonts w:ascii="Century Gothic" w:hAnsi="Century Gothic" w:cs="Century Gothic"/><w:sz w:val="18"/><w:szCs w:val="18"/><w:u w:val="single"/></w:rPr>';
 
             foreach ($replacements as $rep) {
                 $label = $rep['label'];
                 $value = $rep['value'];
                 
-                // Build a regex for the label that allows XML tags between characters
-                $labelRegex = '';
-                for ($i = 0; $i < strlen($label); $i++) {
-                    $char = $label[$i];
-                    $labelRegex .= preg_quote($char) . '(?:<[^>]+>)*';
+                // Flexible regex for labels to handle split tags and variations (like "D Number")
+                if ($label === 'ID Number') {
+                    $labelRegex = '(?:I(?:\s|<[^>]+>)*)?D(?:\s|<[^>]+>)*N(?:\s|<[^>]+>)*u(?:\s|<[^>]+>)*m(?:\s|<[^>]+>)*b(?:\s|<[^>]+>)*e(?:\s|<[^>]+>)*r';
+                } else {
+                    $labelRegex = '';
+                    for ($i = 0; $i < strlen($label); $i++) {
+                        $char = $label[$i];
+                        $labelRegex .= preg_quote($char) . '(?:<[^>]+>)*';
+                    }
                 }
 
-                $replacementXml = "</w:t></w:r><w:r>$baseProps<w:t>$value </w:t></w:r><w:r><w:t>";
+                $replacementXml = "</w:t></w:r><w:r>$props<w:t> $value </w:t></w:r>";
                 
-                // Aggressive regex to match label and underscores across potential tag splits
-                // Match Label + (optional tags/whitespace) + colon + (optional tags/whitespace) + underscores
-                // Limit: 1 replacement per loop to ensure sequential order
-                $pattern = '/' . $labelRegex . '(?:\s|<[^>]+>)*:(?:\s|<[^>]+>)*(_(?:(?:\s|<[^>]+>)|_)*)/s';
+                // Add padding only for ID Number to separate it from Course and Year
+                  if ($label === 'ID Number') {
+                      $replacementXml .= "<w:r><w:t xml:space=\"preserve\">                        </w:t></w:r>";
+                  }
                 
-                $xml = preg_replace($pattern, "$label: $replacementXml", $xml, 1);
+                $replacementXml .= "<w:r><w:t>";
+                
+                // Pattern matches the label, the colon, and ALL subsequent underscores
+                // $1 captures the label and colon, $2 captures all underscores
+                $pattern = '/(' . $labelRegex . '(?:\s|<[^>]+>)*:(?:\s|<[^>]+>)*)(_+)/s';
+                
+                // We replace the whole match with Group 1 (label: ) + our new XML (value)
+                // This removes ALL matched underscores cleanly.
+                $xml = preg_replace($pattern, '$1' . $replacementXml, $xml, 1);
             }
 
             // Violations (Text replacement - appends checkmark to label)
@@ -666,8 +677,8 @@ class ViolationController extends Controller
                     
                     $dateStr = date('m/d/Y- g:i A', $ts);
                     
-                    // Inject into <w:p> with tiny font size for debug verification
-                    $runXml = '<w:r><w:rPr><w:sz w:val="4"/><w:szCs w:val="4"/></w:rPr><w:t>' . $dateStr . '</w:t></w:r>';
+                    // Inject into <w:p> with standard small font size
+                    $runXml = '<w:r><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t>' . $dateStr . '</w:t></w:r>';
                     
                     if (strpos($cellContent, '</w:p>') !== false) {
                         // Find the last </w:p> in this cell and insert before it

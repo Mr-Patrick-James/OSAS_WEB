@@ -3259,8 +3259,10 @@ function initViolationsModule() {
                 return;
             }
 
-            // Use Client-Side Generation to bypass server ZipArchive issues
-            generateEntranceSlipClientSide(violation);
+            // FORCE SERVER-SIDE GENERATION (To avoid JS cache and use the PHP fixes)
+            const studentId = violation.studentId || '';
+            const violationId = violation.id || '';
+            window.location.href = API_BASE + 'violations.php?action=generate_slip&violation_id=' + violationId;
         }
 
         async function generateEntranceSlipClientSide(violation) {
@@ -3368,7 +3370,8 @@ function initViolationsModule() {
                     const labelRegex = rep.label.split('').map(c => escapeRegex(c) + '(?:<[^>]+>)*').join('');
                     const pattern = new RegExp('(' + labelRegex + '(?:\\s|<[^>]+>)*:(?:\\s|<[^>]+>)*)(_+)', 's');
                     
-                    const replacementXml = `</w:t></w:r><w:r>${baseProps}<w:t>${rep.value} </w:t></w:r><w:r><w:t>`;
+                    // Added multiple spaces to ensure separation between fields
+                    const replacementXml = `</w:t></w:r><w:r>${baseProps}<w:t>  ${rep.value}     </w:t></w:r><w:r><w:t>`;
                     
                     // Replace only the captured underscores (group 2), keeping the label (group 1) intact
                     xml = xml.replace(pattern, (match, g1, g2) => g1 + replacementXml);
