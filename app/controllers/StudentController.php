@@ -344,6 +344,10 @@ class StudentController extends Controller {
         }
 
         try {
+            // Temporarily enable verbose error reporting for debugging
+            error_reporting(E_ALL);
+            ini_set('display_errors', 1);
+
             $jsonData = null;
 
             if ($ext === 'csv') {
@@ -373,6 +377,10 @@ class StudentController extends Controller {
         } catch (Exception $e) {
             if (file_exists($filepath)) unlink($filepath);
             $this->error('Import failed: ' . $e->getMessage());
+        } finally {
+            // Restore original error reporting settings
+            ini_set('display_errors', 0);
+            error_reporting(E_ERROR | E_WARNING | E_PARSE);
         }
     }
 

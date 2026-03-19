@@ -688,4 +688,3 @@ class StudentModel extends Model {
         return $result && $result->num_rows > 0;
     }
 }
-

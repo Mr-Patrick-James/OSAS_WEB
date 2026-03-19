@@ -15,6 +15,7 @@ class SlipRequestModel extends Model
                 requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 approved_by INT NULL,
                 approved_at DATETIME NULL,
+                processed_date DATETIME NULL,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_violation_student (violation_id, student_id),
                 KEY idx_status (status),
@@ -24,6 +25,14 @@ class SlipRequestModel extends Model
         ";
 
         $this->conn->query($sql);
+
+        // Check if processed_date column exists, if not, add it
+        $checkColumnSql = "SHOW COLUMNS FROM slip_requests LIKE 'processed_date'";
+        $result = $this->conn->query($checkColumnSql);
+        if ($result && $result->num_rows == 0) {
+            $addColumnSql = "ALTER TABLE slip_requests ADD COLUMN processed_date DATETIME NULL";
+            $this->conn->query($addColumnSql);
+        }
     }
 
     public function getByViolationAndStudent($violationId, $studentId)
