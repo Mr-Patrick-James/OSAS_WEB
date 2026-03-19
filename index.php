@@ -814,7 +814,7 @@
                 <div class="logo-icon">
                     <img src="./app/assets/img/default.png" alt="OSAS Logo" width="40" height="40">
                 </div>
-                <span>OSAS</span>
+                <span>OSAS OF COLEGIO DE NAUJAN</span>
             </a>
             <div class="nav-links" id="navLinks">
                 <a href="#features" class="nav-link">Features</a>

@@ -2711,6 +2711,9 @@ function initViolationsModule() {
             // Update action buttons visibility based on status
             const detailResolveBtn = document.getElementById('detailResolveBtn');
             const detailEscalateBtn = document.getElementById('detailEscalateBtn');
+            const detailSlipStatus = document.getElementById('detailSlipStatus');
+            const detailApproveSlipBtn = document.getElementById('detailApproveSlipBtn');
+            const detailDenySlipBtn = document.getElementById('detailDenySlipBtn');
             
             if (detailResolveBtn) {
                 let currentStatus = violation.status;
@@ -2735,6 +2738,38 @@ function initViolationsModule() {
                     detailEscalateBtn.style.display = 'inline-flex';
                 }
             }
+
+            if (detailSlipStatus) {
+                detailSlipStatus.textContent = 'Slip Request: Loading...';
+            }
+            if (detailApproveSlipBtn) detailApproveSlipBtn.style.display = 'none';
+            if (detailDenySlipBtn) detailDenySlipBtn.style.display = 'none';
+
+            fetch(`${API_BASE}violations.php?action=slip_status&violation_id=${encodeURIComponent(violationId)}`)
+                .then(r => r.json())
+                .then(result => {
+                    if (!detailSlipStatus) return;
+                    if (result.status !== 'success') {
+                        detailSlipStatus.textContent = 'Slip Request: Unknown';
+                        return;
+                    }
+
+                    const status = result.data?.status || 'none';
+                    if (status === 'pending') {
+                        detailSlipStatus.textContent = 'Slip Request: Pending (student requested)';
+                        if (detailApproveSlipBtn) detailApproveSlipBtn.style.display = 'inline-flex';
+                        if (detailDenySlipBtn) detailDenySlipBtn.style.display = 'inline-flex';
+                    } else if (status === 'approved') {
+                        detailSlipStatus.textContent = 'Slip Request: Approved';
+                    } else if (status === 'denied') {
+                        detailSlipStatus.textContent = 'Slip Request: Denied';
+                    } else {
+                        detailSlipStatus.textContent = 'Slip Request: None';
+                    }
+                })
+                .catch(() => {
+                    if (detailSlipStatus) detailSlipStatus.textContent = 'Slip Request: Unknown';
+                });
         }
 
         function closeRecordModal() {

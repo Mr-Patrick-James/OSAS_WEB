@@ -184,27 +184,75 @@ body.dark {
   overflow: hidden;
 }
 
-.Reports-btn.outline {
-  background: var(--light);
-  color: var(--dark);
-  border: 1.5px solid var(--border);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.Reports-btn.outline.small {
-  padding: 4px 10px;
-  font-size: 10px;
-  border-radius: 6px;
-  border-width: 1.5px;
-}
-
-.Reports-btn.primary {
-  background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
-  color: var(--dark);
+.Reports-btn.primary,
+.Reports-btn-primary,
+#btnGenerateFirstReport {
+  background: #ffb347 !important;
+  color: #ffffff !important;
   font-weight: 600;
   padding: 8px 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
+  border: none;
+  box-shadow: 0 4px 12px rgba(255, 179, 71, 0.3);
+}
+
+.Reports-btn.primary:hover,
+.Reports-btn-primary:hover,
+#btnGenerateFirstReport:hover {
+  background: #ffa500 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(255, 165, 0, 0.4);
+}
+
+#applyFilters {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+#applyFilters:hover {
+  background: #059669 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+#clearFilters,
+#resetFilters,
+.Reports-btn-outline {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+#clearFilters:hover,
+#resetFilters:hover,
+.Reports-btn-outline:hover {
+  background: #dc2626 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+#btnRefreshReports {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+#btnRefreshReports:hover {
+  background: #2563eb !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+#btnExportReports {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+#btnExportReports:hover {
+  background: #059669 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .Reports-btn i {
@@ -1037,11 +1085,19 @@ body.dark {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   font-size: 16px;
   transition: all 0.3s ease;
   color: var(--dark);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   position: relative;
+}
+
+.Reports-action-btn i {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .Reports-action-btn:hover {
@@ -1050,22 +1106,37 @@ body.dark {
   border-color: var(--gold);
 }
 
+.Reports-action-btn.view {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
 .Reports-action-btn.view:hover {
-  background: rgba(33, 150, 243, 0.15);
-  color: #2196f3;
-  border-color: #2196f3;
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.Reports-action-btn.export {
+  background: #10b981;
+  color: #ffffff;
 }
 
 .Reports-action-btn.export:hover {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4caf50;
-  border-color: #4caf50;
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.Reports-action-btn.print {
+  background: #64748b;
+  color: #ffffff;
 }
 
 .Reports-action-btn.print:hover {
-  background: rgba(96, 125, 139, 0.15);
-  color: #607d8b;
-  border-color: #607d8b;
+  background: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(100, 116, 139, 0.3);
 }
 
 /* Add tooltips for action buttons */
@@ -1406,15 +1477,35 @@ body.dark {
   gap: 6px;
   font-weight: 600;
   font-size: 11px;
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: var(--dark);
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
-.modal-actions .Reports-action-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: var(--dark);
-  color: var(--dark);
+.modal-actions .Reports-action-btn.export {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.modal-actions .Reports-action-btn.export:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.modal-actions .Reports-action-btn.print {
+  background: #64748b;
+  color: #ffffff;
+}
+
+.modal-actions .Reports-action-btn.print:hover {
+  background: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(100, 116, 139, 0.3);
 }
 
 /* ========================================= */

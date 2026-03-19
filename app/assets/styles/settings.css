@@ -578,8 +578,8 @@ select.settings-input {
 }
 
 .settings-action-btn:hover {
-  background: var(--settings-sidebar-bg);
-  color: var(--settings-text-main);
+  background: #3b82f6;
+  color: #ffffff;
 }
 
 .settings-action-btn.delete {
@@ -587,9 +587,9 @@ select.settings-input {
 }
 
 .settings-action-btn.delete:hover {
-  background: #FEF2F2;
-  border-color: #FECACA;
-  color: #DC2626;
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
 }
 
 /* Dark Mode Overrides (if needed) */

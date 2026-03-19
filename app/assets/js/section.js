@@ -429,83 +429,6 @@ function initSectionsModule() {
             doc.save(`Sections_${now.toISOString().slice(0, 10)}.pdf`);
         }
 
-        function downloadSectionsExcel() {
-            const lines = [];
-            const now = new Date();
-            lines.push('Section List Report');
-            lines.push('Generated,' + csvEscape(now.toLocaleString()));
-            lines.push('');
-            lines.push(['ID', 'Section Name', 'Department', 'Academic Year', 'Student Count', 'Status'].map(csvEscape).join(','));
-
-            sections.forEach(s => {
-                lines.push([
-                    s.section_id || 'SEC-' + String(s.id).padStart(3, '0'),
-                    s.name,
-                    s.department,
-                    s.academic_year,
-                    s.student_count,
-                    s.status
-                ].map(csvEscape).join(','));
-            });
-
-            const csvContent = lines.join('\r\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const fileName = 'sections_export_' + now.toISOString().slice(0, 10) + '.csv';
-            saveAs(blob, fileName);
-        }
-
-        async function downloadSectionsWord() {
-            if (!window.docx) {
-                if (typeof showNotification === 'function') {
-                    showNotification('DOCX library not loaded. Please refresh.', 'warning');
-                } else {
-                    console.warn('DOCX library not loaded. Please refresh the page.');
-                }
-                return;
-            }
-            
-            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
-            const now = new Date();
-            
-            const tableHeader = new TableRow({
-                children: ["ID", "Section Name", "Department", "Academic Year", "Students", "Status"].map(text => new TableCell({
-                    children: [new Paragraph({ text, bold: true, size: 20 })],
-                    shading: { fill: "E0E0E0" }
-                }))
-            });
-            
-            const tableRows = sections.map(s => new TableRow({
-                children: [
-                    String(s.section_id || 'SEC-' + String(s.id).padStart(3, '0')),
-                    s.name,
-                    s.department,
-                    s.academic_year,
-                    String(s.student_count),
-                    s.status
-                ].map(text => new TableCell({
-                    children: [new Paragraph({ text: text || "", size: 18 })]
-                }))
-            }));
-
-            const doc = new Document({
-                sections: [{
-                    children: [
-                        new Paragraph({ text: "SECTION LIST REPORT", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
-                        new Paragraph({ text: `Office of Student Affairs and Services`, alignment: AlignmentType.CENTER }),
-                        new Paragraph({ text: `Generated: ${now.toLocaleString()}`, alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
-                        new Table({
-                            rows: [tableHeader, ...tableRows],
-                            width: { size: 100, type: WidthType.PERCENTAGE }
-                        })
-                    ]
-                }]
-            });
-
-            Packer.toBlob(doc).then(blob => {
-                saveAs(blob, `Sections_${now.toISOString().slice(0, 10)}.docx`);
-            });
-        }
-
         // --- Render function ---
         function renderSections() {
             const list = Array.isArray(sections) ? sections : [];
@@ -785,22 +708,6 @@ function initSectionsModule() {
             if (exportPDFBtn) {
                 exportPDFBtn.addEventListener('click', async () => {
                     await downloadSectionsPDF();
-                    if (exportModal) exportModal.classList.remove('active');
-                    document.body.style.overflow = 'auto';
-                });
-            }
-
-            if (exportExcelBtn) {
-                exportExcelBtn.addEventListener('click', () => {
-                    downloadSectionsExcel();
-                    if (exportModal) exportModal.classList.remove('active');
-                    document.body.style.overflow = 'auto';
-                });
-            }
-
-            if (exportWordBtn) {
-                exportWordBtn.addEventListener('click', async () => {
-                    await downloadSectionsWord();
                     if (exportModal) exportModal.classList.remove('active');
                     document.body.style.overflow = 'auto';
                 });

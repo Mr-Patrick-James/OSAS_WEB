@@ -177,27 +177,44 @@ body.dark {
   overflow: hidden;
 }
 
-.Violations-btn.outline {
-  background: var(--light);
-  color: var(--dark);
-  border: 1.5px solid var(--border);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+#btnExportViolations {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
 }
 
-.Violations-btn.outline.small {
-  padding: 4px 10px;
-  font-size: 10px;
-  border-radius: 6px;
-  border-width: 1.5px;
+#btnExportViolations:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+#btnRefreshViolations {
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+}
+
+#btnRefreshViolations:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .Violations-btn.primary {
-  background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
-  color: var(--dark);
+  background: #ffb347;
+  color: #ffffff;
   font-weight: 600;
   padding: 8px 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
+  border: none;
+  box-shadow: 0 4px 12px rgba(255, 179, 71, 0.3);
+}
+
+.Violations-btn.primary:hover {
+  background: #ffa500;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(255, 165, 0, 0.4);
 }
 
 .Violations-btn i {
@@ -220,6 +237,46 @@ body.dark {
   color: var(--gold);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
+}
+
+#btnArchivedViolations {
+  background: #f59e0b !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+#btnArchivedViolations:hover {
+  background: #d97706 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+#btnArchivedViolations.active {
+  background: #64748b !important;
+}
+
+#btnMonthlyReset {
+  background: #6366f1 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+#btnMonthlyReset:hover {
+  background: #4f46e5 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+#btnExportViolations {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+#btnExportViolations:hover {
+  background: #059669 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .Violations-btn.primary:hover {
@@ -905,11 +962,19 @@ body.dark {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   font-size: 16px;
   transition: all 0.3s ease;
   color: var(--dark);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   position: relative;
+}
+
+.Violations-action-btn i {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .Violations-action-btn:hover {
@@ -918,66 +983,92 @@ body.dark {
   border-color: var(--gold);
 }
 
+.Violations-action-btn.view {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
 .Violations-action-btn.view:hover {
-  background: rgba(33, 150, 243, 0.15);
-  color: #2196f3;
-  border-color: #2196f3;
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.Violations-action-btn.edit {
+  background: #3b82f6;
+  color: #ffffff;
 }
 
 .Violations-action-btn.edit:hover {
-  background: rgba(255, 152, 0, 0.15);
-  color: #ff9800;
-  border-color: #ff9800;
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.Violations-action-btn.resolve {
+  background: #10b981;
+  color: #ffffff;
 }
 
 .Violations-action-btn.resolve:hover {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4caf50;
-  border-color: #4caf50;
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.Violations-action-btn.escalate {
+  background: #f59e0b;
+  color: #ffffff;
 }
 
 .Violations-action-btn.escalate:hover {
-  background: rgba(244, 67, 54, 0.15);
-  color: #f44336;
-  border-color: #f44336;
+  background: #d97706;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+}
+
+.Violations-action-btn.delete {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.Violations-action-btn.delete:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+}
+
+.Violations-action-btn.reopen {
+  background: #64748b;
+  color: #ffffff;
 }
 
 .Violations-action-btn.reopen:hover {
-  background: rgba(96, 125, 139, 0.15);
-  color: #607d8b;
-  border-color: #607d8b;
+  background: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(100, 116, 139, 0.3);
+}
+
+.Violations-action-btn.entrance {
+  background: #6366f1;
+  color: #ffffff;
 }
 
 .Violations-action-btn.entrance:hover {
-  background: rgba(63, 81, 181, 0.15);
-  color: #3f51b5;
-  border-color: #3f51b5;
-}
-
-.Violations-btn-outline.entrance-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid #3f51b5;
-  color: #3f51b5;
-  background: transparent;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.Violations-btn-outline.entrance-btn:hover {
-  background: rgba(63, 81, 181, 0.1);
+  background: #4f46e5;
   transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+}
+
+.Violations-action-btn.print {
+  background: #64748b;
+  color: #ffffff;
 }
 
 .Violations-action-btn.print:hover {
-  background: rgba(96, 125, 139, 0.15);
-  color: #607d8b;
-  border-color: #607d8b;
+  background: #475569;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(100, 116, 139, 0.3);
 }
 
 /* Add tooltips for action buttons */

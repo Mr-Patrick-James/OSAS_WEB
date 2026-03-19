@@ -38,13 +38,17 @@ include '../../config/db_connect.php';
 
       <div class="header-actions">
         <div class="button-group">
+          <button class="action-btn outline small" id="btnImport" title="Import Departments">
+            <i class='bx bx-upload'></i>
+            <span>Import</span>
+          </button>
+          <button class="action-btn outline small" id="btnExport" title="Export Departments">
+            <i class='bx bx-download'></i>
+            <span>Export</span>
+          </button>
           <button class="action-btn outline small" id="btnArchived" title="View Archived Departments">
             <i class='bx bx-archive'></i>
             <span>Archived</span>
-          </button>
-          <button class="action-btn outline small" id="btnExport">
-            <i class='bx bx-download'></i>
-            <span>Export</span>
           </button>
         </div>
         <button class="action-btn primary" id="btnAddDepartment">
@@ -219,6 +223,18 @@ include '../../config/db_connect.php';
       </div>
     </div>
 
+    <!-- Empty State (hidden by default) -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-icon">
+        <i class='bx bx-building-house'></i>
+      </div>
+      <h3>No Departments Found</h3>
+      <p>Get started by adding your first department</p>
+      <button class="btn-primary" id="btnAddFirstDepartment">
+        <i class='bx bx-plus'></i> Add Department
+      </button>
+    </div>
+
     <!-- Export Modal -->
     <div id="ExportDepartmentsModal" class="modal">
       <div class="modal-overlay" id="ExportModalOverlay"></div>
@@ -233,41 +249,20 @@ include '../../config/db_connect.php';
           </button>
         </div>
         <div class="modal-body" style="padding: 20px;">
-          <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the department records.</p>
+          <p style="margin-bottom: 20px; color: #666;">Download the department records as a non-editable PDF report.</p>
           <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
             <button id="exportPDF" class="action-btn outline" style="justify-content: flex-start; width: 100%;">
               <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-              <span style="margin-left: 10px;">Export as PDF</span>
-            </button>
-            <button id="exportExcel" class="action-btn outline" style="justify-content: flex-start; width: 100%;">
-              <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
-              <span style="margin-left: 10px;">Export as Excel (CSV)</span>
-            </button>
-            <button id="exportWord" class="action-btn outline" style="justify-content: flex-start; width: 100%;">
-              <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
-              <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+              <span style="margin-left: 10px;">Export as PDF (Non-editable)</span>
             </button>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Empty State (hidden by default) -->
-    <div class="empty-state" id="emptyState" style="display: none;">
-      <div class="empty-icon">
-        <i class='bx bx-building-house'></i>
-      </div>
-      <h3>No Departments Found</h3>
-      <p>Get started by adding your first department</p>
-      <button class="btn-primary" id="btnAddFirstDepartment">
-        <i class='bx bx-plus'></i> Add Department
-      </button>
-    </div>
   </main>
   <!-- Load Libraries for Export -->
   <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
   <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
-  <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
   <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 </body>
 

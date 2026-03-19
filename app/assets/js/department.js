@@ -443,83 +443,6 @@ function initDepartmentModule() {
     doc.save(`Departments_${now.toISOString().slice(0, 10)}.pdf`);
   }
 
-  function downloadDepartmentsExcel() {
-    const lines = [];
-    const now = new Date();
-    lines.push('Department List Report');
-    lines.push('Generated,' + csvEscape(now.toLocaleString()));
-    lines.push('');
-    lines.push(['ID', 'Code', 'Department Name', 'HOD', 'Student Count', 'Status'].map(csvEscape).join(','));
-
-    departments.forEach(d => {
-      lines.push([
-        d.id,
-        d.code,
-        d.name,
-        d.hod,
-        d.studentCount,
-        d.status
-      ].map(csvEscape).join(','));
-    });
-
-    const csvContent = lines.join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const fileName = 'departments_export_' + now.toISOString().slice(0, 10) + '.csv';
-    saveAs(blob, fileName);
-  }
-
-  async function downloadDepartmentsWord() {
-    if (!window.docx) {
-      if (typeof showNotification === 'function') {
-        showNotification('DOCX library not loaded. Please refresh.', 'warning');
-      } else {
-        console.warn('DOCX library not loaded. Please refresh the page.');
-      }
-      return;
-    }
-    
-    const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType } = window.docx;
-    const now = new Date();
-    
-    const tableHeader = new TableRow({
-      children: ["ID", "Code", "Department Name", "HOD", "Students", "Status"].map(text => new TableCell({
-        children: [new Paragraph({ text, bold: true, size: 20 })],
-        shading: { fill: "E0E0E0" }
-      }))
-    });
-    
-    const tableRows = departments.map(d => new TableRow({
-      children: [
-        String(d.id),
-        d.code,
-        d.name,
-        d.hod,
-        String(d.studentCount),
-        d.status
-      ].map(text => new TableCell({
-        children: [new Paragraph({ text: text || "", size: 18 })]
-      }))
-    }));
-
-    const doc = new Document({
-      sections: [{
-        children: [
-          new Paragraph({ text: "DEPARTMENT LIST REPORT", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
-          new Paragraph({ text: `Office of Student Affairs and Services`, alignment: AlignmentType.CENTER }),
-          new Paragraph({ text: `Generated: ${now.toLocaleString()}`, alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
-          new Table({
-            rows: [tableHeader, ...tableRows],
-            width: { size: 100, type: WidthType.PERCENTAGE }
-          })
-        ]
-      }]
-    });
-
-    Packer.toBlob(doc).then(blob => {
-      saveAs(blob, `Departments_${now.toISOString().slice(0, 10)}.docx`);
-    });
-  }
-
   // Initial load - fetch from database
   loadDepartments('active');
 
@@ -674,22 +597,6 @@ function initDepartmentModule() {
     if (exportPDFBtn) {
       exportPDFBtn.addEventListener('click', async () => {
         await downloadDepartmentsPDF();
-        if (exportModal) exportModal.classList.remove('active');
-        document.body.style.overflow = 'auto';
-      });
-    }
-
-    if (exportExcelBtn) {
-      exportExcelBtn.addEventListener('click', () => {
-        downloadDepartmentsExcel();
-        if (exportModal) exportModal.classList.remove('active');
-        document.body.style.overflow = 'auto';
-      });
-    }
-
-    if (exportWordBtn) {
-      exportWordBtn.addEventListener('click', async () => {
-        await downloadDepartmentsWord();
         if (exportModal) exportModal.classList.remove('active');
         document.body.style.overflow = 'auto';
       });

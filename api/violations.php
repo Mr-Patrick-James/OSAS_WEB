@@ -28,7 +28,7 @@ try {
         case 'POST':
             // Check for action in query string even for POST
             $action = $_GET['action'] ?? '';
-            if ($action === 'archive') {
+            if (in_array($action, ['archive', 'request_slip', 'approve_slip', 'deny_slip'], true)) {
                 $controller->index();
             } else {
                 $controller->create();

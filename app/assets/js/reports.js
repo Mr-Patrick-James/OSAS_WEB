@@ -983,19 +983,8 @@ function initReportsModule() {
                     // Use message from server
                     showSuccess(data.message || `Reports generated successfully!`);
                     
-                    // Check for download URL (CSV/Excel) - Handle Excel client-side for branding
-                    if (reportFormat === 'excel' && data.reports && data.reports.length > 0) {
-                        console.log('📊 Exporting Excel report (Branded)...');
-                        await generateExcel(data.reports, (reportName || 'Violation Report') + '.xls');
-                    } else if (data.downloadUrl) {
-                        // Fallback for other formats if any
-                        const downloadUrl = API_BASE + data.downloadUrl;
-                        console.log('🔗 Redirecting to download:', downloadUrl);
-                        window.location.href = downloadUrl;
-                    }
-
-                    // Check for client-side download (PDF/DOCX)
-                    if (reportFormat === 'pdf' || reportFormat === 'docx') {
+                    // Check for client-side download (PDF)
+                    if (reportFormat === 'pdf') {
                         if (data.reports && data.reports.length > 0) {
                             // Get the checkbox directly from the document to be absolutely sure
                             const includeChartsCheckbox = document.getElementById('includeCharts');
@@ -1007,11 +996,7 @@ function initReportsModule() {
                                 isChecked: isChecked
                             });
                             
-                            if (reportFormat === 'pdf') {
-                                await downloadPDF(data.reports, reportName || 'Violation Report', isChecked);
-                            } else if (reportFormat === 'docx') {
-                                await downloadDOCX(data.reports, reportName || 'Violation Report', isChecked);
-                            }
+                            await downloadPDF(data.reports, reportName || 'Violation Report', isChecked);
                         } else {
                             showError('No reports found to export for the selected criteria.');
                         }
@@ -1161,6 +1146,132 @@ function initReportsModule() {
                     resolve(imgData);
                 }, 100);
             });
+        }
+
+        async function printReport(report) {
+            if (!report) return;
+            
+            showNotification('Preparing PDF report...', 'info');
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const now = new Date();
+
+                // --- Header Section ---
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
+
+                if (headerData) {
+                    doc.addImage(headerData, 'PNG', 38, 5, 140, 25);
+                }
+
+                // Report Title
+                doc.setFontSize(14);
+                doc.setTextColor(41, 128, 185);
+                doc.setFont("helvetica", "bold");
+                doc.text("STUDENT VIOLATION ANALYSIS", 105, 40, { align: 'center' });
+
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Report ID: ${report.reportId}`, 105, 46, { align: 'center' });
+                doc.text(`Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 105, 51, { align: 'center' });
+
+                // Divider
+                doc.setDrawColor(220, 220, 220);
+                doc.line(14, 56, 196, 56);
+
+                // Student Info
+                doc.setFontSize(11);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("Student Profile", 14, 65);
+
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                let y = 72;
+                doc.text(`Name: ${report.studentName}`, 14, y);
+                doc.text(`Student ID: ${report.studentId}`, 110, y);
+                y += 7;
+                doc.text(`Department: ${report.department}`, 14, y);
+                doc.text(`Section: ${report.section}`, 110, y);
+                y += 7;
+                doc.text(`Year Level: ${report.yearlevel || 'N/A'}`, 14, y);
+                doc.text(`Contact: ${report.studentContact}`, 110, y);
+
+                // Stats Table
+                y += 10;
+                doc.setFont("helvetica", "bold");
+                doc.text("Violation Summary", 14, y);
+                y += 5;
+
+                const statsTable = [
+                    ["Violation Type", "Count"],
+                    ["Improper Uniform", report.uniformCount.toString()],
+                    ["Improper Footwear", report.footwearCount.toString()],
+                    ["No ID", report.noIdCount.toString()],
+                    ["Total Violations", report.totalViolations.toString()]
+                ];
+
+                doc.autoTable({
+                    body: statsTable.slice(1),
+                    head: [statsTable[0]],
+                    startY: y,
+                    theme: 'striped',
+                    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+                    styles: { fontSize: 10 }
+                });
+
+                y = doc.lastAutoTable.finalY + 15;
+
+                // History
+                if (report.history && report.history.length > 0) {
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Violation History", 14, y);
+                    y += 5;
+
+                    const historyRows = report.history.map(h => [h.date, h.title, h.desc]);
+                    doc.autoTable({
+                        head: [["Date", "Violation", "Description"]],
+                        body: historyRows,
+                        startY: y,
+                        theme: 'grid',
+                        headStyles: { fillColor: [245, 245, 245], textColor: 44 },
+                        styles: { fontSize: 9 }
+                    });
+                    y = doc.lastAutoTable.finalY + 15;
+                }
+
+                // Footer
+                if (y > 250) {
+                    doc.addPage();
+                    y = 20;
+                }
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.text("Recommendations:", 14, y);
+                y += 7;
+                doc.setFont("helvetica", "normal");
+                const recommendations = report.recommendations || ["No recommendations at this time."];
+                recommendations.forEach(rec => {
+                    doc.text(`• ${rec}`, 14, y);
+                    y += 6;
+                });
+
+                // Signatures
+                y += 20;
+                doc.line(130, y, 190, y);
+                doc.setFontSize(9);
+                doc.text("OSAS Representative", 160, y + 5, { align: 'center' });
+
+                doc.save(`AnalysisReport_${report.studentId}.pdf`);
+                showNotification('Analysis report generated as PDF!', 'success');
+            } catch (error) {
+                console.error('Error generating analysis PDF:', error);
+                showNotification('Failed to generate PDF report.', 'error');
+            }
         }
 
         async function downloadPDF(reportsData, filenamePrefix, isChecked = false) {

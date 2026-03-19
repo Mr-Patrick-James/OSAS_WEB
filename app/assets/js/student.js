@@ -5,7 +5,6 @@ function initStudentsModule() {
     try {
         // Elements
         const tableBody = document.getElementById('StudentsTableBody');
-        const btnArchivedStudents = document.getElementById('btnArchivedStudents');
         const btnImportFirstStudents = document.getElementById('btnImportFirstStudents');
         const modal = document.getElementById('StudentsModal');
         const modalOverlay = document.getElementById('StudentsModalOverlay');
@@ -26,7 +25,6 @@ function initStudentsModule() {
         const exportWordBtn = document.getElementById('exportWord');
         const studentDeptSelect = document.getElementById('studentDept');
         const studentSectionSelect = document.getElementById('studentSection');
-        const btnDeleteAllStudents = document.getElementById('btnDeleteAllStudents');
 
         // Modern Alert Elements
         const modernAlertModal = document.getElementById('ModernAlertModal');
@@ -763,21 +761,11 @@ function initStudentsModule() {
                                 <button class="Students-action-btn view" data-id="${s.id}" title="View Profile">
                                     <i class='bx bx-user'></i>
                                 </button>
-                                <button class="Students-action-btn edit" data-id="${s.id}" title="Edit">
-                                    <i class='bx bx-edit'></i>
-                                </button>
                                 ${ (s.status && s.status.toLowerCase() === 'archived') ? `
                                     <button class="Students-action-btn restore" data-id="${s.id}" title="Restore">
                                         <i class='bx bx-undo'></i>
                                     </button>
-                                    <button class="Students-action-btn delete permanent" data-id="${s.id}" title="Delete Permanently">
-                                        <i class='bx bx-trash'></i>
-                                    </button>
-                                ` : `
-                                    <button class="Students-action-btn delete" data-id="${s.id}" title="Archive">
-                                        <i class='bx bx-trash'></i>
-                                    </button>
-                                `}
+                                ` : '' }
                             </div>
                         </td>
                     </tr>
@@ -998,280 +986,6 @@ function initStudentsModule() {
             }
         }
 
-        async function downloadStudentsExcel() {
-            // Show loading state
-            const exportExcelBtn = document.getElementById('exportExcel');
-            const originalText = exportExcelBtn.innerHTML;
-            exportExcelBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Excel...</span>";
-            exportExcelBtn.disabled = true;
-
-            try {
-                const exportStudents = await getFilteredStudentsForExport();
-                
-                if (exportStudents.length === 0) {
-                    showError('No student records found to export.');
-                    return;
-                }
-
-                const now = new Date();
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
-                const headerData = await loadImage(headerPath);
-
-                // Create HTML Table for Excel with Header Image
-                let html = `
-                    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                    <head>
-                        <meta charset="UTF-8">
-                        <style>
-                            .title { font-size: 14pt; font-weight: bold; color: #2980b9; text-align: center; }
-                            .subtitle { font-size: 10pt; color: #7f8c8d; text-align: center; }
-                            .stats { font-size: 9pt; color: #333; text-align: center; }
-                            .data-table th { background-color: #f2f2f2; font-weight: bold; border: 0.5pt solid #000; text-align: center; }
-                            .data-table td { border: 0.5pt solid #000; padding: 5px; }
-                        </style>
-                    </head>
-                    <body>
-                        <table width="1330" style="width: 1330px; border-collapse: collapse;">
-                            ${headerData ? `
-                            <tr height="100" style="height: 100px;">
-                                <td colspan="11" width="1330" align="center" valign="middle" style="width: 1330px; text-align: center; vertical-align: middle;">
-                                    <center>
-                                        <div align="center" style="text-align: center;">
-                                            <p align="center" style="text-align: center; margin: 0; padding: 0;">
-                                                <img src="${headerData}" width="400" height="80" border="0" style="display: inline-block;">
-                                            </p>
-                                        </div>
-                                    </center>
-                                </td>
-                            </tr>` : ''}
-                            <tr><td colspan="11" class="title" align="center" style="text-align: center;">STUDENT LIST REPORT</td></tr>
-                            <tr><td colspan="11" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
-                            <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
-                            <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Exported by: ${getCurrentAdminName()}</td></tr>
-                            <tr><td colspan="11" class="stats" align="center" style="text-align: center;">Total Records: ${exportStudents.length}</td></tr>
-                            <tr><td colspan="11" style="height: 20px;"></td></tr>
-                            <tr class="data-table">
-                                <th width="40" style="width: 40px; background-color: #e0e0e0; border: 0.5pt solid #000;">ID</th>
-                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
-                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">First Name</th>
-                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Middle Name</th>
-                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Last Name</th>
-                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Email</th>
-                                <th width="250" style="width: 250px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
-                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section</th>
-                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Year Level</th>
-                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Contact No</th>
-                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Status</th>
-                            </tr>
-                `;
-
-                exportStudents.forEach(s => {
-                    html += `
-                        <tr>
-                            <td>${s.id}</td>
-                            <td>${s.studentId || ''}</td>
-                            <td>${s.firstName || ''}</td>
-                            <td>${s.middleName || ''}</td>
-                            <td>${s.lastName || ''}</td>
-                            <td>${s.email || ''}</td>
-                            <td>${s.department || ''}</td>
-                            <td>${s.section || ''}</td>
-                            <td>${s.yearlevel || ''}</td>
-                            <td>${s.contact || ''}</td>
-                            <td>${formatStatus(s.status)}</td>
-                        </tr>
-                    `;
-                });
-
-                html += `
-                        </table>
-                    </body>
-                    </html>
-                `;
-
-                const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-                const fileName = 'students_export_' + now.toISOString().slice(0, 10) + '.xls';
-                
-                if (typeof saveAs === 'function') {
-                    saveAs(blob, fileName);
-                } else {
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                }
-                
-                if (exportModal) exportModal.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            } catch (error) {
-                console.error('Excel export error:', error);
-                showError('Failed to generate Excel document.');
-            } finally {
-                exportExcelBtn.innerHTML = originalText;
-                exportExcelBtn.disabled = false;
-            }
-        }
-
-        async function downloadStudentsWord() {
-            if (!window.docx) {
-                if (typeof showNotification === 'function') {
-                    showNotification('DOCX library not loaded. Please refresh.', 'warning');
-                } else {
-                    console.warn('DOCX library not loaded. Please refresh the page.');
-                }
-                return;
-            }
-
-            // Show loading state
-            const exportWordBtn = document.getElementById('exportWord');
-            const originalText = exportWordBtn.innerHTML;
-            exportWordBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Word...</span>";
-            exportWordBtn.disabled = true;
-
-            try {
-                const exportStudents = await getFilteredStudentsForExport();
-                
-                if (exportStudents.length === 0) {
-                    showError('No student records found to export.');
-                    return;
-                }
-
-                const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun } = window.docx;
-                const now = new Date();
-                
-                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
-                const headerData = await loadImage(headerPath);
-                
-                // Table Header
-                const tableHeader = new TableRow({
-                    children: [
-                        "ID", "Student ID", "Name", "Dept", "Section", "Year Level", "Contact No", "Status"
-                    ].map(text => new TableCell({
-                        children: [new Paragraph({ text, bold: true, size: 20 })], 
-                        width: { size: 100 / 8, type: WidthType.PERCENTAGE },
-                        shading: { fill: "E0E0E0" }
-                    }))
-                });
-                
-                // Table Rows
-                const tableRows = exportStudents.map(s => {
-                    const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
-                    return new TableRow({
-                        children: [
-                            String(s.id),
-                            s.studentId || "",
-                            fullName,
-                            s.department || "N/A",
-                            s.section || "N/A",
-                            s.yearlevel || "N/A",
-                            s.contact || "N/A",
-                            formatStatus(s.status || "active")
-                        ].map(text => new TableCell({
-                            children: [new Paragraph({ text: text || "", size: 16 })],
-                            width: { size: 100 / 8, type: WidthType.PERCENTAGE }
-                        }))
-                    });
-                });
-
-                const docChildren = [];
-                
-                // Add Header Image if available
-                if (headerData) {
-                    docChildren.push(new Paragraph({
-                        children: [
-                            new ImageRun({
-                                data: headerData,
-                                transformation: {
-                                    width: 400, // Reduced from 500
-                                    height: 80, // Reduced from 100
-                                },
-                            }),
-                        ],
-                        alignment: AlignmentType.CENTER,
-                    }));
-                }
-
-                docChildren.push(
-                     new Paragraph({
-                         text: "STUDENT LIST REPORT",
-                         heading: HeadingLevel.HEADING_2, // Reduced from HEADING_1
-                         alignment: AlignmentType.CENTER,
-                         spacing: { before: 200 }
-                     }),
-                     new Paragraph({
-                         children: [
-                             new TextRun({
-                                 text: `Office of Student Affairs and Services`,
-                                 italics: true,
-                                 color: "666666",
-                                 size: 18, // Added size (9pt)
-                             })
-                         ],
-                         alignment: AlignmentType.CENTER
-                     }),
-                     new Paragraph({
-                         children: [
-                             new TextRun({
-                                 text: `Generated: ${now.toLocaleString()}`,
-                                 italics: true,
-                                 color: "999999",
-                                 size: 16, // Added size (8pt)
-                             })
-                         ],
-                         alignment: AlignmentType.CENTER,
-                     }),
-                     new Paragraph({
-                         children: [
-                             new TextRun({
-                                 text: `Exported by: ${getCurrentAdminName()}`,
-                                 italics: true,
-                                 color: "999999",
-                                 size: 16,
-                             })
-                         ],
-                         alignment: AlignmentType.CENTER,
-                         spacing: { after: 400 }
-                     }),
-                    new Paragraph({
-                        text: `Total Records: ${exportStudents.length}`,
-                        spacing: { after: 200 }
-                    }),
-                    new Table({
-                        rows: [tableHeader, ...tableRows],
-                        width: { size: 100, type: WidthType.PERCENTAGE }
-                    })
-                );
-
-                const doc = new Document({
-                    sections: [{
-                        properties: {},
-                        children: docChildren
-                    }]
-                });
-
-                const blob = await Packer.toBlob(doc);
-                if (typeof saveAs === 'function') {
-                    saveAs(blob, `Student_List_${now.toISOString().slice(0, 10)}.docx`);
-                } else {
-                    console.error('FileSaver.js not loaded');
-                    showError('Error: FileSaver.js not loaded');
-                }
-                
-                if (exportModal) exportModal.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            } catch (error) {
-                console.error('Word export error:', error);
-                showError('Failed to generate Word document.');
-            } finally {
-                exportWordBtn.innerHTML = originalText;
-                exportWordBtn.disabled = false;
-            }
-        }
-
         function updateCounts(filteredStudents) {
             const showingEl = document.getElementById('showingStudentsCount');
             const totalCountEl = document.getElementById('totalStudentsCount');
@@ -1418,8 +1132,6 @@ function initStudentsModule() {
         // --- Event handlers ---
         function handleTableClick(e) {
             const viewBtn = e.target.closest('.Students-action-btn.view');
-            const editBtn = e.target.closest('.Students-action-btn.edit');
-            const deleteBtn = e.target.closest('.Students-action-btn.delete');
             const restoreBtn = e.target.closest('.Students-action-btn.restore');
 
             if (viewBtn) {
@@ -1427,37 +1139,6 @@ function initStudentsModule() {
                 const student = allStudents.find(s => s.id === id);
                 if (student) {
                     openProfileModal(student);
-                }
-            }
-
-            if (editBtn) {
-                const id = parseInt(editBtn.dataset.id);
-                openModal(id);
-            }
-
-            if (deleteBtn) {
-                const id = parseInt(deleteBtn.dataset.id);
-                const student = allStudents.find(s => s.id === id);
-                if (student) {
-                    if (student.status && student.status.toLowerCase() === 'archived') {
-                        showModernAlert({
-                            title: 'Permanent Delete',
-                            message: `Permanently delete student "${student.firstName} ${student.lastName}"? This action cannot be undone.`,
-                            icon: 'error',
-                            confirmText: 'Delete Permanently'
-                        }).then(confirmed => {
-                            if (confirmed) deleteStudent(id);
-                        });
-                    } else {
-                        showModernAlert({
-                            title: 'Archive Student',
-                            message: `Archive student "${student.firstName} ${student.lastName}"? This will move them to the archived list.`,
-                            icon: 'warning',
-                            confirmText: 'Yes, Archive'
-                        }).then(confirmed => {
-                            if (confirmed) deleteStudent(id);
-                        });
-                    }
                 }
             }
 
@@ -1530,16 +1211,8 @@ function initStudentsModule() {
                     // Sync currentView with filter selection
                      if (filterSelect.value === 'archived') {
                          currentView = 'archived';
-                         if (btnArchivedStudents) {
-                             btnArchivedStudents.classList.add('active');
-                             btnArchivedStudents.innerHTML = "<i class='bx bx-check-circle'></i><span>Show Active</span>";
-                         }
                      } else {
                          currentView = 'active';
-                         if (btnArchivedStudents) {
-                             btnArchivedStudents.classList.remove('active');
-                             btnArchivedStudents.innerHTML = "<i class='bx bx-archive'></i><span>Archived</span>";
-                         }
                      }
                     currentPage = 1;
                     fetchStudents();
@@ -1577,69 +1250,12 @@ function initStudentsModule() {
             // Event listeners for table
             tableBody.addEventListener('click', handleTableClick);
 
-            // Archived Students button (Control Bar)
-            if (btnArchivedStudents) {
-                btnArchivedStudents.addEventListener('click', function() {
-                    const isArchived = currentView === 'archived';
-                    
-                    if (isArchived) {
-                        // Switch back to active
-                        currentView = 'active';
-                        this.classList.remove('active');
-                        this.innerHTML = "<i class='bx bx-archive'></i><span>Archived</span>";
-                        if (filterSelect) filterSelect.value = 'active';
-                    } else {
-                        // Switch to archived
-                        currentView = 'archived';
-                        this.classList.add('active');
-                        this.innerHTML = "<i class='bx bx-check-circle'></i><span>Show Active</span>";
-                        if (filterSelect) filterSelect.value = 'archived';
-                    }
-                    
-                    currentPage = 1;
-                    fetchStudents();
-                });
-            }
-
             // Export Students button
             if (exportBtn) {
                 exportBtn.addEventListener('click', () => {
                     if (exportModal) {
                         exportModal.classList.add('active');
                         document.body.style.overflow = 'hidden';
-                    }
-                });
-            }
-
-            // Delete All Students button
-            if (btnDeleteAllStudents) {
-                btnDeleteAllStudents.addEventListener('click', async () => {
-                    const confirmed = await showModernAlert({
-                        title: 'Delete All Students',
-                        message: 'Are you sure you want to delete ALL students and their associated user accounts? This action CANNOT be undone.',
-                        icon: 'error',
-                        confirmText: 'Yes, Delete Everything',
-                        cancelText: 'Cancel'
-                    });
-
-                    if (confirmed) {
-                        try {
-                            const response = await fetch(`${apiBase}?action=deleteAll`, {
-                                method: 'POST'
-                            });
-                            const result = await response.json();
-                            
-                            if (result.status === 'success') {
-                                showSuccess('All student records have been cleared.');
-                                currentPage = 1;
-                                fetchStudents();
-                            } else {
-                                showError(result.message || 'Failed to delete all students.');
-                            }
-                        } catch (error) {
-                            console.error('Error deleting all students:', error);
-                            showError('A connection error occurred. Please try again.');
-                        }
                     }
                 });
             }
@@ -1836,18 +1452,6 @@ function initStudentsModule() {
             if (exportPDFBtn) {
                 exportPDFBtn.addEventListener('click', async () => {
                     await downloadStudentsPDF();
-                });
-            }
-
-            if (exportExcelBtn) {
-                exportExcelBtn.addEventListener('click', async () => {
-                    await downloadStudentsExcel();
-                });
-            }
-
-            if (exportWordBtn) {
-                exportWordBtn.addEventListener('click', async () => {
-                    await downloadStudentsWord();
                 });
             }
 

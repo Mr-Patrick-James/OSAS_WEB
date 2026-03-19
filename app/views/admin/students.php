@@ -41,14 +41,6 @@ require_once '../../config/db_connect.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
-        <button id="btnArchivedStudents" class="Students-btn outline small">
-          <i class='bx bx-archive'></i>
-          <span>Archived</span>
-        </button>
-        <button id="btnDeleteAllStudents" class="Students-btn danger small">
-          <i class='bx bx-trash'></i>
-          <span>Delete All</span>
-        </button>
       </div>
     </div>
   </div>
@@ -359,32 +351,24 @@ require_once '../../config/db_connect.php';
   </div>
 
   <!-- Export Modal -->
-  <div id="ExportStudentsModal" class="Students-modal">
-    <div class="Students-modal-overlay" id="ExportModalOverlay"></div>
-    <div class="Students-modal-container" style="max-width: 400px;">
-      <div class="Students-modal-header">
+  <div id="ExportStudentsModal" class="modal">
+    <div class="modal-overlay" id="ExportModalOverlay"></div>
+    <div class="modal-container" style="max-width: 400px;">
+      <div class="modal-header">
         <h2>
           <i class='bx bx-download'></i>
-          <span>Export Students Data</span>
+          <span>Export Students</span>
         </h2>
-        <button class="Students-close-btn" id="closeExportModal">
+        <button class="close-btn" id="closeExportModal">
           <i class='bx bx-x'></i>
         </button>
       </div>
-      <div class="Students-modal-body" style="padding: 20px;">
-        <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the student records.</p>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="margin-bottom: 20px; color: #666;">Download the student records as a non-editable PDF report.</p>
         <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
           <button id="exportPDF" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as PDF</span>
-          </button>
-          <button id="exportExcel" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Excel (.xls)</span>
-          </button>
-          <button id="exportWord" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+            <span style="margin-left: 10px;">Export as PDF (Non-editable)</span>
           </button>
         </div>
       </div>
@@ -536,7 +520,6 @@ require_once '../../config/db_connect.php';
 <!-- Load Libraries for Export -->
 <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
 <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
-<script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 
 </body>

@@ -490,8 +490,8 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Action Buttons -->
         <div class="violation-details-actions">
-          <button class="Violations-action-btn edit" id="detailEditBtn" title="Edit">
-            <i class='bx bx-edit'></i> Edit
+          <button class="Violations-action-btn view" id="detailRecordNewBtn" title="Record New Violation" style="background: #10b981; color: white;">
+            <i class='bx bx-plus'></i> Record New
           </button>
           <button class="Violations-action-btn resolve" id="detailResolveBtn" title="Mark Resolved">
             <i class='bx bx-check'></i> Mark Resolved
@@ -499,10 +499,17 @@ require_once __DIR__ . '/../../core/View.php';
           <button class="Violations-action-btn escalate" id="detailEscalateBtn" title="Escalate">
             <i class='bx bx-alarm'></i> Escalate
           </button>
+          <button class="Violations-action-btn resolve" id="detailApproveSlipBtn" title="Approve Slip Download">
+            <i class='bx bx-check-shield'></i> Approve Slip
+          </button>
+          <button class="Violations-action-btn outline" id="detailDenySlipBtn" title="Deny Slip Download">
+            <i class='bx bx-block'></i> Deny Slip
+          </button>
           <button class="Violations-action-btn print" id="detailPrintBtn" title="Print">
             <i class='bx bx-printer'></i> Print Report
           </button>
         </div>
+        <div id="detailSlipStatus" style="margin-top: 10px; font-size: 12px; color: #64748b;"></div>
       </div>
     </div>
   </div>
@@ -564,15 +571,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
           <button id="exportPDF" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as PDF</span>
-          </button>
-          <button id="exportExcel" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Excel (.xls)</span>
-          </button>
-          <button id="exportWord" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+            <span style="margin-left: 10px;">Export as PDF (Non-editable)</span>
           </button>
         </div>
       </div>
@@ -581,19 +580,11 @@ require_once __DIR__ . '/../../core/View.php';
 
 </main>
 
-<!-- Load Docx Generation Libraries -->
-<script src="<?= View::asset('js/lib/docxtemplater.js') ?>"></script>
-<script src="<?= View::asset('js/lib/pizzip.js') ?>"></script>
-<script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
-<script src="<?= View::asset('js/lib/pizzip-utils.js') ?>"></script>
-
 <!-- Load Libraries for Export -->
 <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
 <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
-<script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 
 </body>
 </html>
-
 

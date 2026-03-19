@@ -373,10 +373,7 @@ require_once __DIR__ . '/../../core/View.php';
           <div class="Reports-form-group">
             <label for="reportFormat">Format</label>
             <select id="reportFormat" name="reportFormat" required>
-              <option value="">Select format</option>
-              <option value="pdf">PDF Document</option>
-              <option value="docx">Word Document</option>
-              <option value="csv">CSV File</option>
+              <option value="pdf">PDF Document (Non-editable)</option>
             </select>
           </div>
         </div>
@@ -647,15 +644,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
           <button id="exportPDF" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as PDF</span>
-          </button>
-          <button id="exportExcel" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Excel (.xls)</span>
-          </button>
-          <button id="exportWord" class="Reports-btn outline" style="justify-content: flex-start; width: 100%;">
-            <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+            <span style="margin-left: 10px;">Export as PDF (Non-editable)</span>
           </button>
         </div>
       </div>
@@ -666,7 +655,6 @@ require_once __DIR__ . '/../../core/View.php';
 
 <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
 <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
-<script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 <script src="<?= View::asset('js/reports.js') ?>"></script>
 </body>

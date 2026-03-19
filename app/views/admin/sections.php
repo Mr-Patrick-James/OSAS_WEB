@@ -252,19 +252,11 @@ if ($deptResult && $deptResult->num_rows > 0) {
           </button>
         </div>
         <div class="sections-modal-body" style="padding: 20px;">
-          <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the section records.</p>
+          <p style="margin-bottom: 20px; color: #666;">Download the section records as a non-editable PDF report.</p>
           <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
             <button id="exportPDF" class="sections-btn outline" style="justify-content: flex-start; width: 100%;">
               <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-              <span style="margin-left: 10px;">Export as PDF</span>
-            </button>
-            <button id="exportExcel" class="sections-btn outline" style="justify-content: flex-start; width: 100%;">
-              <i class='bx bxs-file-export' style="color: #27ae60; font-size: 24px;"></i>
-              <span style="margin-left: 10px;">Export as Excel (CSV)</span>
-            </button>
-            <button id="exportWord" class="sections-btn outline" style="justify-content: flex-start; width: 100%;">
-              <i class='bx bxs-file-doc' style="color: #3498db; font-size: 24px;"></i>
-              <span style="margin-left: 10px;">Export as Word (DOCX)</span>
+              <span style="margin-left: 10px;">Export as PDF (Non-editable)</span>
             </button>
           </div>
         </div>
@@ -286,7 +278,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
   <!-- Load Libraries for Export -->
   <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
   <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
-  <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
   <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
 </body>
 
