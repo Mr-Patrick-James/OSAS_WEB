@@ -585,7 +585,15 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
           <button id="exportPDF" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as PDF (Non-editable)</span>
+            <span style="margin-left: 10px;">Export as PDF</span>
+          </button>
+          <button id="exportExcel" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file' style="color: #27ae60; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Excel (.csv)</span>
+          </button>
+          <button id="exportWord" class="Violations-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-doc' style="color: #2980b9; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Word (.docx)</span>
           </button>
         </div>
       </div>
@@ -598,6 +606,9 @@ require_once __DIR__ . '/../../core/View.php';
 <script src="<?= View::asset('js/lib/jspdf.umd.min.js') ?>"></script>
 <script src="<?= View::asset('js/lib/jspdf.plugin.autotable.min.js') ?>"></script>
 <script src="<?= View::asset('js/lib/FileSaver.js') ?>"></script>
+<script src="<?= View::asset('js/lib/pizzip.js') ?>"></script>
+<script src="<?= View::asset('js/lib/docxtemplater.js') ?>"></script>
+<script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 
 </body>
 </html>

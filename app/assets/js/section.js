@@ -429,6 +429,289 @@ function initSectionsModule() {
             doc.save(`Sections_${now.toISOString().slice(0, 10)}.pdf`);
         }
 
+        async function downloadSectionsExcel() {
+            const exportExcelBtn = document.getElementById('exportExcel');
+            if (!exportExcelBtn) return;
+            
+            const originalText = exportExcelBtn.innerHTML;
+            exportExcelBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Excel...</span>";
+            exportExcelBtn.disabled = true;
+
+            try {
+                const now = new Date();
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                const headerData = await loadImage(headerPath);
+
+                let html = `
+                    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            .title { font-size: 14pt; font-weight: bold; color: #2980b9; text-align: center; }
+                            .subtitle { font-size: 10pt; color: #7f8c8d; text-align: center; }
+                            .stats { font-size: 9pt; color: #333; text-align: center; }
+                            .data-table th { background-color: #f2f2f2; font-weight: bold; border: 0.5pt solid #000; text-align: center; }
+                            .data-table td { border: 0.5pt solid #000; padding: 5px; }
+                        </style>
+                    </head>
+                    <body>
+                        <table width="900" style="width: 900px; border-collapse: collapse;">
+                            ${headerData ? `
+                            <tr height="100" style="height: 100px;">
+                                <td colspan="6" width="900" align="center" valign="middle" style="width: 900px; text-align: center; vertical-align: middle;">
+                                    <center>
+                                        <div align="center" style="text-align: center;">
+                                            <p align="center" style="text-align: center; margin: 0; padding: 0;">
+                                                <img src="${headerData}" width="400" height="80" border="0" style="display: inline-block;">
+                                            </p>
+                                        </div>
+                                    </center>
+                                </td>
+                            </tr>` : ''}
+                            <tr><td colspan="6" class="title" align="center" style="text-align: center;">SECTION LIST REPORT</td></tr>
+                            <tr><td colspan="6" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
+                            <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
+                            <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Exported by: ${getCurrentAdminName()}</td></tr>
+                            <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Total Records: ${sections.length}</td></tr>
+                            <tr><td colspan="6" style="height: 20px;"></td></tr>
+                            <tr class="data-table">
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section ID</th>
+                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section Name</th>
+                                <th width="250" style="width: 250px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
+                                <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Academic Year</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Students</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Status</th>
+                            </tr>
+                `;
+
+                sections.forEach(s => {
+                    html += `
+                        <tr>
+                            <td>${s.section_id || 'SEC-' + String(s.id).padStart(3, '0')}</td>
+                            <td>${s.name || ''}</td>
+                            <td>${s.department || ''}</td>
+                            <td>${s.academic_year || ''}</td>
+                            <td align="center">${s.student_count || 0}</td>
+                            <td>${s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : 'Active'}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </table>
+                    </body>
+                    </html>
+                `;
+
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+                const fileName = 'Sections_Export_' + now.toISOString().slice(0, 10) + '.xls';
+                
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, fileName);
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
+                
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } catch (error) {
+                console.error('Excel export error:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification('Failed to generate Excel document.', 'error');
+                }
+            } finally {
+                exportExcelBtn.innerHTML = originalText;
+                exportExcelBtn.disabled = false;
+            }
+        }
+
+        async function downloadSectionsWord() {
+            if (!window.docx) {
+                if (typeof showNotification === 'function') {
+                    showNotification('DOCX library not loaded. Please refresh.', 'warning');
+                }
+                return;
+            }
+
+            const exportWordBtn = document.getElementById('exportWord');
+            if (!exportWordBtn) return;
+            
+            const originalText = exportWordBtn.innerHTML;
+            exportWordBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Word...</span>";
+            exportWordBtn.disabled = true;
+
+            try {
+                const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun, VerticalAlign, BorderStyle } = window.docx;
+                const now = new Date();
+                
+                const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
+                let headerImage = null;
+                try {
+                    const response = await fetch(headerPath);
+                    const blob = await response.blob();
+                    const arrayBuffer = await blob.arrayBuffer();
+                    
+                    headerImage = new Paragraph({
+                        children: [
+                            new ImageRun({
+                                data: arrayBuffer,
+                                transformation: {
+                                    width: 600,
+                                    height: 100,
+                                },
+                            }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 },
+                    });
+                } catch (error) {
+                    console.warn('Could not load header image for DOCX:', error);
+                }
+                
+                const tableHeader = new TableRow({
+                    children: [
+                        "Section ID", "Section Name", "Department", "Academic Year", "Students", "Status"
+                    ].map(text => new TableCell({
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                        verticalAlign: VerticalAlign.CENTER,
+                        margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                    })),
+                    tableHeader: true,
+                    height: { value: 600, rule: "atLeast" }
+                });
+                
+                const tableRows = sections.map((s, index) => {
+                    const isEven = index % 2 === 0;
+                    const rowColor = isEven ? "FFFFFF" : "F8F9FA";
+                    
+                    return new TableRow({
+                        children: [
+                            s.section_id || 'SEC-' + String(s.id).padStart(3, '0'),
+                            s.name || '',
+                            s.department || '',
+                            s.academic_year || '',
+                            String(s.student_count || 0),
+                            s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : 'Active'
+                        ].map(text => new TableCell({
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text, size: 18 })],
+                                alignment: AlignmentType.LEFT
+                            })],
+                            shading: { fill: rowColor, val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                        })),
+                        height: { value: 400, rule: "atLeast" }
+                    });
+                });
+
+                const children = [];
+                
+                if (headerImage) {
+                    children.push(headerImage);
+                }
+                
+                children.push(
+                    new Paragraph({
+                        text: 'SECTION LIST REPORT',
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
+                                italics: true,
+                                color: "666666",
+                                size: 18,
+                            }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `Exported by: ${getCurrentAdminName()}`,
+                                italics: true,
+                                color: "666666",
+                                size: 18,
+                            }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `Total Records: ${sections.length}`,
+                                bold: true,
+                                size: 20,
+                            }),
+                        ],
+                        spacing: { after: 400 },
+                    }),
+                    new Table({
+                        rows: [tableHeader, ...tableRows],
+                        width: {
+                            size: 100,
+                            type: WidthType.PERCENTAGE,
+                        },
+                        borders: {
+                            top: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            bottom: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            left: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            right: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" },
+                            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" },
+                        }
+                    })
+                );
+
+                const doc = new Document({
+                    sections: [{
+                        properties: {
+                            page: {
+                                margin: {
+                                    top: 720,
+                                    right: 720,
+                                    bottom: 720,
+                                    left: 720
+                                }
+                            }
+                        },
+                        children: children
+                    }]
+                });
+                
+                const blob = await Packer.toBlob(doc);
+                saveAs(blob, `Sections_Export_${now.toISOString().slice(0, 10)}.docx`);
+                
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } catch (error) {
+                console.error('Word export error:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification('Failed to generate Word document.', 'error');
+                }
+            } finally {
+                exportWordBtn.innerHTML = originalText;
+                exportWordBtn.disabled = false;
+            }
+        }
+
         // --- Render function ---
         function renderSections() {
             const list = Array.isArray(sections) ? sections : [];
@@ -709,6 +992,18 @@ function initSectionsModule() {
                     await downloadSectionsPDF();
                     if (exportModal) exportModal.classList.remove('active');
                     document.body.style.overflow = 'auto';
+                });
+            }
+
+            if (exportExcelBtn) {
+                exportExcelBtn.addEventListener('click', async () => {
+                    await downloadSectionsExcel();
+                });
+            }
+
+            if (exportWordBtn) {
+                exportWordBtn.addEventListener('click', async () => {
+                    await downloadSectionsWord();
                 });
             }
 

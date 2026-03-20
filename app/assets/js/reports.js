@@ -1464,7 +1464,7 @@ function initReportsModule() {
             }
             
             console.log('📝 DOCX Request:', { isChecked });
-            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun } = window.docx;
+            const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun, VerticalAlign, BorderStyle } = window.docx;
             const now = new Date();
             
             const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
@@ -1492,9 +1492,9 @@ function initReportsModule() {
             children.push(
                 new Paragraph({
                     text: "VIOLATION ANALYSIS REPORT",
-                    heading: HeadingLevel.HEADING_2,
+                    heading: HeadingLevel.HEADING_1,
                     alignment: AlignmentType.CENTER,
-                    spacing: { before: 200 }
+                    spacing: { before: 200, after: 200 }
                 }),
                 new Paragraph({
                     children: [
@@ -1505,34 +1505,42 @@ function initReportsModule() {
                             size: 18,
                         })
                     ],
-                    alignment: AlignmentType.CENTER
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 100 }
                 }),
                 new Paragraph({
                     children: [
                         new TextRun({
                             text: `Generated: ${now.toLocaleString()}`,
                             italics: true,
-                            color: "999999",
-                            size: 16,
+                            color: "666666",
+                            size: 18,
                         })
                     ],
                     alignment: AlignmentType.CENTER,
+                    spacing: { after: 100 }
                 }),
                 new Paragraph({
                     children: [
                         new TextRun({
                             text: `Reported by: ${getCurrentAdminName()}`,
                             italics: true,
-                            color: "999999",
-                            size: 16,
+                            color: "666666",
+                            size: 18,
                         })
                     ],
                     alignment: AlignmentType.CENTER,
-                    spacing: { after: 400 }
+                    spacing: { after: 100 }
                 }),
                 new Paragraph({
-                    text: `Total Students: ${reportsData.length}`,
-                    spacing: { after: 200 }
+                    children: [
+                        new TextRun({
+                            text: `Total Students: ${reportsData.length}`,
+                            bold: true,
+                            size: 20,
+                        })
+                    ],
+                    spacing: { after: 400 }
                 })
             );
 
@@ -1612,34 +1620,53 @@ function initReportsModule() {
                 }
             }
             
-            // Table Header
+            // Table Header with modern styling
             const tableHeader = new TableRow({
                 children: [
                     "Student ID", "Name", "Dept", "Section", "Uniform", "Footwear", "No ID", "Total", "Status"
                 ].map(text => new TableCell({
-                    children: [new Paragraph({ text, bold: true, size: 20 })],
+                    children: [new Paragraph({ 
+                        children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
+                        alignment: AlignmentType.CENTER
+                    })],
+                    shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                    verticalAlign: VerticalAlign.CENTER,
                     width: { size: 100 / 9, type: WidthType.PERCENTAGE },
-                    shading: { fill: "E0E0E0" }
-                }))
+                    margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                })),
+                tableHeader: true,
+                height: { value: 600, rule: "atLeast" }
             });
             
-            // Table Rows
-            const tableRows = reportsData.map(report => new TableRow({
-                children: [
-                    report.studentId,
-                    report.studentName,
-                    report.department,
-                    report.section,
-                    String(report.uniformCount),
-                    String(report.footwearCount),
-                    String(report.noIdCount),
-                    String(report.totalViolations),
-                    report.statusLabel
-                ].map(text => new TableCell({
-                    children: [new Paragraph({ text: text || "", size: 18 })],
-                    width: { size: 100 / 9, type: WidthType.PERCENTAGE }
-                }))
-            }));
+            // Table Rows with modern styling
+            const tableRows = reportsData.map((report, index) => {
+                const isEven = index % 2 === 0;
+                const rowColor = isEven ? "FFFFFF" : "F8F9FA";
+                
+                return new TableRow({
+                    children: [
+                        report.studentId,
+                        report.studentName,
+                        report.department,
+                        report.section,
+                        String(report.uniformCount),
+                        String(report.footwearCount),
+                        String(report.noIdCount),
+                        String(report.totalViolations),
+                        report.statusLabel
+                    ].map(text => new TableCell({
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text: text || "", size: 18 })],
+                            alignment: AlignmentType.LEFT
+                        })],
+                        shading: { fill: rowColor, val: "clear", color: "auto" },
+                        verticalAlign: VerticalAlign.CENTER,
+                        width: { size: 100 / 9, type: WidthType.PERCENTAGE },
+                        margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                    })),
+                    height: { value: 400, rule: "atLeast" }
+                });
+            });
 
             children.push(new Paragraph({
                 text: "Summary Data",
@@ -1649,12 +1676,29 @@ function initReportsModule() {
 
             children.push(new Table({
                 rows: [tableHeader, ...tableRows],
-                width: { size: 100, type: WidthType.PERCENTAGE }
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                borders: {
+                    top: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                    bottom: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                    left: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                    right: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" },
+                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" }
+                }
             }));
 
             const doc = new Document({
                 sections: [{
-                    properties: {},
+                    properties: {
+                        page: {
+                            margin: {
+                                top: 720,
+                                right: 720,
+                                bottom: 720,
+                                left: 720
+                            }
+                        }
+                    },
                     children: children
                 }]
             });

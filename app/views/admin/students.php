@@ -358,11 +358,19 @@ require_once '../../config/db_connect.php';
         </button>
       </div>
       <div class="modal-body" style="padding: 20px;">
-        <p style="margin-bottom: 20px; color: #666;">Download the student records as a non-editable PDF report.</p>
+        <p style="margin-bottom: 20px; color: #666;">Select your preferred format to download the student records.</p>
         <div class="export-options" style="display: flex; flex-direction: column; gap: 10px;">
           <button id="exportPDF" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
             <i class='bx bxs-file-pdf' style="color: #e74c3c; font-size: 24px;"></i>
-            <span style="margin-left: 10px;">Export as PDF (Non-editable)</span>
+            <span style="margin-left: 10px;">Export as PDF</span>
+          </button>
+          <button id="exportExcel" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file' style="color: #10B981; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Excel (.xlsx)</span>
+          </button>
+          <button id="exportWord" class="Students-btn outline" style="justify-content: flex-start; width: 100%;">
+            <i class='bx bxs-file-doc' style="color: #2563EB; font-size: 24px;"></i>
+            <span style="margin-left: 10px;">Export as Word (.docx)</span>
           </button>
         </div>
       </div>
@@ -449,13 +457,6 @@ require_once '../../config/db_connect.php';
       </div>
       <div class="Students-modal-body" style="padding: 20px;">
         <p style="margin-bottom: 20px; color: #666;">Upload an Excel (.xlsx, .xls) or CSV file containing student records to sync with the database.</p>
-        
-        <div class="import-instructions" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--gold);">
-          <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: var(--dark);">Required Columns (CSV):</h4>
-          <p style="font-size: 0.8rem; color: #666; line-height: 1.4;">
-            <code>student_id</code>, <code>first_name</code>, <code>last_name</code>, <code>section_code</code>, <code>department_code</code>
-          </p>
-        </div>
 
         <form id="ImportStudentsForm" enctype="multipart/form-data">
           <div class="Students-form-group">

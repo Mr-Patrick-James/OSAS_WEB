@@ -985,6 +985,401 @@ function initStudentsModule() {
             }
         }
 
+        async function downloadStudentsExcel() {
+            const exportExcelBtn = document.getElementById('exportExcel');
+            const originalText = exportExcelBtn.innerHTML;
+            exportExcelBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Excel...</span>";
+            exportExcelBtn.disabled = true;
+
+            try {
+                const exportStudents = await getFilteredStudentsForExport();
+                
+                if (exportStudents.length === 0) {
+                    showError('No student records found to export.');
+                    return;
+                }
+
+                const now = new Date();
+                
+                // Create CSV content
+                const lines = [];
+                
+                // Header
+                lines.push('STUDENT LIST REPORT');
+                lines.push(`Generated on,${now.toLocaleDateString()} ${now.toLocaleTimeString()}`);
+                lines.push(`Exported by,${getCurrentAdminName()}`);
+                lines.push(`Total Records,${exportStudents.length}`);
+                lines.push('');
+                
+                // Column headers
+                lines.push(['ID', 'Student ID', 'First Name', 'Middle Name', 'Last Name', 'Email', 'Contact', 'Address', 'Department', 'Section', 'Year Level', 'Status'].map(csvEscape).join(','));
+                
+                // Data rows
+                exportStudents.forEach(s => {
+                    lines.push([
+                        s.id,
+                        s.studentId,
+                        s.firstName || '',
+                        s.middleName || '',
+                        s.lastName || '',
+                        s.email || '',
+                        s.contact || '',
+                        s.address || '',
+                        s.department || '',
+                        s.section || '',
+                        s.yearlevel || '',
+                        formatStatus(s.status || 'active')
+                    ].map(csvEscape).join(','));
+                });
+
+                const csvContent = lines.join('\r\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const fileName = `Student_List_${now.toISOString().slice(0, 10)}.csv`;
+                
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, fileName);
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
+
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } finally {
+                exportExcelBtn.innerHTML = originalText;
+                exportExcelBtn.disabled = false;
+            }
+        }
+
+        async function downloadStudentsWord() {
+            if (!window.docx) {
+                showError('DOCX library not loaded. Please refresh the page.');
+                return;
+            }
+
+            const exportWordBtn = document.getElementById('exportWord');
+            const originalText = exportWordBtn.innerHTML;
+            exportWordBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i><span>Preparing Word...</span>";
+            exportWordBtn.disabled = true;
+
+            try {
+                const exportStudents = await getFilteredStudentsForExport();
+                
+                if (exportStudents.length === 0) {
+                    showError('No student records found to export.');
+                    return;
+                }
+
+                const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, HeadingLevel, ImageRun, AlignmentType, BorderStyle, VerticalAlign } = window.docx;
+                const now = new Date();
+
+                // Load header image
+                let headerImage = null;
+                try {
+                    const response = await fetch('/OSAS_WEB/app/assets/headers/header.png');
+                    const blob = await response.blob();
+                    const arrayBuffer = await blob.arrayBuffer();
+                    
+                    headerImage = new Paragraph({
+                        children: [
+                            new ImageRun({
+                                data: arrayBuffer,
+                                transformation: {
+                                    width: 600,
+                                    height: 100,
+                                },
+                            }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 },
+                    });
+                } catch (error) {
+                    console.warn('Could not load header image for DOCX:', error);
+                }
+
+                // Table Header with modern styling
+                const tableHeader = new TableRow({
+                    children: [
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "ID", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 5, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "Student ID", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 12, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "Full Name", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 25, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "Email", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 20, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "Department", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 12, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "Section", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 10, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "Year", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 8, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: "Status", bold: true, size: 18, color: "FFFFFF" })],
+                                alignment: AlignmentType.CENTER
+                            })],
+                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 8, type: WidthType.PERCENTAGE },
+                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                        }),
+                    ],
+                    tableHeader: true,
+                    height: { value: 600, rule: "atLeast" }
+                });
+
+                // Table Rows with modern styling
+                const tableRows = exportStudents.map((s, index) => {
+                    const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
+                    const isEven = index % 2 === 0;
+                    const rowColor = isEven ? "FFFFFF" : "F8F9FA";
+                    
+                    return new TableRow({
+                        children: [
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: String(s.id), size: 18 })],
+                                    alignment: AlignmentType.CENTER
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 5, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: s.studentId || '', size: 18 })],
+                                    alignment: AlignmentType.LEFT
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 12, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: fullName, size: 18 })],
+                                    alignment: AlignmentType.LEFT
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 25, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: s.email || 'N/A', size: 18 })],
+                                    alignment: AlignmentType.LEFT
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 20, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: s.department || 'N/A', size: 18 })],
+                                    alignment: AlignmentType.CENTER
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 12, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: s.section || 'N/A', size: 18 })],
+                                    alignment: AlignmentType.CENTER
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 10, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: s.yearlevel || 'N/A', size: 18 })],
+                                    alignment: AlignmentType.CENTER
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 8, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                            new TableCell({ 
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: formatStatus(s.status || 'active'), size: 18 })],
+                                    alignment: AlignmentType.CENTER
+                                })],
+                                shading: { fill: rowColor, val: "clear", color: "auto" },
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 8, type: WidthType.PERCENTAGE },
+                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                            }),
+                        ],
+                        height: { value: 400, rule: "atLeast" }
+                    });
+                });
+
+                const children = [];
+                
+                // Add header image if loaded
+                if (headerImage) {
+                    children.push(headerImage);
+                }
+                
+                // Add title and metadata
+                children.push(
+                    new Paragraph({
+                        text: 'STUDENT LIST REPORT',
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `Generated on: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
+                                italics: true,
+                                color: "666666",
+                                size: 18,
+                            }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `Exported by: ${getCurrentAdminName()}`,
+                                italics: true,
+                                color: "666666",
+                                size: 18,
+                            }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `Total Records: ${exportStudents.length}`,
+                                bold: true,
+                                size: 20,
+                            }),
+                        ],
+                        spacing: { after: 400 },
+                    }),
+                    new Table({
+                        rows: [tableHeader, ...tableRows],
+                        width: {
+                            size: 100,
+                            type: WidthType.PERCENTAGE,
+                        },
+                        borders: {
+                            top: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            bottom: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            left: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            right: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" },
+                            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" },
+                        },
+                        layout: "fixed",
+                        columnWidths: [500, 1200, 2500, 2000, 1200, 1000, 800, 800]
+                    })
+                );
+
+                const doc = new Document({
+                    sections: [{
+                        properties: {
+                            page: {
+                                margin: {
+                                    top: 720,
+                                    right: 720,
+                                    bottom: 720,
+                                    left: 720,
+                                },
+                            },
+                        },
+                        children: children,
+                    }],
+                });
+
+                Packer.toBlob(doc).then(blob => {
+                    saveAs(blob, `Student_List_${now.toISOString().slice(0, 10)}.docx`);
+                });
+
+                if (exportModal) exportModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } finally {
+                exportWordBtn.innerHTML = originalText;
+                exportWordBtn.disabled = false;
+            }
+        }
+
         function updateCounts(filteredStudents) {
             const showingEl = document.getElementById('showingStudentsCount');
             const totalCountEl = document.getElementById('totalStudentsCount');
@@ -1451,6 +1846,20 @@ function initStudentsModule() {
             if (exportPDFBtn) {
                 exportPDFBtn.addEventListener('click', async () => {
                     await downloadStudentsPDF();
+                });
+            }
+
+            const exportExcelBtn = document.getElementById('exportExcel');
+            if (exportExcelBtn) {
+                exportExcelBtn.addEventListener('click', async () => {
+                    await downloadStudentsExcel();
+                });
+            }
+
+            const exportWordBtn = document.getElementById('exportWord');
+            if (exportWordBtn) {
+                exportWordBtn.addEventListener('click', async () => {
+                    await downloadStudentsWord();
                 });
             }
 

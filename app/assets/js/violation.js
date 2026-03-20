@@ -1589,7 +1589,7 @@ function initViolationsModule() {
                     return;
                 }
 
-                const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun } = window.docx;
+                const { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, ImageRun, VerticalAlign, BorderStyle } = window.docx;
                 const now = new Date();
                 
                 const headerPath = '/OSAS_WEB/app/assets/headers/header.png';
@@ -1599,18 +1599,37 @@ function initViolationsModule() {
                     children: [
                         "Case ID", "Student ID", "Name", "Type", "Level", "Date", "Location", "Status"
                     ].map(text => new TableCell({
-                        children: [new Paragraph({ text, bold: true, size: 18 })], 
-                        shading: { fill: "E0E0E0" }
-                    }))
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: "2C3E50", val: "clear", color: "auto" },
+                        verticalAlign: VerticalAlign.CENTER,
+                        margins: { top: 80, bottom: 80, left: 80, right: 80 }
+                    })),
+                    tableHeader: true,
+                    height: { value: 600, rule: "atLeast" }
                 });
                 
-                const tableRows = exportViolations.map(v => new TableRow({
-                    children: [
-                        v.caseId, v.studentId, v.studentName, v.violationTypeLabel, v.violationLevelLabel, v.dateReported, v.locationLabel, v.statusLabel
-                    ].map(text => new TableCell({
-                        children: [new Paragraph({ text: text || "", size: 16 })]
-                    }))
-                }));
+                const tableRows = exportViolations.map((v, index) => {
+                    const isEven = index % 2 === 0;
+                    const rowColor = isEven ? "FFFFFF" : "F8F9FA";
+                    
+                    return new TableRow({
+                        children: [
+                            v.caseId, v.studentId, v.studentName, v.violationTypeLabel, v.violationLevelLabel, v.dateReported, v.locationLabel, v.statusLabel
+                        ].map(text => new TableCell({
+                            children: [new Paragraph({ 
+                                children: [new TextRun({ text: text || "", size: 18 })],
+                                alignment: AlignmentType.LEFT
+                            })],
+                            shading: { fill: rowColor, val: "clear", color: "auto" },
+                            verticalAlign: VerticalAlign.CENTER,
+                            margins: { top: 60, bottom: 60, left: 80, right: 80 }
+                        })),
+                        height: { value: 400, rule: "atLeast" }
+                    });
+                });
 
                 const docChildren = [];
                 if (headerData) {
@@ -1623,33 +1642,60 @@ function initViolationsModule() {
                 docChildren.push(
                     new Paragraph({
                         text: "VIOLATION LIST REPORT",
-                        heading: HeadingLevel.HEADING_2,
+                        heading: HeadingLevel.HEADING_1,
                         alignment: AlignmentType.CENTER,
-                        spacing: { before: 200 }
+                        spacing: { before: 200, after: 200 }
                     }),
                     new Paragraph({
                         children: [new TextRun({ text: `Office of Student Affairs and Services`, italics: true, color: "666666", size: 18 })],
-                        alignment: AlignmentType.CENTER
-                    }),
-                    new Paragraph({
-                        children: [new TextRun({ text: `Generated: ${now.toLocaleString()}`, italics: true, color: "999999", size: 16 })],
-                        alignment: AlignmentType.CENTER
-                    }),
-                    new Paragraph({
-                        children: [new TextRun({ text: `Exported by: ${getCurrentAdminName()}`, italics: true, color: "999999", size: 16 })],
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 400 }
+                        spacing: { after: 100 }
                     }),
-                    new Paragraph({ text: `Total Records: ${exportViolations.length}`, spacing: { after: 200 } }),
+                    new Paragraph({
+                        children: [new TextRun({ text: `Generated: ${now.toLocaleString()}`, italics: true, color: "666666", size: 18 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 }
+                    }),
+                    new Paragraph({
+                        children: [new TextRun({ text: `Exported by: ${getCurrentAdminName()}`, italics: true, color: "666666", size: 18 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 }
+                    }),
+                    new Paragraph({ 
+                        children: [new TextRun({ text: `Total Records: ${exportViolations.length}`, bold: true, size: 20 })],
+                        spacing: { after: 400 } 
+                    }),
                     new Table({
                         rows: [tableHeader, ...tableRows],
-                        width: { size: 100, type: WidthType.PERCENTAGE }
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: {
+                            top: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            bottom: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            left: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            right: { style: BorderStyle.SINGLE, size: 2, color: "2C3E50" },
+                            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" },
+                            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "E0E0E0" }
+                        }
                     })
                 );
 
-                const doc = new Document({ sections: [{ children: docChildren }] });
+                const doc = new Document({ 
+                    sections: [{ 
+                        properties: {
+                            page: {
+                                margin: {
+                                    top: 720,
+                                    right: 720,
+                                    bottom: 720,
+                                    left: 720
+                                }
+                            }
+                        },
+                        children: docChildren 
+                    }] 
+                });
                 const blob = await Packer.toBlob(doc);
-                saveAs(blob, `Violation_List_${now.toISOString().slice(0, 10)}.docx`);
+                saveAs(blob, `Violations_Export_${now.toISOString().slice(0, 10)}.docx`);
                 
                 if (exportModal) exportModal.classList.remove('active');
                 document.body.style.overflow = 'auto';
