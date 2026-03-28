@@ -31,11 +31,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        body.dark {
-            background: #0a0a0a;
-            color: #fff;
-        }
-
         /* ── NAVBAR ── */
         .navbar {
             position: fixed;
@@ -48,11 +43,85 @@
             transition: var(--transition);
         }
 
-        .navbar.scrolled {
+        /* Always white text over the hero image regardless of theme */
+        .nav-brand-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.95);
+            line-height: 1.2;
+        }
+
+        .nav-brand-sub {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.6);
+            font-weight: 400;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: #fff; }
+
+        .btn-signin {
+            padding: 0.55rem 1.4rem;
+            background: transparent;
+            border: 1.5px solid rgba(255,255,255,0.7);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .btn-signin:hover {
+            background: #fff;
+            color: #0a0a0a;
+            border-color: #fff;
+        }
+
+        .btn-theme {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            border: 1.5px solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.85);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .btn-theme:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.7);
+        }
+
+        /* ── SCROLLED STATE — light mode ── */
+        body:not(.dark) .navbar.scrolled {
             background: rgba(255,255,255,0.97);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid #e5e7eb;
-            padding: 0.9rem 2.5rem;
+        }
+
+        body:not(.dark) .navbar.scrolled .nav-brand-text { color: #1a1a1a; }
+        body:not(.dark) .navbar.scrolled .nav-brand-sub  { color: #6b7280; }
+        body:not(.dark) .navbar.scrolled .nav-links a    { color: #4b5563; }
+        body:not(.dark) .navbar.scrolled .nav-links a:hover { color: #1a1a1a; }
+        body:not(.dark) .navbar.scrolled .btn-signin     { border-color: #1a1a1a; color: #1a1a1a; }
+        body:not(.dark) .navbar.scrolled .btn-signin:hover { background: #1a1a1a; color: #fff; }
+        body:not(.dark) .navbar.scrolled .btn-theme      { border-color: rgba(0,0,0,0.2); background: rgba(0,0,0,0.05); color: #4b5563; }
+
+        /* ── SCROLLED STATE — dark mode ── */
+        body.dark .navbar.scrolled {
+            background: rgba(10,10,10,0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
         .nav-brand {
@@ -73,51 +142,11 @@
 
         .nav-brand-icon img { width: 100%; height: 100%; object-fit: contain; }
 
-        .nav-brand-text {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #1a1a1a;
-            line-height: 1.2;
-        }
-
-        .nav-brand-sub {
-            font-size: 0.7rem;
-            color: #6b7280;
-            font-weight: 400;
-        }
-
         .nav-links {
             display: flex;
             align-items: center;
             gap: 2.5rem;
             list-style: none;
-        }
-
-        .nav-links a {
-            color: #4b5563;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover { color: #1a1a1a; }
-
-        .btn-signin {
-            padding: 0.55rem 1.4rem;
-            background: transparent;
-            border: 1.5px solid #1a1a1a;
-            color: #1a1a1a;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-
-        .btn-signin:hover {
-            background: #1a1a1a;
-            color: #fff;
         }
 
         /* ── HERO ── */
@@ -443,28 +472,13 @@
             color: #9ca3af;
         }
 
-        /* ── THEME TOGGLE BUTTON ── */
-        .btn-theme {
-            width: 36px; height: 36px;
-            border-radius: 8px;
-            border: 1.5px solid rgba(0,0,0,0.2);
-            background: rgba(0,0,0,0.05);
-            color: #4b5563;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: var(--transition);
-            flex-shrink: 0;
-        }
-        .btn-theme:hover {
-            background: rgba(0,0,0,0.1);
-        }
         /* ── DARK MODE explicit overrides (body.dark) ── */
+        body.dark { background: #0a0a0a; color: #fff; }
         body.dark .features { background: #0f0f0f; }
         body.dark .section-title { color: #fff; }
         body.dark .section-sub   { color: rgba(255,255,255,0.5); }
         body.dark .feature-card  { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
-        body.dark .feature-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(212,175,55,0.3); }
+        body.dark .feature-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(212,175,55,0.3); box-shadow: none; }
         body.dark .feature-card h3 { color: #fff; }
         body.dark .feature-card p  { color: rgba(255,255,255,0.5); }
         body.dark .footer          { background: #080808; border-top-color: rgba(255,255,255,0.07); }
@@ -473,14 +487,6 @@
         body.dark .footer-col ul li a   { color: rgba(255,255,255,0.5); }
         body.dark .footer-col ul li a:hover { color: var(--primary); }
         body.dark .footer-bottom { border-top-color: rgba(255,255,255,0.07); color: rgba(255,255,255,0.3); }
-        body.dark .nav-brand-text { color: rgba(255,255,255,0.9); }
-        body.dark .nav-brand-sub  { color: rgba(255,255,255,0.45); }
-        body.dark .nav-links a    { color: rgba(255,255,255,0.75); }
-        body.dark .nav-links a:hover { color: #fff; }
-        body.dark .btn-signin     { border-color: rgba(255,255,255,0.6); color: #fff; }
-        body.dark .btn-signin:hover { background: #fff; color: #0a0a0a; }
-        body.dark .btn-theme      { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
-        body.dark .navbar.scrolled { background: rgba(10,10,10,0.92); border-bottom-color: rgba(255,255,255,0.08); }
 
         @media (max-width: 768px) {
             .navbar { padding: 1rem 1.25rem; }
@@ -645,27 +651,26 @@
     const themeIcon   = document.getElementById('themeIcon');
     const body        = document.body;
 
-    // Use the same key as login.js ('theme'), default to light to match login page default
     const savedTheme = localStorage.getItem('theme') || 'light';
     applyTheme(savedTheme);
 
     themeToggle.addEventListener('click', () => {
-        const next = body.classList.contains('light') ? 'dark' : 'light';
+        const next = body.classList.contains('dark') ? 'light' : 'dark';
         applyTheme(next);
         localStorage.setItem('theme', next);
     });
 
     function applyTheme(theme) {
-        if (theme === 'light') {
-            body.classList.add('light');
-            body.classList.remove('dark');
-            themeIcon.className = 'fas fa-moon';
-            themeToggle.title = 'Switch to dark mode';
-        } else {
-            body.classList.remove('light');
+        if (theme === 'dark') {
             body.classList.add('dark');
+            body.classList.remove('light');
             themeIcon.className = 'fas fa-sun';
             themeToggle.title = 'Switch to light mode';
+        } else {
+            body.classList.remove('dark');
+            body.classList.add('light');
+            themeIcon.className = 'fas fa-moon';
+            themeToggle.title = 'Switch to dark mode';
         }
     }
 
