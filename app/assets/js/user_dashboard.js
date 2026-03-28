@@ -322,20 +322,17 @@ function initializeNotifications() {
 window.logout = function() {
   if (confirm('Are you sure you want to logout?')) {
     // Clear session and cookies
-    fetch('../api/logout.php', {
+    fetch('/OSAS_WEB/api/logout.php', {
       method: 'POST',
       credentials: 'include'
     })
     .then(() => {
-      // Clear local storage
       localStorage.clear();
-      // Redirect to login page
-      window.location.href = '../index.php';
+      window.location.href = '/OSAS_WEB/login_page.php';
     })
     .catch(error => {
       console.error('Logout error:', error);
-      // Redirect anyway
-      window.location.href = '../index.php';
+      window.location.href = '/OSAS_WEB/login_page.php';
     });
   }
 };
@@ -514,23 +511,9 @@ window.executeLogout = function() {
       // Direct redirect to logout script
       console.log('Redirecting to logout script...');
       
-      // Determine correct logout path based on current location
-      let logoutPath;
-      const currentPath = window.location.pathname;
-      
-      if (currentPath.includes('/index.php')) {
-        // From app/entry/user_dashboard.php -> ../app/views/auth/logout.php
-        logoutPath = '../index.php';
-      } else if (currentPath.includes('/includes/')) {
-        // From includes/user_dashboard.php -> ../app/views/auth/logout.php
-        logoutPath = '../index.php';
-      } else {
-        // Default fallback - go to root and then to logout
-        logoutPath = '../index.php';
-      }
-      
-      console.log('Logout path:', logoutPath);
-      window.location.href = logoutPath;
+      // Call server-side logout to clear session/cookies, then redirect to login
+      fetch('/OSAS_WEB/api/logout.php', { method: 'POST', credentials: 'include' })
+        .finally(() => { window.location.href = '/OSAS_WEB/login_page.php'; });
       
     } catch (error) {
       console.error('Logout error:', error);

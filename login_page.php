@@ -1,18 +1,15 @@
 <?php
-// Check if user wants to see login page (bypass auto-redirect)
-$forceLogin = isset($_GET['force_login']) && $_GET['force_login'] === 'true';
+session_start();
 
 // Check if user wants to see login page (bypass auto-redirect)
 $forceLogin = isset($_GET['force_login']) && $_GET['force_login'] === 'true';
 
-// Session is already started in index.php, no need to start again
+// Restore session from cookies if not forcing login
 if (!$forceLogin && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
-    // Restore session from cookies
     $_SESSION['user_id'] = $_COOKIE['user_id'];
     $_SESSION['username'] = $_COOKIE['username'] ?? '';
     $_SESSION['role'] = $_COOKIE['role'];
     
-    // Redirect to appropriate dashboard
     if ($_SESSION['role'] === 'admin') {
         header('Location: includes/dashboard.php');
         exit;

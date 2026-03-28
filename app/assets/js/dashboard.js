@@ -286,23 +286,9 @@ window.executeLogout = function() {
         document.cookie = 'student_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         document.cookie = 'student_id_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 
-        // Determine correct logout path based on current location
-        let logoutPath;
-        const currentPath = window.location.pathname;
-        
-        if (currentPath.includes('/index.php')) {
-          // From app/entry/dashboard.php -> ../app/views/auth/logout.php
-          logoutPath = '../index.php';
-        } else if (currentPath.includes('/includes/')) {
-          // From includes/dashboard.php -> ../app/views/auth/logout.php
-          logoutPath = '../index.php';
-        } else {
-          // Default fallback
-          logoutPath = 'index.php';
-        }
-        
-        console.log('Redirecting to logout:', logoutPath);
-        window.location.href = logoutPath;
+        // Call server-side logout to clear session/cookies, then redirect to login
+        fetch('/OSAS_WEB/api/logout.php', { method: 'POST', credentials: 'include' })
+            .finally(() => { window.location.href = '/OSAS_WEB/login_page.php'; });
 }
 
 // Enhanced content loading with error handling and loading states

@@ -5,7 +5,6 @@ function toggleTheme() {
     darkMode = !darkMode;
     updateTheme();
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-    console.log('Theme toggled to:', darkMode ? 'dark' : 'light');
 }
 
 function updateTheme() {
@@ -38,11 +37,11 @@ function updateThemeColor() {
 // Check for saved theme preference or system preference
 function checkSavedTheme() {
     const savedTheme = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     if (savedTheme) {
         darkMode = savedTheme === 'dark';
     } else {
+        // Default to light to match landing page default
         darkMode = false;
     }
 
