@@ -7,7 +7,7 @@ const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
 const PRECACHE_ASSETS = [
-  '/', '/index.php', '/manifest.json',
+  '/', '/index.php', '/manifest.php', '/manifest.json',
   '/app/assets/styles/login.css',
   '/app/assets/styles/dashboard.css',
   '/app/assets/styles/topnav.css',

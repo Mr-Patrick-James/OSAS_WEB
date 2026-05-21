@@ -75,7 +75,7 @@ if (!$student_id) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-OSAS SYSTEM</title>
-    <link rel="manifest" href="<?= View::url('manifest.json') ?>">
+    <link rel="manifest" href="<?= View::url('manifest.php') ?>">
     <meta name="theme-color" content="#D4AF37">
     <link rel="icon" type="image/png" href="<?= View::asset('img/default.png') ?>">
     <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">

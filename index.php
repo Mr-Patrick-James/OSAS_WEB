@@ -8,7 +8,7 @@ $forceLanding = isset($_GET['force_landing']) && $_GET['force_landing'] === 'tru
 
 // Helper: detect project prefix ('' on AWS root, '/OSAS_WEB' on local subfolder)
 function getAppPrefix(): string {
-    $appDirs = ['app','api','includes','assets','public','index.php'];
+    $appDirs = ['app','api','includes','assets','public','index.php','manifest.php','manifest.json','service-worker.js'];
     $parts   = explode('/', trim($_SERVER['SCRIPT_NAME'] ?? '', '/'));
     return (!empty($parts[0]) && !in_array($parts[0], $appDirs)) ? '/' . $parts[0] : '';
 }
@@ -38,7 +38,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-OSAS — Student Affairs Portal | Colegio de Naujan</title>
     <meta name="description" content="The official digital student affairs management system of Colegio de Naujan. One platform for every student, zero paperwork.">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="<?= $prefix ?>/manifest.php">
     <meta name="theme-color" content="#D4AF37">
     <link rel="icon" type="image/png" sizes="32x32" href="app/assets/img/default.png">
     <link rel="icon" type="image/png" sizes="192x192" href="app/assets/img/default.png">

@@ -21,7 +21,7 @@ class View {
      */
     private static function getPrefix(): string {
         // Directories that are part of the app structure, NOT a subfolder name
-        $appDirs = ['app', 'api', 'includes', 'assets', 'public', 'index.php'];
+        $appDirs = ['app', 'api', 'includes', 'assets', 'public', 'index.php', 'manifest.php', 'manifest.json', 'service-worker.js'];
 
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
         if ($scriptName && $scriptName !== '/') {

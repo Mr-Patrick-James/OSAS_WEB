@@ -32,7 +32,7 @@ if ($_SESSION['role'] !== 'admin') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
-  <link rel="manifest" href="<?= View::url('manifest.json') ?>">
+  <link rel="manifest" href="<?= View::url('manifest.php') ?>">
   <meta name="theme-color" content="#D4AF37">
   <link rel="icon" type="image/png" href="<?= View::asset('img/default.png') ?>">
   <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">
