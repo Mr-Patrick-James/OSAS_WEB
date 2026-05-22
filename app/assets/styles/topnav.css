@@ -1184,8 +1184,12 @@ body.dark .moon-icon {
   }
   
   #content {
-    margin-bottom: 70px !important;
-    height: calc(100vh - 140px) !important;
+    margin-bottom: 0 !important;
+    height: calc(100vh - 55px) !important;
+  }
+
+  #main-content {
+    padding-bottom: 70px !important;
   }
 }
 
@@ -1199,7 +1203,11 @@ body.dark .moon-icon {
   }
   
   #content {
-    height: calc(100vh - 140px) !important;
+    height: calc(100vh - 55px) !important;
+  }
+
+  #main-content {
+    padding-bottom: 70px !important;
   }
 }
 

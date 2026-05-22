@@ -3,8 +3,6 @@
     width: 100%;
     padding: 20px 24px 24px 24px;
     font-family: var(--poppins);
-    max-height: calc(100vh - 56px);
-    overflow-y: auto;
 }
 
 /* Page Header Card - Similar to Department Page */

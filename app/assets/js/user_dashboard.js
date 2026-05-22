@@ -719,8 +719,19 @@ document.querySelectorAll('.mobile-bottom-nav .nav-link').forEach(link => {
 // ===============================
 // DYNAMIC CONTENT LOADER
 // ===============================
+const _userPageCache = {};
+
 function loadContent(page) {
   console.log(`📄 Loading page: ${page}`);
+
+  // ── CACHE HIT: restore instantly without XHR ──
+  if (_userPageCache[page]) {
+    mainContent.innerHTML = _userPageCache[page];
+    mainContent.scrollTop = 0;
+    // Re-initialize page modules
+    _initUserPageModule(page);
+    return;
+  }
 
   const xhr = new XMLHttpRequest();
   // Load from app/views/loader.php instead of pages/
@@ -808,6 +819,8 @@ function loadContent(page) {
           const bodyClone = bodyContent.cloneNode(true);
           bodyClone.querySelectorAll('script').forEach(script => script.remove());
           mainContent.innerHTML = bodyClone.innerHTML;
+          // Cache the HTML for instant restore on revisit
+          _userPageCache[page] = bodyClone.innerHTML;
         } else {
           // If no body tag, try to get main content
           const mainTag = tempDiv.querySelector('main');
@@ -1055,6 +1068,42 @@ function loadContent(page) {
   };
 
   xhr.send();
+}
+
+// Re-initialize page modules when loading from cache
+function _initUserPageModule(page) {
+  const p = page.toLowerCase();
+  if (p.includes('user_dashcontent') || p.includes('dashcontent')) {
+    setTimeout(() => {
+      if (typeof initializeUserDashboard === 'function') initializeUserDashboard();
+      if (typeof initializeAnnouncements === 'function') initializeAnnouncements();
+      const loadData = () => {
+        if (window.userDashboardData) {
+          window.userDashboardData.loadAllData().catch(e => console.error(e));
+        } else if (typeof UserDashboardData !== 'undefined') {
+          window.userDashboardData = new UserDashboardData();
+          window.userDashboardData.loadAllData().catch(e => console.error(e));
+        } else {
+          setTimeout(loadData, 300);
+        }
+      };
+      loadData();
+      if (typeof updateSidebarProfile === 'function') updateSidebarProfile();
+      else if (typeof loadSidebarProfile === 'function') loadSidebarProfile();
+    }, 100);
+  }
+  if (p.includes('my_violations')) {
+    setTimeout(() => {
+      if (typeof window.initUserViolations === 'function') window.initUserViolations();
+      else if (typeof window.initializeUserViolations === 'function') window.initializeUserViolations();
+    }, 200);
+  }
+  if (p.includes('announcements') && !p.includes('user_dashcontent')) {
+    setTimeout(() => {
+      if (typeof window.initAnnouncementsModule === 'function') window.initAnnouncementsModule();
+      else if (typeof window.initializeUserAnnouncements === 'function') window.initializeUserAnnouncements();
+    }, 200);
+  }
 }
 
 // Load script dynamically

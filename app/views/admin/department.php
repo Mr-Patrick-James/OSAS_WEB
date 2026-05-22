@@ -2,7 +2,8 @@
 require_once __DIR__ . '/../../core/View.php';
 ?>
 <?php
-include '../../config/db_connect.php';
+require_once __DIR__ . '/../../config/db_connect.php';
+/** @var mysqli $conn */
 ?>
 
 <!DOCTYPE html>
@@ -13,7 +14,7 @@ include '../../config/db_connect.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Departments | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
-  <link rel="stylesheet" href="<?= View::asset('styles/department.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/department.css') ?>?v=<?= time() ?>">
 </head>
 
 <body>

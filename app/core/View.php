@@ -2,7 +2,7 @@
 /**
  * View Helper Class
  * Works on both:
- *   - AWS root:      https://e-osas.duckdns.org/  (SCRIPT_NAME = /includes/dashboard.php)
+ *   - AWS root:      https://eosas.duckdns.org/  (SCRIPT_NAME = /includes/dashboard.php)
  *   - Local subfolder: http://localhost/OSAS_WEB/ (SCRIPT_NAME = /OSAS_WEB/includes/dashboard.php)
  */
 class View {

@@ -1869,8 +1869,8 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 
 <script src="service-worker.js"></script>
 <script src="app/assets/js/pwa.js"></script>
-<script src="app/assets/js/push-notifications.js?v=5"></script>
-<script src="app/assets/js/guestAnnouncements.js?v=3"></script>
+<script src="app/assets/js/push-notifications.js?v=6"></script>
+<script src="app/assets/js/guestAnnouncements.js?v=4"></script>
 <script src="app/assets/js/session.js"></script>
 <script src="app/assets/js/login.js"></script>
 <script>

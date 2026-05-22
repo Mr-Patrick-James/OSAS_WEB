@@ -183,7 +183,10 @@ class DashboardData {
                     if (announcementsRes.value.ok) {
                         const data = await announcementsRes.value.json();
                         console.log('📊 Announcements response:', data);
-                        this.announcements = data.data || data.announcements || [];
+                        const annPayload = data.data;
+                        this.announcements = Array.isArray(annPayload)
+                            ? annPayload
+                            : (annPayload && Array.isArray(annPayload.announcements) ? annPayload.announcements : (data.announcements || []));
                         console.log('✅ Announcements loaded:', this.announcements.length);
                     } else {
                         console.warn('⚠️ Announcements API error:', announcementsRes.value.status, announcementsRes.value.statusText);

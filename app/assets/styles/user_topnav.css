@@ -447,8 +447,11 @@ input:checked + .slider .sun-icon { opacity: .3; }
     height: calc(100vh - 56px - 60px) !important;
     overflow-y: auto !important;
   }
+}
+
+@media (max-width: 768px) {
   #main-content { padding: 16px !important; }
-  .student-dash { padding: 0 !important; }
+  #content main { padding: 0 !important; }
 }
 
 @media (max-width: 480px) {

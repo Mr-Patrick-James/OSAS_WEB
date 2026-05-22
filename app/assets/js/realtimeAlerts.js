@@ -49,9 +49,13 @@
     }
 
     async function fetchAnnouncements() {
-        const res = await fetch(apiBase() + 'announcements.php?action=active', { credentials: 'same-origin' });
+        const res = await fetch(apiBase() + 'announcements.php?action=active&limit=50', { credentials: 'same-origin' });
         const data = await res.json();
-        return data.data || data.announcements || (Array.isArray(data) ? data : []);
+        const payload = data.data;
+        if (Array.isArray(payload)) return payload;
+        if (payload && Array.isArray(payload.announcements)) return payload.announcements;
+        if (Array.isArray(data.announcements)) return data.announcements;
+        return [];
     }
 
     async function checkForUpdates() {

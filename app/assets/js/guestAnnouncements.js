@@ -19,14 +19,23 @@
         return root + '/app/assets/img/default.png';
     }
 
+    /** API returns { data: { announcements: [...] } } or legacy { data: [...] } */
+    function parseAnnouncementList(json) {
+        const payload = json && json.data;
+        if (Array.isArray(payload)) return payload;
+        if (payload && Array.isArray(payload.announcements)) return payload.announcements;
+        if (json && Array.isArray(json.announcements)) return json.announcements;
+        return [];
+    }
+
     async function fetchLatest(limit) {
         const res = await fetch(apiBase() + 'announcements.php?action=active&limit=' + (limit || 5), {
             credentials: 'same-origin',
             cache: 'no-store'
         });
         const json = await res.json();
-        let list = json.data || json.announcements || [];
-        if (!Array.isArray(list)) list = [];
+        if (json.status === 'error') return [];
+        let list = parseAnnouncementList(json);
         list.sort((a, b) => Number(b.id) - Number(a.id));
         return list.slice(0, limit || 5);
     }
@@ -54,11 +63,10 @@
         if (!force) return;
         if (localStorage.getItem(SHOWN_KEY)) return;
 
-        localStorage.setItem(SHOWN_KEY, '1');
-
         const list = await fetchLatest(5);
         if (!list.length) {
             await showViaServiceWorker('E-OSAS', 'No active announcements right now.', 'eosas-empty');
+            localStorage.setItem(SHOWN_KEY, '1');
             return;
         }
 
@@ -74,6 +82,7 @@
             if (i < list.length - 1) await new Promise(r => setTimeout(r, 450));
         }
 
+        localStorage.setItem(SHOWN_KEY, '1');
         localStorage.setItem(LAST_ID_KEY, String(list[0].id));
     }
 

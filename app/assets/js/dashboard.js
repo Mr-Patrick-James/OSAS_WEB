@@ -251,6 +251,8 @@ function loadContent(page) {
     // ── CACHE HIT: restore instantly without XHR ──────────────────────────
     if (_pageCache[page]) {
         mainContent.innerHTML = _pageCache[page];
+        // Reset scroll position to top
+        mainContent.scrollTop = 0;
         updateThemeColor();
         initializeModule(page);
         if (page === 'admin_page/dashcontent') _triggerDashboardData();
@@ -455,6 +457,9 @@ function loadContent(page) {
 
             // Ensure PWA theme is applied to new content
             updateThemeColor();
+
+            // Reset scroll position to top
+            mainContent.scrollTop = 0;
 
             // Initialize module JS
             initializeModule(page);

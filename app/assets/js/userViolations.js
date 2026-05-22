@@ -5,6 +5,7 @@ const API_BASE = (function(){ const p=window.location.pathname.split('/').filter
 
 let studentId = null;
 let userViolations = [];
+let allUserViolations = []; // includes archived
 let currentViolationId = null;
 let uvViewMode = 'list'; // default view
 
@@ -102,17 +103,34 @@ async function loadUserViolations() {
     const tbody = document.getElementById('violationsTableBody');
 
     try {
+        // Fetch active (current month) violations
         const apiUrl = `${API_BASE}violations.php`;
         console.log('📡 Fetching violations from:', apiUrl);
         
-        const res = await fetch(apiUrl);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
-        const json = await res.json();
-        if (json.status !== 'success') throw new Error(json.message || 'Failed to load violations');
+        const [resActive, resArchived] = await Promise.all([
+            fetch(apiUrl),
+            fetch(`${apiUrl}?is_archived=1`)
+        ]);
 
-        userViolations = json.data || [];
-        console.log('✅ Loaded', userViolations.length, 'violations');
+        if (!resActive.ok) throw new Error(`HTTP error! status: ${resActive.status}`);
+        
+        const jsonActive = await resActive.json();
+        if (jsonActive.status !== 'success') throw new Error(jsonActive.message || 'Failed to load violations');
+
+        userViolations = jsonActive.data || [];
+        
+        // Merge archived violations
+        let archivedViolations = [];
+        if (resArchived.ok) {
+            const jsonArchived = await resArchived.json();
+            if (jsonArchived.status === 'success') {
+                archivedViolations = (jsonArchived.data || []).map(v => ({ ...v, _isArchived: true }));
+            }
+        }
+
+        // All violations = active + archived
+        allUserViolations = [...userViolations, ...archivedViolations];
+        console.log('✅ Loaded', userViolations.length, 'active +', archivedViolations.length, 'archived violations');
 
         updateViolationStats();
         renderViolationTable();
@@ -127,10 +145,22 @@ async function loadUserViolations() {
  * STATS
  *********************************************************/
 function updateViolationStats() {
-    const total = userViolations.length;
+    // All-time total (active + archived)
+    const allTimeTotal = allUserViolations.length;
+
+    // Current month violations only (active, non-archived)
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const thisMonthViolations = userViolations.filter(v => {
+        const dateStr = v.created_at || v.violation_date || v.date || '';
+        const d = new Date(dateStr.replace(/\//g, '-'));
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
 
     const countByType = (type) => {
-        return userViolations.filter(v => {
+        return thisMonthViolations.filter(v => {
             const rawType = v.violation_type_name || v.violation_type || v.violationType || '';
             const violationType = String(rawType).toLowerCase();
             const violationTypeLabel = String(v.violationTypeLabel || '').toLowerCase();
@@ -153,10 +183,10 @@ function updateViolationStats() {
         if (el) el.textContent = value;
     };
 
+    setStat('statTotal', allTimeTotal);
     setStat('statUniform', countByType('uniform'));
     setStat('statFootwear', countByType('footwear'));
     setStat('statId', countByType('id'));
-    setStat('statTotal', total);
 }
 
 /*********************************************************
@@ -167,12 +197,23 @@ function renderViolationTable() {
     const listBody = document.getElementById('violationsListBody');
     const showingCount = document.getElementById('showingViolationsCount');
     
+    // Determine source based on time period filter
+    const timePeriod = document.getElementById('timePeriodFilter')?.value || 'current_month';
+    let sourceViolations;
+    
+    if (timePeriod === 'all') {
+        sourceViolations = allUserViolations;
+    } else {
+        // current_month — only active (non-archived) violations
+        sourceViolations = userViolations;
+    }
+
     // Apply filters
     const searchTerm = (document.getElementById('searchViolation')?.value || '').toLowerCase();
     const typeFilter = document.getElementById('violationFilter')?.value || 'all';
     const statusFilter = document.getElementById('statusFilter')?.value || 'all';
 
-    const filtered = userViolations.filter(v => {
+    const filtered = sourceViolations.filter(v => {
         const searchStr = `${v.case_id || v.id} ${v.violation_type_name || ''} ${v.violation_type || ''} ${v.violationTypeLabel || ''} ${v.created_at || ''}`.toLowerCase();
         const matchesSearch = !searchTerm || searchStr.includes(searchTerm);
 
@@ -374,7 +415,7 @@ function formatTime(timeStr) {
 }
 
 function viewViolationDetails(id) {
-    const v = userViolations.find(x => x.id == id);
+    const v = allUserViolations.find(x => x.id == id) || userViolations.find(x => x.id == id);
     if (!v) return;
     currentViolationId = id;
 
@@ -431,8 +472,8 @@ function viewViolationDetails(id) {
     updateSlipStatusUI(id);
 
     // --- Violation Details Grid (Match Admin style) ---
-    // In user view, "userViolations" is already filtered for this student
-    let studentViolations = [...userViolations];
+    // Use all violations (including archived) for complete history
+    let studentViolations = [...(allUserViolations || userViolations)];
     
     // Sort violations by date descending
     studentViolations.sort((a, b) => {
@@ -552,7 +593,7 @@ function viewViolationDetails(id) {
     // --- History Timeline (Match Admin Deduplication) ---
     const timelineEl = document.getElementById('detailTimeline');
     if (timelineEl) {
-        let studentHistory = [...userViolations];
+        let studentHistory = [...(allUserViolations || userViolations)];
         
         // Deduplicate history for timeline
         const seenHistory = new Set();

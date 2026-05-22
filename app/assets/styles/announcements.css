@@ -890,3 +890,220 @@
 #announcements-page.admin-side .btn-export i {
   font-size: 14px !important;
 }
+
+/* ========================================= */
+/*         RESPONSIVE STYLES                */
+/* ========================================= */
+@media screen and (max-width: 768px) {
+  #announcements-page.admin-side {
+    padding: 12px;
+  }
+
+  /* Header stacks */
+  #announcements-page.admin-side .announcements-head-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  #announcements-page.admin-side .announcement-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #announcements-page.admin-side .announcement-btn-group {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Table header stacks */
+  #announcements-page.admin-side .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  /* Header right — search + toggle on same row, filters below */
+  #announcements-page.admin-side .header-right {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* Row 1: search + toggle side by side */
+  #announcements-page.admin-side .search-group {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    order: 1;
+  }
+
+  #announcements-page.admin-side .view-toggles {
+    flex-shrink: 0;
+    order: 2;
+  }
+
+  /* Wrap search and toggle in a row */
+  #announcements-page.admin-side .header-right {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 8px;
+  }
+
+  #announcements-page.admin-side .search-group {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+  }
+
+  #announcements-page.admin-side .view-toggles {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  #announcements-page.admin-side .filter-controls {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #announcements-page.admin-side .integrated-select {
+    flex: 1;
+    min-width: calc(50% - 8px);
+  }
+
+  /* Header buttons — match violations layout */
+  #announcements-page.admin-side .announcement-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  #announcements-page.admin-side .announcement-btn-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  #announcements-page.admin-side .announcement-btn-group .btn-export,
+  #announcements-page.admin-side .announcement-btn-group .btn-refresh {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 12px !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+  }
+
+  #announcements-page.admin-side .btn-add-announcement {
+    width: 100%;
+    justify-content: center;
+    padding: 7px 12px !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Table card view on mobile */
+  #announcements-page.admin-side .table-wrapper {
+    overflow-x: hidden;
+  }
+
+  #announcements-page.admin-side #announcementsTable,
+  #announcements-page.admin-side #announcementsTable thead,
+  #announcements-page.admin-side #announcementsTable tbody,
+  #announcements-page.admin-side #announcementsTable th,
+  #announcements-page.admin-side #announcementsTable td,
+  #announcements-page.admin-side #announcementsTable tr {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #announcements-page.admin-side #announcementsTable thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  #announcements-page.admin-side #announcementsTable tbody tr {
+    margin-bottom: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  #announcements-page.admin-side #announcementsTable td {
+    border: none;
+    position: relative;
+    padding-left: 50% !important;
+    text-align: right !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid #f1f5f9;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 11px;
+  }
+
+  #announcements-page.admin-side #announcementsTable td:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-left: 10px !important;
+    text-align: center !important;
+  }
+
+  #announcements-page.admin-side #announcementsTable td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: 45%;
+    text-align: left;
+    font-weight: 700;
+    color: #64748b;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  #announcements-page.admin-side #announcementsTable td[data-label="Actions"]::before {
+    display: none;
+  }
+
+  /* Footer */
+  #announcements-page.admin-side .table-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  #announcements-page.admin-side .pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* Grid view responsive */
+  .grid-view {
+    grid-template-columns: 1fr;
+  }
+}

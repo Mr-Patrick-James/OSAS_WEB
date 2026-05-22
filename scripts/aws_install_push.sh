@@ -31,4 +31,4 @@ fi
 
 php scripts/verify_push_setup.php
 echo ""
-echo "Test: curl -s https://e-osas.duckdns.org/api/push.php?action=vapid-key"
+echo "Test: curl -s https://eosas.duckdns.org/api/push.php?action=vapid-key"

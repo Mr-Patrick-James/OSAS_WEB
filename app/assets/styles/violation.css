@@ -59,7 +59,10 @@ body.dark {
 /* ========================================= */
 
 #Violations-page {
-  padding: 16px;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
   min-height: calc(100vh - 56px);
   font-family: var(--poppins);
   background: var(--grey);
@@ -314,7 +317,7 @@ body.dark {
 
 .Violations-stats-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -3208,6 +3211,16 @@ body.dark {
 /* ========================================= */
 
 @media screen and (max-width: 768px) {
+  .Violations-stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .Violations-stat-card {
+    flex-direction: row;
+    text-align: left;
+  }
+
   .Violations-head-title {
     flex-direction: column;
     align-items: flex-start;

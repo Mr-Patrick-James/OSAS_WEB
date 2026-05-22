@@ -94,34 +94,51 @@ class UserDashboardData {
         try {
             const url = `${USER_API_BASE}violations.php`;
             console.log('🔄 Loading violations from:', url);
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            // Fetch active + archived in parallel
+            const [resActive, resArchived] = await Promise.all([
+                fetch(url),
+                fetch(`${url}?is_archived=1`)
+            ]);
 
-            const data = await response.json();
-            console.log('📦 Violations API response:', data);
-            if (data.status === 'error') throw new Error(data.message || 'Error loading violations');
+            if (!resActive.ok) throw new Error(`HTTP ${resActive.status}`);
 
-            this.violations = data.violations || data.data || [];
-            console.log('✅ Loaded', this.violations.length, 'violations');
+            const dataActive = await resActive.json();
+            if (dataActive.status === 'error') throw new Error(dataActive.message || 'Error loading violations');
+
+            this.violations = dataActive.violations || dataActive.data || [];
+            
+            // Load archived violations
+            let archivedViolations = [];
+            if (resArchived.ok) {
+                const dataArchived = await resArchived.json();
+                if (dataArchived.status === 'success') {
+                    archivedViolations = dataArchived.violations || dataArchived.data || [];
+                }
+            }
+
+            // All violations (active + archived) for all-time stats
+            this.allViolations = [...this.violations, ...archivedViolations];
+            console.log('✅ Loaded', this.violations.length, 'active +', archivedViolations.length, 'archived violations');
             
             // SYNC with userViolations.js so viewViolationDetails works
-            if (typeof window.userViolations !== 'undefined') {
-                window.userViolations = this.violations;
-                console.log('🔗 Synced violations with userViolations.js');
-            } else {
-                window.userViolations = this.violations; // Define it if not exists
-            }
+            window.userViolations = this.violations;
+            window.allUserViolations = this.allViolations;
 
             this.calculateViolationStats();
         } catch (error) {
             console.error('❌ Error loading violations:', error);
             this.violations = [];
+            this.allViolations = [];
             this.calculateViolationStats();
         }
     }
 
     calculateViolationStats() {
-        this.stats.totalViolations = this.violations.length;
+        // All-time total (active + archived)
+        this.stats.totalViolations = this.allViolations ? this.allViolations.length : this.violations.length;
+
+        // Current month stats (from active violations only)
         this.stats.activeViolations = this.violations.filter(v => {
             const status = (v.status || '').toLowerCase();
             return status === 'warning';
@@ -138,8 +155,10 @@ class UserDashboardData {
             this.stats.violationTypes[type] = (this.stats.violationTypes[type] || 0) + 1;
         });
 
-        if (this.violations.length > 0) {
-            const sorted = [...this.violations].sort((a, b) => new Date(b.date || b.created_at || b.violation_date) - new Date(a.date || a.created_at || a.violation_date));
+        // Days clean — use all-time data for accurate calculation
+        const allViolations = this.allViolations || this.violations;
+        if (allViolations.length > 0) {
+            const sorted = [...allViolations].sort((a, b) => new Date(b.date || b.created_at || b.violation_date) - new Date(a.date || a.created_at || a.violation_date));
             const lastDate = new Date(sorted[0].date || sorted[0].created_at || sorted[0].violation_date);
             const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
             this.stats.daysClean = diffDays;
@@ -179,9 +198,11 @@ class UserDashboardData {
                 throw new Error(data.message || 'Error loading announcements');
             }
 
-            // Handle different response formats
-            this.announcements = data.data || data.announcements || [];
-            
+            const annPayload = data.data;
+            this.announcements = Array.isArray(annPayload)
+                ? annPayload
+                : (annPayload && Array.isArray(annPayload.announcements) ? annPayload.announcements : (data.announcements || []));
+
             if (Array.isArray(this.announcements)) {
                 console.log('✅ Loaded', this.announcements.length, 'announcements');
             } else {
@@ -225,8 +246,14 @@ class UserDashboardData {
         setStat('statDaysClean', this.stats.daysClean);
 
         // Update compliance ring (new redesigned hero)
+        // Use all-time data for compliance: total vs all resolved (across all time)
+        const allTimeResolved = this.allViolations ? this.allViolations.filter(v => {
+            const status = (v.status || '').toLowerCase();
+            return status === 'permitted' || status === 'resolved';
+        }).length : this.stats.resolvedViolations;
+
         if (typeof window.updateComplianceRing === 'function') {
-            window.updateComplianceRing(this.stats.totalViolations, this.stats.resolvedViolations);
+            window.updateComplianceRing(this.stats.totalViolations, allTimeResolved);
         }
 
         // Update hero student name
@@ -328,9 +355,9 @@ class UserDashboardData {
             return;
         }
 
-        const sorted = [...this.violations]
+        const sorted = [...this.allViolations || this.violations]
             .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))
-            .slice(0, 10);
+            .slice(0, 5);
 
         const getIcon = (label) => {
             const lower = (label || '').toLowerCase();

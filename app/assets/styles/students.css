@@ -1401,9 +1401,21 @@ body.dark {
 
   .Students-filter-group {
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
+  }
+
+  .Students-filter-select {
+    flex: 1;
+    min-width: calc(50% - 8px);
+  }
+
+  .Students-filter-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
   }
 
   .Students-table-container {
@@ -1555,12 +1567,13 @@ body.dark {
 
 @media (max-width: 576px) {
   .Students-stats-overview {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
   
   .Students-stat-card {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row;
+    text-align: left;
   }
   
   .Students-form-row {
@@ -1931,10 +1944,22 @@ body.dark {
     flex-shrink: 0;
   }
 
-  /* Filters stack below */
+  /* Filters wrap in rows */
   .Students-filter-group {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .Students-filter-group .Students-filter-select {
+    flex: 1;
+    min-width: calc(50% - 8px);
+  }
+
+  .Students-filter-group .Students-filter-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
   }
 
   .student-list-badges {

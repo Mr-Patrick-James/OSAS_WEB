@@ -68,7 +68,7 @@ body.dark #departmentModal .close-btn:hover {
 /* ========================================= */
 #department-page {
   padding: 12px;
-  min-height: calc(100vh - 56px);
+  min-height: 0;
   font-family: var(--poppins);
   background: var(--grey);
   color: var(--dark);
@@ -1084,6 +1084,8 @@ body.dark #departmentModal .close-btn:hover {
   .table-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: 15px 15px 10px;
+    gap: 12px;
   }
   
   .header-right {
@@ -1137,31 +1139,68 @@ body.dark #departmentModal .close-btn:hover {
 
   .header-right {
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    margin-bottom: 15px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
   }
 
   .search-box {
-    width: 100% !important;
-  }
-
-  .filter-group {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .filter-select {
-    width: 100%;
+    flex: 1;
     min-width: 0;
   }
 
+  .search-box input {
+    height: 40px;
+    font-size: 13px;
+    padding-left: 38px;
+  }
+
+  .search-box i {
+    font-size: 16px;
+    left: 14px;
+  }
+
+  .filter-group {
+    display: contents;
+  }
+
+  .filter-select {
+    width: 100% !important;
+    height: 40px;
+    font-size: 13px;
+    min-width: 0;
+    order: 2;
+  }
+
+  .dept-view-toggle {
+    width: auto;
+    height: 40px;
+    order: 1;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--grey);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .dept-view-btn {
+    width: 32px !important;
+    height: 30px !important;
+    flex: none;
+  }
+
   .filter-btn {
-    width: 100%;
-    height: 38px;
+    width: 40px !important;
+    height: 40px !important;
+    order: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
   }
 
   .department-table-container {
