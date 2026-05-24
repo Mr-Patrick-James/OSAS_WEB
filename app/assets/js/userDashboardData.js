@@ -302,12 +302,10 @@ class UserDashboardData {
             return 'bxs-error-circle';
         };
 
-        const colors = [
-            { bg: 'var(--blue-light)',   color: 'var(--blue)',   bar: 'var(--blue)' },
-            { bg: 'rgba(255,140,0,.12)', color: 'var(--amber)',  bar: 'var(--amber)' },
-            { bg: 'var(--red-light)',    color: 'var(--red)',    bar: 'var(--red)' },
-            { bg: 'var(--purple-light)', color: 'var(--purple)', bar: 'var(--purple)' },
-        ];
+        const getColorByType = (label) => {
+            // Consistent gold for all types — avoids confusion with warning/severity colors
+            return { bg: 'var(--gold-light)', color: 'var(--gold-dark)', bar: 'var(--gold)' };
+        };
 
         if (sortedTypes.length === 0) {
             container.innerHTML = `
@@ -322,7 +320,7 @@ class UserDashboardData {
 
         const maxCount = sortedTypes[0][1];
         container.innerHTML = sortedTypes.map(([label, count], i) => {
-            const c = colors[i % colors.length];
+            const c = getColorByType(label);
             const pct = Math.round((count / maxCount) * 100);
             return `
                 <div class="violation-type">

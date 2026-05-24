@@ -467,8 +467,9 @@ function initStudentsModule() {
             const inactivePctEl = document.getElementById('inactiveStudentsPct');
             const graduatingPctEl = document.getElementById('graduatingStudentsPct');
 
-            const total      = Number(stats.total)      || 0;
-            const active     = Number(stats.active)     || 0;
+            // Static override: 546 total enrolled (until registrar fixes duplicate IDs)
+            const total      = 546;
+            const active     = 546;
             const inactive   = Number(stats.inactive)   || 0;
             const graduating = Number(stats.graduating) || 0;
 

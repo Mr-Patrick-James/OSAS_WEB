@@ -593,7 +593,7 @@ function viewViolationDetails(id) {
     // --- History Timeline (Match Admin Deduplication) ---
     const timelineEl = document.getElementById('detailTimeline');
     if (timelineEl) {
-        let studentHistory = [...(allUserViolations || userViolations)];
+        let studentHistory = [...userViolations];
         
         // Deduplicate history for timeline
         const seenHistory = new Set();

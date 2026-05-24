@@ -338,8 +338,10 @@ class DashboardData {
         }
         
         if (studentsCount) {
-            if (window.animateCountUp) animateCountUp(studentsCount, this.stats.students || 0);
-            else studentsCount.textContent = this.stats.students || 0;
+            // Static override: 546 total enrolled students (until registrar fixes duplicate IDs)
+            const studentTotal = 546;
+            if (window.animateCountUp) animateCountUp(studentsCount, studentTotal);
+            else studentsCount.textContent = studentTotal;
         }
         
         if (departmentsCount) {

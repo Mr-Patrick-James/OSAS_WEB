@@ -192,14 +192,16 @@ body.dark {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-#btnRefreshViolations {
-  background: #3b82f6;
-  color: #ffffff;
-  border: none;
+#btnRefreshViolations,
+#refreshViolationsBtn {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  border: none !important;
 }
 
-#btnRefreshViolations:hover {
-  background: #2563eb;
+#btnRefreshViolations:hover,
+#refreshViolationsBtn:hover {
+  background: #2563eb !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
@@ -259,13 +261,13 @@ body.dark {
 }
 
 #btnMonthlyReset {
-  background: #6366f1 !important;
+  background: var(--red, #DB504A) !important;
   color: #ffffff !important;
   border: none !important;
 }
 
 #btnMonthlyReset:hover {
-  background: #4f46e5 !important;
+  background: #b71c1c !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
@@ -810,32 +812,19 @@ body.dark {
   font-size: 9px;
   font-weight: 700;
   display: inline-block;
-  border: 1.5px solid transparent;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  background: var(--surface-2, #f0f0f0);
+  color: var(--text-2, #555);
+  border: 1.5px solid var(--border, #e0e0e0);
+  box-shadow: none;
 }
 
-.violation-type-badge.uniform {
-  background: rgba(156, 39, 176, 0.2);
-  color: #4a148c;
-  border-color: rgba(156, 39, 176, 0.3);
-}
-
-.violation-type-badge.id {
-  background: rgba(33, 150, 243, 0.2);
-  color: #0d47a1;
-  border-color: rgba(33, 150, 243, 0.3);
-}
-
-.violation-type-badge.footwear {
-  background: rgba(76, 175, 80, 0.2);
-  color: #1b5e20;
-  border-color: rgba(76, 175, 80, 0.3);
-}
-
+.violation-type-badge.uniform,
+.violation-type-badge.id,
+.violation-type-badge.footwear,
 .violation-type-badge.behavior {
-  background: rgba(255, 152, 0, 0.2);
-  color: #e65100;
-  border-color: rgba(255, 152, 0, 0.3);
+  background: var(--surface-2, #f0f0f0);
+  color: var(--text-2, #555);
+  border-color: var(--border, #e0e0e0);
 }
 
 /* Violation Level Badges */

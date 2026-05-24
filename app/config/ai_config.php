@@ -29,11 +29,17 @@
  */
 
 // AI API Type: 'openai', 'groq', 'huggingface', 'cohere', 'gemini', or 'custom'
-define('AI_API_TYPE', 'gemini'); // Change to 'groq' for free API
+define('AI_API_TYPE', 'groq'); // Groq - free, fast, 14,400 requests/day
 
 // Your AI API Key (keep this secure!)
-// Get your free API key from one of the services above
-define('AI_API_KEY', 'AIzaSyAfKXEQCJEvnVskAGRj1jFQg6sLvSrFokg'); // Paste your free API key here
+// Create app/config/ai_config.local.php with your key (see ai_config.local.example.php)
+$localConfig = __DIR__ . '/ai_config.local.php';
+if (file_exists($localConfig)) {
+    require_once $localConfig;
+}
+if (!defined('AI_API_KEY')) {
+    define('AI_API_KEY', ''); // Fallback - set key in ai_config.local.php
+}
 
 // API Configuration (automatically set based on AI_API_TYPE)
 // You can also manually override these if needed
@@ -47,8 +53,8 @@ if (AI_API_TYPE === 'groq') {
     define('AI_API_URL', 'https://api.cohere.ai/v1/chat');
     define('AI_MODEL', 'command-r-plus'); // or 'command-r', 'command'
 } elseif (AI_API_TYPE === 'gemini') {
-    define('AI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent');
-    define('AI_MODEL', 'gemini-pro');
+    define('AI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent');
+    define('AI_MODEL', 'gemini-2.0-flash');
 } else {
     // OpenAI (default)
     define('AI_API_URL', 'https://api.openai.com/v1/chat/completions');

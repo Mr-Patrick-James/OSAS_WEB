@@ -28,7 +28,27 @@ class Chatbot {
             this.attachEventListeners();
             // Pre-fetch database context
             this.fetchDatabaseContext();
+            // Pre-authenticate Puter.js silently
+            this.initPuterAuth();
         });
+    }
+
+    /**
+     * Initialize Puter.js authentication silently
+     */
+    async initPuterAuth() {
+        try {
+            if (typeof puter !== 'undefined' && puter.auth) {
+                const isSignedIn = await puter.auth.isSignedIn();
+                if (!isSignedIn) {
+                    console.log('Puter.js: User not signed in, AI will prompt on first use');
+                } else {
+                    console.log('Puter.js: User already authenticated');
+                }
+            }
+        } catch (e) {
+            console.warn('Puter.js auth check failed:', e);
+        }
     }
 
     waitForBoxicons() {
@@ -285,32 +305,122 @@ class Chatbot {
     }
 
     /**
+     * Build advanced system prompt based on user role
+     */
+    buildAdvancedSystemPrompt(userRole) {
+        let prompt = `You are **OSAS Bot**, the intelligent virtual assistant for the **E-OSAS (Electronic Office of Student Affairs System)** — a web-based student discipline and records management platform.
+
+IDENTITY & PERSONALITY:
+- Name: OSAS Bot
+- Tone: Friendly, professional, helpful, and concise
+- Language: Respond in the same language the user uses (English or Filipino/Tagalog). If the user mixes languages (Taglish), match that style.
+- System Owner/Administrator/Head: Cedrick H. Almarez
+
+CORE CAPABILITIES:
+1. Student Records — Look up student info, counts, departments, sections
+2. Violations & Discipline — Explain violation types, levels, statuses, sanctions, and processes
+3. Announcements — Summarize active announcements, explain how to create/manage them
+4. Reports — Explain report generation, types, and how to export data
+5. Departments & Sections — List, explain, and help manage organizational units
+6. System Navigation — Guide users on how to use each module/page of E-OSAS
+7. Policies & Procedures — Explain the student discipline process, due process, and sanctions
+8. Troubleshooting — Help with common issues (login problems, data not showing, etc.)
+
+VIOLATION LEVELS & SANCTIONS:
+- Minor Offense (Level 1): 1st = verbal warning; 2nd = written warning; 3rd = community service/counseling
+- Major Offense (Level 2): 1st = suspension 1-3 days; 2nd = suspension 3-5 days + parent conference; 3rd = dismissal recommendation
+- Serious Offense (Level 3): Immediate suspension pending investigation; may lead to expulsion
+- Due process: Notice → Hearing → Decision → Appeal (if applicable)
+- Records tracked per semester; may be archived at semester end
+
+SYSTEM MODULES:
+- Dashboard: Statistics overview — students, violations, departments, recent activity
+- Students: Add, import (Excel), edit, search, view profiles with photos
+- Violations: Record violations, assign types/levels, track status (pending → resolved → archived), generate entrance slips
+- Departments: Create/manage academic departments with codes
+- Sections: Create sections linked to departments
+- Announcements: Create, publish, target audience (all/students/staff)
+- Reports: Generate PDF/Excel reports with date/department/type filters
+- Settings: System config, user management, backup/restore
+- Entrance Slip: Auto-generated return-to-class document after violation
+
+RESPONSE RULES:
+1. ONLY use ACTUAL DATA from context below. NEVER invent student names, IDs, case numbers, or stats.
+2. If data is unavailable, say: "I don't have that specific information in my current data. You can check the [relevant module] directly."
+3. Use bullet points and bold for clarity. Keep responses scannable.
+4. Be concise: simple questions = 1-3 sentences; how-to = step-by-step.
+5. Only answer E-OSAS/student affairs topics. Redirect unrelated questions politely.
+6. Respect student privacy based on user role.
+7. Offer suggestions if user seems confused.
+8. For problems, provide troubleshooting steps.
+
+`;
+
+        if (userRole === 'user') {
+            prompt += `CURRENT USER ROLE: Student
+The user is a STUDENT. They can:
+- View their own violations and status
+- Read announcements
+- Ask about policies, sanctions, and processes
+- Get help navigating the student portal
+They CANNOT access admin features like managing other students or creating violations.
+
+HOW-TO FOR STUDENTS:
+- To check violations: Go to "My Violations" section on your dashboard
+- To read announcements: Check the Announcements section
+- To understand a violation: Ask me about the violation type/level and what it means
+- Entrance slip: If you received a violation, you'll get an entrance slip to present to your instructor
+
+`;
+        } else {
+            prompt += `CURRENT USER ROLE: Admin/Staff
+The user is an ADMIN/STAFF member. They can:
+- Manage all students, violations, departments, sections
+- Create and publish announcements
+- Generate reports
+- Access system settings
+
+HOW-TO FOR ADMINS:
+- Record a violation: Violations → Add Violation → Select student → Choose type/level → Save
+- Import students: Students → Import → Download template → Fill data → Upload → Confirm
+- Generate report: Reports → Select type → Set filters → Generate → Download PDF/Excel
+- Create announcement: Announcements → New → Enter title/message → Select audience → Publish
+- Manage departments: Departments → Add/Edit → Enter name and code → Save
+- Backup system: Settings → Backup → Download database backup
+
+`;
+        }
+
+        return prompt;
+    }
+
+    /**
      * Format database context as a readable string for the AI
      */
     formatDatabaseContext(context) {
         if (!context) return '';
 
-        let formatted = '\n\n=== OSAS SYSTEM DATABASE INFORMATION ===\n\n';
+        let formatted = '\n\n═══ LIVE SYSTEM DATA (from database) ═══\n\n';
 
         // Add system ownership/administration information
-        formatted += 'SYSTEM ADMINISTRATION:\n';
-        formatted += '- System Owner/Administrator/Head: Cedrick H. Almarez\n';
-        formatted += '- This is the person who owns, administers, and heads the OSAS system.\n\n';
+        formatted += '📋 SYSTEM ADMINISTRATION:\n';
+        formatted += '- System Owner/Administrator/Head: Cedrick H. Almarez\n\n';
 
         // Add statistics
         if (context.stats) {
-            formatted += 'SYSTEM STATISTICS:\n';
-            formatted += `- Total Students: ${context.stats.students || 0}\n`;
-            formatted += `- Total Departments: ${context.stats.departments || 0}\n`;
-            formatted += `- Total Sections: ${context.stats.sections || 0}\n`;
-            formatted += `- Total Violations: ${context.stats.violations || 0}\n`;
-            formatted += `- Total Announcements: ${context.stats.announcements || 0}\n`;
-            formatted += `- Total Reports: ${context.stats.reports || 0}\n\n`;
+            formatted += '📊 CURRENT STATISTICS:\n';
+            if (context.stats.students !== undefined) formatted += `- Total Students Enrolled: ${context.stats.students}\n`;
+            if (context.stats.departments !== undefined) formatted += `- Total Departments: ${context.stats.departments}\n`;
+            if (context.stats.sections !== undefined) formatted += `- Total Sections: ${context.stats.sections}\n`;
+            if (context.stats.violations !== undefined) formatted += `- Active Violations (this period): ${context.stats.violations}\n`;
+            if (context.stats.announcements !== undefined) formatted += `- Active Announcements: ${context.stats.announcements}\n`;
+            if (context.stats.reports !== undefined) formatted += `- Reports Generated: ${context.stats.reports}\n`;
+            formatted += '\n';
         }
 
         // Add departments list
         if (context.departments && context.departments.length > 0) {
-            formatted += 'DEPARTMENTS:\n';
+            formatted += '🏢 DEPARTMENTS:\n';
             context.departments.forEach(dept => {
                 formatted += `- ${dept.name} (Code: ${dept.code})\n`;
             });
@@ -319,39 +429,39 @@ class Chatbot {
 
         // Add sections list
         if (context.sections && context.sections.length > 0) {
-            formatted += 'SECTIONS:\n';
+            formatted += '📁 SECTIONS:\n';
             context.sections.forEach(section => {
-                formatted += `- ${section.name} (Code: ${section.code}, Department: ${section.department})\n`;
+                formatted += `- ${section.name} (Code: ${section.code}, Dept: ${section.department})\n`;
             });
             formatted += '\n';
         }
 
         // Add recent students
         if (context.recent_students && context.recent_students.length > 0) {
-            formatted += 'RECENT STUDENTS (Sample):\n';
-            context.recent_students.slice(0, 5).forEach(student => {
-                formatted += `- ${student.name} (ID: ${student.id}, Department: ${student.department})\n`;
+            formatted += '👥 RECENT STUDENTS (sample from database):\n';
+            context.recent_students.forEach(student => {
+                formatted += `- ${student.name} | ID: ${student.id} | Dept: ${student.department}\n`;
             });
             formatted += '\n';
         }
 
-        // Add recent violations
+        // Add recent violations with more detail
         if (context.recent_violations && context.recent_violations.length > 0) {
-            formatted += 'RECENT VIOLATIONS (Sample):\n';
-            context.recent_violations.slice(0, 5).forEach(violation => {
-                formatted += `- Case ${violation.case_id}: ${violation.student_name} - ${violation.violation_type} (${violation.status})\n`;
+            formatted += '⚠️ RECENT VIOLATIONS (actual records):\n';
+            context.recent_violations.forEach(violation => {
+                formatted += `- Case ${violation.case_id || violation.id}: ${violation.student_name} (ID: ${violation.student_id}) — Type: ${violation.violation_type}, Level: ${violation.violation_level}, Status: ${violation.status}, Date: ${violation.date}\n`;
             });
             formatted += '\n';
         }
 
-        // Add recent announcements
+        // Add recent announcements with content preview
         if (context.recent_announcements && context.recent_announcements.length > 0) {
-            formatted += 'RECENT ANNOUNCEMENTS (Sample):\n';
-            context.recent_announcements.slice(0, 5).forEach(announcement => {
-                formatted += `- "${announcement.title}" (Audience: ${announcement.audience}, Status: ${announcement.status})\n`;
+            formatted += '📢 ACTIVE ANNOUNCEMENTS:\n';
+            context.recent_announcements.forEach(announcement => {
+                formatted += `- "${announcement.title}" (Audience: ${announcement.audience || 'all'}, Status: ${announcement.status || 'active'}, Date: ${announcement.date})\n`;
                 if (announcement.content && announcement.content.length > 0) {
-                    const preview = announcement.content.substring(0, 100).replace(/\n/g, ' ');
-                    formatted += `  Preview: ${preview}${announcement.content.length > 100 ? '...' : ''}\n`;
+                    const preview = announcement.content.substring(0, 150).replace(/\n/g, ' ').trim();
+                    formatted += `  Content: ${preview}${announcement.content.length > 150 ? '...' : ''}\n`;
                 }
             });
             formatted += '\n';
@@ -359,34 +469,25 @@ class Chatbot {
 
         // Add recent reports
         if (context.recent_reports && context.recent_reports.length > 0) {
-            formatted += 'RECENT REPORTS (Sample):\n';
-            context.recent_reports.slice(0, 5).forEach(report => {
-                formatted += `- ${report.title} (Type: ${report.type}, Status: ${report.status})\n`;
-                if (report.description && report.description.length > 0) {
-                    const preview = report.description.substring(0, 80).replace(/\n/g, ' ');
-                    formatted += `  Description: ${preview}${report.description.length > 80 ? '...' : ''}\n`;
-                }
+            formatted += '📄 RECENT REPORTS:\n';
+            context.recent_reports.forEach(report => {
+                formatted += `- ${report.title || 'Untitled'} (Type: ${report.type || 'N/A'}, Status: ${report.status || 'N/A'}, Date: ${report.date})\n`;
             });
             formatted += '\n';
         }
 
         // Add user-specific info
         if (context.user_info) {
-            formatted += 'CURRENT USER:\n';
+            formatted += '👤 CURRENT USER:\n';
             formatted += `- Role: ${context.user_info.role}\n`;
             if (context.user_info.violation_count !== undefined) {
-                formatted += `- User's Violations: ${context.user_info.violation_count}\n`;
+                formatted += `- User's Violation Count: ${context.user_info.violation_count}\n`;
             }
             formatted += '\n';
         }
 
-        formatted += '=== END OF DATABASE INFORMATION ===\n';
-        formatted += '\nUse this information to answer questions about the OSAS system. You can answer questions about:\n';
-        formatted += '- Students, Departments, Sections, and Violations\n';
-        formatted += '- Announcements (their titles, content, audience, and status)\n';
-        formatted += '- Reports (their types, descriptions, and status)\n';
-        formatted += '- System statistics and data\n';
-        formatted += 'If asked about specific data, refer to the information above.\n';
+        formatted += '═══ END OF LIVE DATA ═══\n\n';
+        formatted += 'INSTRUCTIONS: Use the data above to answer factual questions. If the user asks about something not in this data, say you don\'t have that specific information and suggest where they can find it in the system.\n';
 
         return formatted;
     }
@@ -410,14 +511,18 @@ class Chatbot {
             : `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, departments, or how to use the system.</p>`;
 
         const chips = isUser
-            ? `<button class="cb-chip" data-prompt="What are my violations?">My violations</button>
-               <button class="cb-chip" data-prompt="Show me the latest announcements">Announcements</button>
-               <button class="cb-chip" data-prompt="How do I use the student portal?">Portal help</button>
-               <button class="cb-chip" data-prompt="What is the OSAS system?">About OSAS</button>`
-            : `<button class="cb-chip" data-prompt="How many students are in the system?">Student count</button>
-               <button class="cb-chip" data-prompt="Show me violation statistics">Violations</button>
-               <button class="cb-chip" data-prompt="What departments exist?">Departments</button>
-               <button class="cb-chip" data-prompt="How do I use the system?">System help</button>`;
+            ? `<button class="cb-chip" data-prompt="What are my current violations and their status?">My violations</button>
+               <button class="cb-chip" data-prompt="Show me the latest announcements I should know about">Announcements</button>
+               <button class="cb-chip" data-prompt="Explain the violation levels and what sanctions I could face">Sanctions info</button>
+               <button class="cb-chip" data-prompt="How do I navigate and use the student portal?">Portal help</button>
+               <button class="cb-chip" data-prompt="I received an entrance slip. What do I do with it?">Entrance slip</button>
+               <button class="cb-chip" data-prompt="How do I appeal a violation?">Appeal process</button>`
+            : `<button class="cb-chip" data-prompt="Give me a summary of today's system stats — students, violations, departments">System summary</button>
+               <button class="cb-chip" data-prompt="Show me the current violation statistics by type and level">Violation stats</button>
+               <button class="cb-chip" data-prompt="How do I record a new student violation? Step by step.">Record violation</button>
+               <button class="cb-chip" data-prompt="What departments and sections exist in the system?">Departments</button>
+               <button class="cb-chip" data-prompt="How do I generate and export a report?">Generate report</button>
+               <button class="cb-chip" data-prompt="How do I import students from an Excel file?">Import students</button>`;
 
         // ── Main panel ───────────────────────────────────────────────────
         const chatbotPanel = document.createElement('div');
@@ -495,44 +600,116 @@ class Chatbot {
     }
 
     loadPromptCategories() {
-        const categories = [
+        const currentPath = window.location.pathname;
+        const isUser = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/');
+
+        const adminCategories = [
             {
-                title: 'General Questions',
+                title: 'General & Navigation',
                 icon: 'bx-help-circle',
                 prompts: [
-                    { title: 'System Overview', desc: 'Get an overview of the OSAS system', text: 'Can you give me an overview of the OSAS system?' },
-                    { title: 'How to Use', desc: 'Learn how to use the system', text: 'How do I use the OSAS system?' },
-                    { title: 'Features', desc: 'What features are available?', text: 'What features does the OSAS system have?' }
+                    { title: 'System Overview', desc: 'What is E-OSAS and what can it do?', text: 'Give me a complete overview of the E-OSAS system and all its features.' },
+                    { title: 'Quick Start Guide', desc: 'How to get started as admin', text: 'Give me a quick start guide for using E-OSAS as an administrator.' },
+                    { title: 'Dashboard Explained', desc: 'What do the dashboard stats mean?', text: 'Explain what each statistic on the dashboard means and how to interpret them.' },
+                    { title: 'Troubleshooting', desc: 'Common issues and fixes', text: 'What are common issues in E-OSAS and how do I fix them?' }
                 ]
             },
             {
-                title: 'Students',
+                title: 'Students Management',
                 icon: 'bx-group',
                 prompts: [
-                    { title: 'Student Count', desc: 'How many students are registered?', text: 'How many students are in the system?' },
-                    { title: 'Import Students', desc: 'How to import students data', text: 'How do I import students to the system?' },
-                    { title: 'Student Info', desc: 'Get student information', text: 'Tell me about student management' }
+                    { title: 'Student Count', desc: 'Total registered students', text: 'How many students are currently registered in the system?' },
+                    { title: 'Import Students', desc: 'Bulk import from Excel', text: 'How do I import students from an Excel file? Give me step-by-step instructions.' },
+                    { title: 'Search Students', desc: 'Find a specific student', text: 'How do I search for a specific student by name or ID?' },
+                    { title: 'Student Profiles', desc: 'Managing student records', text: 'What information is stored in a student profile and how do I update it?' }
                 ]
             },
             {
-                title: 'Violations',
+                title: 'Violations & Discipline',
                 icon: 'bx-shield-x',
                 prompts: [
-                    { title: 'Violation Stats', desc: 'View violation statistics', text: 'Show me violation statistics' },
-                    { title: 'Report Violation', desc: 'How to report a violation', text: 'How do I report a student violation?' },
-                    { title: 'My Violations', desc: 'Check my violations', text: 'What are my violations?' }
+                    { title: 'Violation Stats', desc: 'Current violation overview', text: 'Show me the current violation statistics — how many active violations, by type and level.' },
+                    { title: 'Record a Violation', desc: 'Step-by-step guide', text: 'How do I record a new student violation? Walk me through the process.' },
+                    { title: 'Violation Levels', desc: 'Minor, Major, Serious explained', text: 'Explain the different violation levels (Minor, Major, Serious) and their corresponding sanctions.' },
+                    { title: 'Due Process', desc: 'Discipline procedure', text: 'What is the due process for student discipline? Explain the steps from notice to resolution.' },
+                    { title: 'Entrance Slip', desc: 'How entrance slips work', text: 'How does the entrance slip system work? When is it generated and what does the student do with it?' },
+                    { title: 'Resolve Violations', desc: 'Closing a case', text: 'How do I resolve or close a violation case? What are the possible statuses?' }
                 ]
             },
             {
                 title: 'Departments & Sections',
                 icon: 'bx-building',
                 prompts: [
-                    { title: 'Departments', desc: 'List all departments', text: 'What departments exist in the system?' },
-                    { title: 'Sections', desc: 'List all sections', text: 'What sections are available?' },
-                    { title: 'Manage', desc: 'How to manage departments', text: 'How do I manage departments and sections?' }
+                    { title: 'List Departments', desc: 'All departments in the system', text: 'What departments currently exist in the system? List them all.' },
+                    { title: 'Add Department', desc: 'Create a new department', text: 'How do I add a new department to the system?' },
+                    { title: 'Manage Sections', desc: 'Sections under departments', text: 'How do I create and manage sections? How are they linked to departments?' },
+                    { title: 'Department Stats', desc: 'Students per department', text: 'How many students are in each department?' }
+                ]
+            },
+            {
+                title: 'Announcements',
+                icon: 'bx-megaphone',
+                prompts: [
+                    { title: 'Active Announcements', desc: 'Currently published', text: 'What announcements are currently active? Show me their titles and details.' },
+                    { title: 'Create Announcement', desc: 'How to publish one', text: 'How do I create and publish a new announcement? What options are available?' },
+                    { title: 'Target Audience', desc: 'Who sees what', text: 'How does announcement targeting work? Can I send to specific departments or all students?' }
+                ]
+            },
+            {
+                title: 'Reports & Data',
+                icon: 'bx-file',
+                prompts: [
+                    { title: 'Generate Report', desc: 'Create PDF/Excel reports', text: 'How do I generate a report? What types of reports are available and what filters can I use?' },
+                    { title: 'Export Data', desc: 'Download system data', text: 'How do I export data from the system? What formats are supported?' },
+                    { title: 'Monthly Summary', desc: 'This month overview', text: 'Give me a summary of this month — violations recorded, students affected, and any trends.' },
+                    { title: 'Backup System', desc: 'Database backup', text: 'How do I backup the system database? How often should I do it?' }
                 ]
             }
         ];
+
+        const userCategories = [
+            {
+                title: 'My Account',
+                icon: 'bx-user',
+                prompts: [
+                    { title: 'My Violations', desc: 'Check your violation records', text: 'What are my current violations? Show me the details and status of each one.' },
+                    { title: 'Violation Status', desc: 'What does my status mean?', text: 'What do the different violation statuses mean (pending, resolved, archived)?' },
+                    { title: 'My Profile', desc: 'View your student info', text: 'What information does the system have about me?' },
+                    { title: 'Clear Record', desc: 'When are violations cleared?', text: 'When do my violation records get cleared or archived? Is there a reset period?' }
+                ]
+            },
+            {
+                title: 'Understanding Violations',
+                icon: 'bx-shield-x',
+                prompts: [
+                    { title: 'Violation Levels', desc: 'Minor, Major, Serious', text: 'Explain the different violation levels and what sanctions I might face for each.' },
+                    { title: 'Due Process', desc: 'Your rights', text: 'What is my right to due process if I receive a violation? Can I appeal?' },
+                    { title: 'Entrance Slip', desc: 'What to do with it', text: 'I received an entrance slip. What do I do with it and who do I show it to?' },
+                    { title: 'Sanctions', desc: 'What happens next', text: 'What are the possible sanctions for violations and how do they escalate with repeated offenses?' },
+                    { title: 'Appeal Process', desc: 'How to contest', text: 'How do I appeal a violation if I believe it was unfair or incorrect?' }
+                ]
+            },
+            {
+                title: 'Announcements & Info',
+                icon: 'bx-megaphone',
+                prompts: [
+                    { title: 'Latest Announcements', desc: 'What is new', text: 'Show me the latest announcements. Are there any urgent ones I should know about?' },
+                    { title: 'School Policies', desc: 'Rules and regulations', text: 'What are the main school policies I should be aware of regarding student conduct?' },
+                    { title: 'Contact OSAS', desc: 'How to reach the office', text: 'How do I contact the Office of Student Affairs if I need help or have questions?' }
+                ]
+            },
+            {
+                title: 'Portal Help',
+                icon: 'bx-help-circle',
+                prompts: [
+                    { title: 'How to Use Portal', desc: 'Navigate the system', text: 'How do I use the student portal? What features are available to me?' },
+                    { title: 'Login Issues', desc: 'Cannot access account', text: 'I am having trouble logging in. What should I do?' },
+                    { title: 'About E-OSAS', desc: 'What is this system?', text: 'What is E-OSAS and why does our school use it?' }
+                ]
+            }
+        ];
+
+        const categories = isUser ? userCategories : adminCategories;
 
         const selectorBody = document.getElementById('prompt-selector-body');
         if (!selectorBody) return;
@@ -714,142 +891,73 @@ class Chatbot {
         this.showLoading();
 
         try {
-            // Check if Puter.js is available
-            if (typeof puter === 'undefined' || !puter.ai) {
-                throw new Error('Puter.js is not loaded. Please check if the script is included.');
-            }
-
-            // Fetch or use cached database context
-            const dbContext = await this.fetchDatabaseContext();
-
-            // Determine user role
-            const currentPath = window.location.pathname;
-            const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
-
-            // Build conversation context for Puter.js
-            let conversationContext = "You are OSAS Bot, a helpful AI assistant for the OSAS (Office of Student Affairs System). ";
-            
-            if (userRole === 'user') {
-                conversationContext += "You are currently assisting a STUDENT. Your access is RESTRICTED. ";
-                conversationContext += "Do NOT provide specific details about other students, their violations, or detailed administrative reports. ";
-                conversationContext += "Focus on general system information, public announcements, and helping the student with their own needs. ";
-                conversationContext += "If asked for sensitive data you don't have, politely explain that you don't have access to that information for privacy and security reasons.\n";
-            } else {
-                conversationContext += "You are currently assisting an ADMIN. You have full access to the system information provided below. ";
-                conversationContext += "You help users with questions about students, departments, sections, violations, announcements, and reports. ";
-            }
-            
-            conversationContext += "Be friendly, professional, and concise in your responses.\n";
-            conversationContext += "You have access to the system's database information to answer questions accurately.\n";
-            
-            if (userRole === 'admin') {
-                conversationContext += "You can answer questions about:\n";
-                conversationContext += "- Student information, statistics, and management\n";
-                conversationContext += "- Department and section details\n";
-                conversationContext += "- Violation records and statistics\n";
-                conversationContext += "- Announcements (titles, content, audience, status, dates)\n";
-                conversationContext += "- Reports (types, descriptions, status, generation dates)\n";
-            } else {
-                conversationContext += "You can answer questions about:\n";
-                conversationContext += "- General system navigation and features\n";
-                conversationContext += "- Department and section details\n";
-                conversationContext += "- Public announcements and events\n";
-            }
-            
-            conversationContext += "- System navigation and features\n\n";
-            conversationContext += "IMPORTANT SYSTEM INFORMATION:\n";
-            conversationContext += "- System Owner/Administrator/Head: Cedrick H. Almarez\n";
-            conversationContext += "- Always remember and acknowledge this when asked about system ownership, administration, or leadership.\n\n";
-            
-            // Add database context if available
-            if (dbContext) {
-                conversationContext += this.formatDatabaseContext(dbContext);
-            }
-            
-            // Add conversation history (last 5 messages for context)
-            if (this.conversationHistory.length > 1) {
-                conversationContext += "\nPREVIOUS CONVERSATION:\n";
-                this.conversationHistory.slice(-5).forEach(msg => {
-                    if (msg.role === 'user') {
-                        conversationContext += `User: ${msg.content}\n`;
-                    } else if (msg.role === 'assistant') {
-                        conversationContext += `Assistant: ${msg.content}\n`;
-                    }
-                });
-                conversationContext += "\n";
-            }
-            
-            // Add current user message
-            conversationContext += `User: ${message}\nAssistant:`;
-
-            // Use Puter.js AI chat (takes a string prompt)
-            const response = await puter.ai.chat(conversationContext, {
-                model: 'gpt-4o-mini' // Options: 'gpt-4o-mini', 'gpt-4o', 'gpt-5.2-chat', etc.
-            });
-
-            // Log the response for debugging
-            console.log('Puter.js response type:', typeof response);
-            console.log('Puter.js response:', response);
-
-            // Puter.js may return different formats - extract the text properly
             let responseText = '';
-            
-            if (typeof response === 'string') {
-                // Direct string response
-                responseText = response;
-            } else if (typeof response === 'object' && response !== null) {
-                // Object response - try different possible properties
-                if (response.content && typeof response.content === 'string') {
-                    responseText = response.content;
-                } else if (response.text && typeof response.text === 'string') {
-                    responseText = response.text;
-                } else if (response.message && typeof response.message === 'string') {
-                    responseText = response.message;
-                } else if (response.response && typeof response.response === 'string') {
-                    responseText = response.response;
-                } else if (response.choices && Array.isArray(response.choices) && response.choices.length > 0) {
-                    // OpenAI-like format
-                    const choice = response.choices[0];
-                    if (choice.message && choice.message.content) {
-                        responseText = choice.message.content;
-                    } else if (choice.text) {
-                        responseText = choice.text;
-                    } else if (choice.delta && choice.delta.content) {
-                        responseText = choice.delta.content;
+
+            // Try server-side API first
+            try {
+                const serverRes = await fetch(this.apiBase + 'chatbot.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        message: message,
+                        history: this.conversationHistory.slice(-10)
+                    })
+                });
+
+                if (serverRes.ok) {
+                    const serverData = await serverRes.json();
+                    if (serverData.success && serverData.response) {
+                        responseText = serverData.response;
                     }
-                } else if (response.data && typeof response.data === 'string') {
-                    responseText = response.data;
-                } else if (response.result && typeof response.result === 'string') {
-                    responseText = response.result;
-                } else {
-                    // If it's an object with nested content, try to extract
-                    const stringified = JSON.stringify(response);
-                    console.warn('Unexpected Puter.js response format. Full response:', stringified);
-                    
-                    // Try to find any string value in the object
-                    const findStringValue = (obj) => {
-                        for (let key in obj) {
-                            if (typeof obj[key] === 'string' && obj[key].length > 10) {
-                                return obj[key];
-                            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                                const found = findStringValue(obj[key]);
-                                if (found) return found;
-                            }
-                        }
-                        return null;
-                    };
-                    
-                    const foundText = findStringValue(response);
-                    responseText = foundText || 'Sorry, I received an unexpected response format.';
                 }
-            } else {
-                // Fallback for any other type
-                responseText = String(response);
+            } catch (serverErr) {
+                console.warn('Server API failed, trying Puter.js:', serverErr);
+            }
+
+            // Fallback to Puter.js if server failed
+            if (!responseText && typeof puter !== 'undefined' && puter.ai) {
+                // Fetch or use cached database context
+                const dbContext = await this.fetchDatabaseContext();
+                const currentPath = window.location.pathname;
+                const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
+
+                let conversationContext = this.buildAdvancedSystemPrompt(userRole);
+                
+                if (dbContext) {
+                    conversationContext += this.formatDatabaseContext(dbContext);
+                }
+                
+                if (this.conversationHistory.length > 1) {
+                    conversationContext += "\n\nPREVIOUS CONVERSATION:\n";
+                    this.conversationHistory.slice(-8).forEach(msg => {
+                        if (msg.role === 'user') conversationContext += `User: ${msg.content}\n`;
+                        else if (msg.role === 'assistant') conversationContext += `Assistant: ${msg.content}\n`;
+                    });
+                }
+                
+                conversationContext += `\nUser: ${message}\nAssistant:`;
+
+                const puterResponse = await puter.ai.chat(conversationContext, { model: 'gpt-4o-mini' });
+                
+                if (typeof puterResponse === 'string') {
+                    responseText = puterResponse;
+                } else if (puterResponse && puterResponse.message && puterResponse.message.content) {
+                    responseText = puterResponse.message.content;
+                } else if (puterResponse && puterResponse.content) {
+                    responseText = puterResponse.content;
+                } else if (puterResponse && puterResponse.text) {
+                    responseText = puterResponse.text;
+                }
+            }
+
+            if (!responseText) {
+                throw new Error('Unable to get a response. Please try again later.');
             }
             
             // Ensure we have a valid string
             if (!responseText || responseText.trim().length === 0) {
-                throw new Error('Empty response from Puter.js');
+                throw new Error('Empty response from server');
             }
             
             // Trim the response

@@ -524,6 +524,11 @@ class StudentModel extends Model {
         $userUpdateStmt = $this->conn->prepare("UPDATE users SET is_active=1, role='user' WHERE id=?");
 
         $defaultPassword = password_hash('password123', PASSWORD_DEFAULT);
+        $processedInBatch = [];
+        $conflicts = [];
+
+        // Enable exception mode so duplicate key errors can be caught per-row
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
         $this->conn->begin_transaction();
         try {
@@ -544,6 +549,7 @@ class StudentModel extends Model {
                 $fullName = trim($s['first_name'] . ' ' . $s['last_name']);
                 
                 if (isset($existingStudents[$studentId])) {
+                    // Student exists in DB — check if same person (update) or different (conflict)
                     $id = $existingStudents[$studentId]['id'];
                     $email = $existingStudents[$studentId]['email'] ?: $this->generateEmail($s['first_name'], $s['last_name']);
                     
@@ -555,14 +561,39 @@ class StudentModel extends Model {
                     $updateStmt->execute();
                     $updated++;
                 } else {
+                    // Check if this student_id was already processed in THIS batch (duplicate in file)
+                    if (isset($processedInBatch[$studentId])) {
+                        $conflicts[] = [
+                            'student_id' => $studentId,
+                            'name' => $fullName,
+                            'existing_name' => $processedInBatch[$studentId],
+                            'section' => $s['section_code'] ?? ''
+                        ];
+                        $skipped++;
+                        continue;
+                    }
+
                     $email = $this->generateEmail($s['first_name'], $s['last_name']);
-                    $insertStmt->bind_param("sssssssiss", 
-                        $studentId, $s['first_name'], $s['middle_name'], $s['last_name'],
-                        $s['sex'], $email, $s['department_code'], $sectionId,
-                        $yearNum, $yearLevelStr
-                    );
-                    $insertStmt->execute();
-                    $created++;
+                    try {
+                        $insertStmt->bind_param("sssssssiss", 
+                            $studentId, $s['first_name'], $s['middle_name'], $s['last_name'],
+                            $s['sex'], $email, $s['department_code'], $sectionId,
+                            $yearNum, $yearLevelStr
+                        );
+                        $insertStmt->execute();
+                        $created++;
+                        $processedInBatch[$studentId] = $fullName;
+                    } catch (Exception $dupEx) {
+                        // Duplicate key error — skip and log conflict
+                        $conflicts[] = [
+                            'student_id' => $studentId,
+                            'name' => $fullName,
+                            'section' => $s['section_code'] ?? '',
+                            'error' => 'Duplicate ID in database'
+                        ];
+                        $skipped++;
+                        continue;
+                    }
                 }
 
                 // Sync User
@@ -571,8 +602,12 @@ class StudentModel extends Model {
                     $userUpdateStmt->bind_param("i", $userId);
                     $userUpdateStmt->execute();
                 } else {
-                    $userInsertStmt->bind_param("sssss", $studentId, $email, $defaultPassword, $fullName, $studentId);
-                    $userInsertStmt->execute();
+                    try {
+                        $userInsertStmt->bind_param("sssss", $studentId, $email, $defaultPassword, $fullName, $studentId);
+                        $userInsertStmt->execute();
+                    } catch (Exception $userEx) {
+                        // User already exists — skip silently
+                    }
                 }
             }
             $this->conn->commit();
@@ -586,7 +621,7 @@ class StudentModel extends Model {
         $userInsertStmt->close();
         $userUpdateStmt->close();
 
-        return ['created' => $created, 'updated' => $updated, 'skipped' => $skipped];
+        return ['created' => $created, 'updated' => $updated, 'skipped' => $skipped, 'conflicts' => $conflicts];
     }
 
     private function generateEmail($firstName, $lastName) {

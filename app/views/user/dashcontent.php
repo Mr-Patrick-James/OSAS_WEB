@@ -106,7 +106,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="sd-card sd-card--table">
         <div class="sd-card__head">
           <div class="sd-card__title-wrap">
-            <span class="sd-card__icon-badge sd-card__icon-badge--red"><i class='bx bx-list-ul'></i></span>
+            <span class="sd-card__icon-badge sd-card__icon-badge--gold"><i class='bx bx-list-ul'></i></span>
             <h3 class="sd-card__title">Recent Violations</h3>
           </div>
           <div class="sd-card__actions">
@@ -143,7 +143,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="sd-card sd-card--announce">
         <div class="sd-card__head">
           <div class="sd-card__title-wrap">
-            <span class="sd-card__icon-badge sd-card__icon-badge--purple"><i class='bx bxs-megaphone'></i></span>
+            <span class="sd-card__icon-badge sd-card__icon-badge--gold"><i class='bx bxs-megaphone'></i></span>
             <h3 class="sd-card__title">Announcements</h3>
           </div>
           <button class="sd-icon-btn sd-announce-toggle" onclick="toggleAnnouncements()" title="Toggle">

@@ -1094,8 +1094,8 @@ body.dark {
   cursor: pointer;
 }
 .announcement-item:hover {
-  border-color: var(--purple);
-  background: var(--purple-light);
+  border-color: var(--gold);
+  background: var(--gold-light);
   transform: translateX(3px);
 }
 .announcement-icon {
@@ -1108,7 +1108,7 @@ body.dark {
 .announcement-icon.urgent  { background: var(--red-light);    color: var(--red); }
 .announcement-icon.warning { background: rgba(255,140,0,.12); color: var(--orange); }
 .announcement-icon.general,
-.announcement-icon.info    { background: var(--purple-light); color: var(--purple); }
+.announcement-icon.info    { background: var(--gold-light);   color: var(--gold-dark); }
 .announcement-details { flex: 1; min-width: 0; }
 .announcement-details h4 {
   font-size: .83rem;
@@ -1149,7 +1149,7 @@ body.dark {
 .announcement-category.urgent  { background: var(--red-light);    color: var(--red); }
 .announcement-category.warning { background: rgba(255,140,0,.12); color: var(--orange); }
 .announcement-category.general,
-.announcement-category.info    { background: var(--purple-light); color: var(--purple); }
+.announcement-category.info    { background: var(--gold-light);   color: var(--gold-dark); }
 
 /* ============================================================
    TIPS CARD
