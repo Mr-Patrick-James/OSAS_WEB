@@ -189,7 +189,7 @@
         laterBtn.id = 'eosas-push-later';
         laterBtn.textContent = 'Later';
 
-        const scope = mode === 'guest' ? 'announcements' : 'full';
+        const scope = 'full';
         const runRetry = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
             retryBtn.disabled = true;
@@ -231,18 +231,15 @@
         if (document.getElementById('eosas-push-overlay')) return;
         injectStyles();
 
-        const isGuest = mode === 'guest';
         const overlay = document.createElement('div');
         overlay.id = 'eosas-push-overlay';
         const modal = document.createElement('div');
         modal.id = 'eosas-push-modal';
 
         const title = document.createElement('h3');
-        title.textContent = isGuest ? 'Campus announcements' : 'Violation alerts';
+        title.textContent = 'Stay updated';
         const desc = document.createElement('p');
-        desc.innerHTML = isGuest
-            ? 'Turn on <strong>campus announcements</strong> for this app. Tap Enable, then <strong>Allow</strong>.'
-            : 'Turn on <strong>violation alerts</strong> for your account. Tap Enable, then <strong>Allow</strong>.';
+        desc.innerHTML = 'Turn on <strong>notifications</strong> to receive campus announcements, violation alerts, and important updates. Tap Enable, then <strong>Allow</strong>.';
 
         const btns = document.createElement('div');
         btns.className = 'eosas-push-btns';
@@ -253,8 +250,7 @@
         no.id = 'eosas-push-later';
         no.textContent = 'Not now';
 
-        const scope = isGuest ? 'announcements' : 'full';
-        const promptKey = isGuest ? GUEST_PROMPT : STUDENT_PROMPT;
+        const promptKey = mode === 'guest' ? GUEST_PROMPT : STUDENT_PROMPT;
 
         const run = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -272,10 +268,11 @@
                         : 'Tap Allow on the next screen.', false);
                     return;
                 }
-                await subscribeAfterPermission(scope);
-                toast(isGuest ? 'Announcements enabled.' : 'Violation alerts enabled.', true);
+                // Always subscribe with 'full' scope so all notifications work
+                await subscribeAfterPermission('full');
+                toast('Notifications enabled — you\'ll receive all alerts.', true);
                 overlay.remove();
-                if (isGuest && typeof window.showLatestAnnouncementNotifications === 'function') {
+                if (typeof window.showLatestAnnouncementNotifications === 'function') {
                     await window.showLatestAnnouncementNotifications(true);
                 }
             } catch (err) {
@@ -303,7 +300,7 @@
         if (Notification.permission !== 'granted') return;
         try {
             const sub = await getOrCreateSubscription();
-            await saveSubscription(sub, 'announcements');
+            await saveSubscription(sub, 'full');
         } catch (e) {
             console.warn('Guest push sync:', e);
         }
@@ -338,6 +335,7 @@
 
     async function initStudentPush() {
         if (!isStudentApp() || !('Notification' in window)) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
         const pushPage = new URLSearchParams(location.search).get('push_page');
         if (pushPage && typeof window.loadContent === 'function') {
@@ -365,15 +363,44 @@
         setTimeout(() => showEnableModal('student'), 800);
     }
 
+    function isAdminApp() {
+        return /dashboard\.php/i.test(location.pathname) && !isStudentApp();
+    }
+
+    async function initAdminPush() {
+        if (!isAdminApp() || !('Notification' in window)) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (!isInstalledPWA()) return;
+
+        if (Notification.permission === 'granted') {
+            // Sync admin subscription
+            try {
+                const sub = await getOrCreateSubscription();
+                await saveSubscription(sub, 'full');
+            } catch (e) {
+                console.warn('Admin push sync:', e);
+            }
+            return;
+        }
+        if (Notification.permission === 'denied') {
+            setTimeout(() => showBlockedModal('admin'), 1200);
+            return;
+        }
+        if (localStorage.getItem('eosas_admin_push_prompted')) return;
+
+        setTimeout(() => showEnableModal('admin'), 800);
+    }
+
     function maybePromptForPush() {
         if (isStudentApp()) initStudentPush();
+        else if (isAdminApp()) initAdminPush();
         else if (isGuestApp()) initGuestPush();
     }
 
     window.isInstalledPWA = isInstalledPWA;
     window.subscribeToPush = () => {
         if (!isInstalledPWA()) { showInstallFirstModal(); return Promise.resolve(false); }
-        return subscribeWithScope(isStudentApp() ? 'full' : 'announcements');
+        return subscribeWithScope('full');
     };
     window.upgradePushToStudent = upgradePushToStudent;
     window.showPushEnableModal = (guest) => showEnableModal(guest ? 'guest' : 'student');

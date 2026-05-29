@@ -161,18 +161,14 @@ function updateViolationStats() {
 
     const countByType = (type) => {
         return thisMonthViolations.filter(v => {
-            const rawType = v.violation_type_name || v.violation_type || v.violationType || '';
-            const violationType = String(rawType).toLowerCase();
-            const violationTypeLabel = String(v.violationTypeLabel || '').toLowerCase();
+            const violationType = String(v.violationTypeLabel || v.violation_type_name || '').toLowerCase();
             
             if (type === 'uniform') {
-                return violationType.includes('uniform') || violationTypeLabel.includes('uniform');
+                return violationType.includes('uniform');
             } else if (type === 'footwear') {
-                return violationType.includes('footwear') || violationType.includes('shoe') || 
-                       violationTypeLabel.includes('footwear') || violationTypeLabel.includes('shoe');
+                return violationType.includes('footwear') || violationType.includes('shoe');
             } else if (type === 'id') {
-                return violationType.includes('id') || violationType.includes('no_id') ||
-                       violationTypeLabel.includes('id') || violationTypeLabel.includes('no id');
+                return violationType.includes('id') || violationType.includes('no id');
             }
             return false;
         }).length;
@@ -202,10 +198,10 @@ function renderViolationTable() {
     let sourceViolations;
     
     if (timePeriod === 'all') {
-        sourceViolations = allUserViolations;
+        sourceViolations = allUserViolations.length > 0 ? allUserViolations : (window.allUserViolations || []);
     } else {
         // current_month — only active (non-archived) violations
-        sourceViolations = userViolations;
+        sourceViolations = userViolations.length > 0 ? userViolations : (window.userViolations || []);
     }
 
     // Apply filters
@@ -214,15 +210,29 @@ function renderViolationTable() {
     const statusFilter = document.getElementById('statusFilter')?.value || 'all';
 
     const filtered = sourceViolations.filter(v => {
-        const searchStr = `${v.case_id || v.id} ${v.violation_type_name || ''} ${v.violation_type || ''} ${v.violationTypeLabel || ''} ${v.created_at || ''}`.toLowerCase();
+        const searchStr = `${v.caseId || v.case_id || v.id} ${v.violationTypeLabel || v.violation_type_name || ''} ${v.studentName || ''} ${v.created_at || v.dateReported || ''}`.toLowerCase();
         const matchesSearch = !searchTerm || searchStr.includes(searchTerm);
 
-        const rawType = String(v.violation_type_name || v.violation_type || v.violationType || '').toLowerCase();
-        const matchesType = typeFilter === 'all' || rawType.includes(typeFilter.replace('improper_', ''));
+        const rawType = String(v.violationTypeLabel || v.violation_type_name || v.violation_type || '').toLowerCase();
+        let matchesType = typeFilter === 'all';
+        if (!matchesType) {
+            const filterKey = typeFilter.toLowerCase();
+            if (filterKey === 'improper_uniform') {
+                matchesType = rawType.includes('uniform');
+            } else if (filterKey === 'improper_footwear') {
+                matchesType = rawType.includes('footwear') || rawType.includes('shoe');
+            } else if (filterKey === 'no_id') {
+                matchesType = rawType.includes('id') || rawType.includes('no_id') || rawType.includes('no id');
+            } else {
+                matchesType = rawType.includes(filterKey.replace('improper_', '').replace('_', ' '));
+            }
+        }
 
         const status = (v.status || 'pending').toLowerCase();
         const matchesStatus = statusFilter === 'all' || 
                              (statusFilter === 'resolved' && (status === 'resolved' || status === 'permitted')) ||
+                             (statusFilter === 'pending' && (status === 'pending' || status === 'warning')) ||
+                             (statusFilter === 'warning' && status === 'warning') ||
                              status === statusFilter;
 
         return matchesSearch && matchesType && matchesStatus;
@@ -415,7 +425,9 @@ function formatTime(timeStr) {
 }
 
 function viewViolationDetails(id) {
-    const v = allUserViolations.find(x => x.id == id) || userViolations.find(x => x.id == id);
+    const v = allUserViolations.find(x => x.id == id) || userViolations.find(x => x.id == id) 
+           || (window.allUserViolations || []).find(x => x.id == id) 
+           || (window.userViolations || []).find(x => x.id == id);
     if (!v) return;
     currentViolationId = id;
 

@@ -30,6 +30,12 @@ class PushNotificationService
         return $this->sendToRows($this->model->getSubscriptionsForStudentId($studentId), $title, $body, $data);
     }
 
+    public function notifyAdmins($title, $body, array $data = [], $excludeUserId = null)
+    {
+        if (!$this->ready) return ['sent' => 0, 'skipped' => true];
+        return $this->sendToRows($this->model->getAdminSubscriptions($excludeUserId), $title, $body, $data);
+    }
+
     private function bootstrap()
     {
         if (empty($this->config['enabled'])) return;

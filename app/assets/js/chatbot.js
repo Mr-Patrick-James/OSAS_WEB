@@ -7,7 +7,7 @@ class Chatbot {
     constructor() {
         this.isOpen = false;
         this.conversationHistory = [];
-        this.usePuter = true; // Using Puter.js for AI responses
+        this.useGroq = true; // Using Groq for AI responses
         this.databaseContext = null; // Cached database context
         this.contextLastFetched = null; // Timestamp of last fetch
         this.contextCacheTime = 5 * 60 * 1000; // Cache for 5 minutes
@@ -28,28 +28,11 @@ class Chatbot {
             this.attachEventListeners();
             // Pre-fetch database context
             this.fetchDatabaseContext();
-            // Pre-authenticate Puter.js silently
-            this.initPuterAuth();
+
         });
     }
 
-    /**
-     * Initialize Puter.js authentication silently
-     */
-    async initPuterAuth() {
-        try {
-            if (typeof puter !== 'undefined' && puter.auth) {
-                const isSignedIn = await puter.auth.isSignedIn();
-                if (!isSignedIn) {
-                    console.log('Puter.js: User not signed in, AI will prompt on first use');
-                } else {
-                    console.log('Puter.js: User already authenticated');
-                }
-            }
-        } catch (e) {
-            console.warn('Puter.js auth check failed:', e);
-        }
-    }
+
 
     waitForBoxicons() {
         return new Promise((resolve) => {
@@ -893,7 +876,7 @@ HOW-TO FOR ADMINS:
         try {
             let responseText = '';
 
-            // Try server-side API first
+            // Call server-side API (Groq with key rotation)
             try {
                 const serverRes = await fetch(this.apiBase + 'chatbot.php', {
                     method: 'POST',
@@ -905,59 +888,32 @@ HOW-TO FOR ADMINS:
                     })
                 });
 
-                if (serverRes.ok) {
-                    const serverData = await serverRes.json();
-                    if (serverData.success && serverData.response) {
-                        responseText = serverData.response;
-                    }
+                const rawText = await serverRes.text();
+                let serverData;
+                try {
+                    serverData = JSON.parse(rawText);
+                } catch (parseErr) {
+                    console.error('Non-JSON response:', rawText.substring(0, 300));
+                    throw new Error('Server error. Check PHP logs.');
                 }
-            } catch (serverErr) {
-                console.warn('Server API failed, trying Puter.js:', serverErr);
+
+                if (serverData.success && serverData.response) {
+                    responseText = serverData.response;
+                } else if (serverData.error) {
+                    throw new Error(serverData.error);
+                } else {
+                    throw new Error('Unexpected server response.');
+                }
+            } catch (fetchErr) {
+                if (fetchErr instanceof TypeError) {
+                    throw new Error('Network error — cannot reach server.');
+                }
+                throw fetchErr;
             }
 
-            // Fallback to Puter.js if server failed
-            if (!responseText && typeof puter !== 'undefined' && puter.ai) {
-                // Fetch or use cached database context
-                const dbContext = await this.fetchDatabaseContext();
-                const currentPath = window.location.pathname;
-                const userRole = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/') ? 'user' : 'admin';
-
-                let conversationContext = this.buildAdvancedSystemPrompt(userRole);
-                
-                if (dbContext) {
-                    conversationContext += this.formatDatabaseContext(dbContext);
-                }
-                
-                if (this.conversationHistory.length > 1) {
-                    conversationContext += "\n\nPREVIOUS CONVERSATION:\n";
-                    this.conversationHistory.slice(-8).forEach(msg => {
-                        if (msg.role === 'user') conversationContext += `User: ${msg.content}\n`;
-                        else if (msg.role === 'assistant') conversationContext += `Assistant: ${msg.content}\n`;
-                    });
-                }
-                
-                conversationContext += `\nUser: ${message}\nAssistant:`;
-
-                const puterResponse = await puter.ai.chat(conversationContext, { model: 'gpt-4o-mini' });
-                
-                if (typeof puterResponse === 'string') {
-                    responseText = puterResponse;
-                } else if (puterResponse && puterResponse.message && puterResponse.message.content) {
-                    responseText = puterResponse.message.content;
-                } else if (puterResponse && puterResponse.content) {
-                    responseText = puterResponse.content;
-                } else if (puterResponse && puterResponse.text) {
-                    responseText = puterResponse.text;
-                }
-            }
-
-            if (!responseText) {
-                throw new Error('Unable to get a response. Please try again later.');
-            }
-            
             // Ensure we have a valid string
             if (!responseText || responseText.trim().length === 0) {
-                throw new Error('Empty response from server');
+                throw new Error('Empty response from server.');
             }
             
             // Trim the response
@@ -974,12 +930,11 @@ HOW-TO FOR ADMINS:
 
         } catch (error) {
             console.error('Chatbot error:', error);
-            let errorMessage = 'Sorry, I\'m having trouble connecting.';
+            let errorMessage = error.message || 'Something went wrong. Please try again.';
             
-            if (error.message) {
-                errorMessage = 'Error: ' + error.message;
-            } else if (error instanceof TypeError && error.message.includes('fetch')) {
-                errorMessage = 'Network error. Please check your internet connection.';
+            // Make rate limit errors more user-friendly
+            if (errorMessage.toLowerCase().includes('rate limit')) {
+                errorMessage = 'I\'m a bit busy right now. Please wait a few seconds and try again.';
             }
             
             this.addMessage('bot', errorMessage);

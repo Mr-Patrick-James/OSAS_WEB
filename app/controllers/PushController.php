@@ -37,10 +37,15 @@ class PushController extends Controller
 
         $userId = null;
         if ($scope === 'full') {
-            if (($_SESSION['role'] ?? '') !== 'user' || empty($_SESSION['user_id'])) {
-                $this->error('Login required for violation alerts', '', 401);
+            // Allow any logged-in user (student or admin) to subscribe for full notifications
+            if (empty($_SESSION['user_id'])) {
+                // Not logged in — still allow subscription but without user_id link
+                // They'll get announcements; violations will work once they log in
+                $scope = 'full';
+                $userId = null;
+            } else {
+                $userId = (int) $_SESSION['user_id'];
             }
-            $userId = (int) $_SESSION['user_id'];
         }
 
         $id = $this->subs->upsert(
@@ -53,11 +58,11 @@ class PushController extends Controller
         $this->success('Subscribed', ['id' => $id, 'scope' => $scope]);
     }
 
-    /** After student login — link device to account for violation push. */
+    /** After login — link device to account for push notifications. */
     public function upgrade()
     {
-        if (($_SESSION['role'] ?? '') !== 'user' || empty($_SESSION['user_id'])) {
-            $this->error('Student login required', '', 401);
+        if (empty($_SESSION['user_id'])) {
+            $this->error('Login required', '', 401);
         }
 
         $input = json_decode(file_get_contents('php://input'), true);

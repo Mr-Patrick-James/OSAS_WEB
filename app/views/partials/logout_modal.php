@@ -136,6 +136,30 @@
 .logout-btn-confirm:active {
     transform: translateY(0);
 }
+
+/* Dark Mode */
+body.dark .logout-modal-content {
+    background: #1a1a1a;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .logout-modal-header h2 {
+    color: #f1f5f9;
+}
+
+body.dark .logout-modal-body p {
+    color: #94a3b8;
+}
+
+body.dark .logout-btn-cancel {
+    background: #2a2a2a;
+    color: #e2e8f0;
+}
+
+body.dark .logout-btn-cancel:hover {
+    background: #333;
+    color: #fff;
+}
 </style>
 
 <script>

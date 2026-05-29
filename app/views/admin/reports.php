@@ -281,11 +281,6 @@ require_once __DIR__ . '/../../core/View.php';
             </th>
             <th>
               <div class="Reports-table-header-content">
-                <span>Status</span>
-              </div>
-            </th>
-            <th>
-              <div class="Reports-table-header-content">
                 <span>Actions</span>
               </div>
             </th>
@@ -413,19 +408,8 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="Reports-form-group">
           <label>Include Violation Types</label>
           <div class="checkbox-group" id="generateViolationTypeCheckboxes">
-            <!-- Violation types will be loaded via JS -->
-            <label class="checkbox-label">
-              <input type="checkbox" name="violationTypes" value="uniform" checked>
-              <span>Improper Uniform</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="violationTypes" value="footwear" checked>
-              <span>Improper Footwear</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="violationTypes" value="no_id" checked>
-              <span>No ID</span>
-            </label>
+            <!-- Violation types will be loaded via JS from the database -->
+            <p class="loading-text">Loading violation types...</p>
           </div>
         </div>
 

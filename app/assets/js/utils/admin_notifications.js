@@ -92,9 +92,25 @@ function renderNotifications(violations) {
     notifList.innerHTML = '';
 
     violations.forEach(violation => {
-        const studentName = `${violation.first_name} ${violation.last_name}`;
-        const avatar = violation.avatar ? `../app/assets/img/students/${violation.avatar}` : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(studentName) + '&background=ffd700&color=333';
-        
+        // API returns camelCase fields (studentName, studentImage, dateReported, studentId)
+        // Fallback to snake_case in case the backend shape changes.
+        const studentName = (violation.studentName
+            || [violation.first_name, violation.middle_name, violation.last_name].filter(Boolean).join(' ')
+            || 'Unknown Student').trim();
+
+        const rawAvatar = violation.studentImage || violation.avatar || '';
+        let avatar;
+        if (!rawAvatar) {
+            avatar = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(studentName) + '&background=ffd700&color=333';
+        } else if (/^https?:\/\//i.test(rawAvatar) || rawAvatar.startsWith('/') || rawAvatar.startsWith('../')) {
+            avatar = rawAvatar;
+        } else {
+            avatar = `../app/assets/img/students/${rawAvatar}`;
+        }
+
+        const dateRaw = violation.dateReported || violation.violation_date || '';
+        const studentId = violation.studentId || violation.student_id || '';
+
         const item = document.createElement('div');
         item.className = 'notif-item';
         item.innerHTML = `
@@ -102,9 +118,9 @@ function renderNotifications(violations) {
             <div class="notif-info">
                 <span class="notif-name">${studentName}</span>
                 <span class="notif-desc">Has pending disciplinary action</span>
-                <span class="notif-time">${formatDate(violation.violation_date)}</span>
+                <span class="notif-time">${formatDate(dateRaw)}</span>
             </div>
-            <button class="notif-manage-btn" onclick="manageViolation('${violation.student_id}')">Manage</button>
+            <button class="notif-manage-btn" onclick="manageViolation('${studentId}')">Manage</button>
         `;
         notifList.appendChild(item);
     });

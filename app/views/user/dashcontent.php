@@ -102,8 +102,8 @@ require_once __DIR__ . '/../../core/View.php';
         </div>
       </div>
 
-      <!-- Recent Violations Table -->
-      <div class="sd-card sd-card--table">
+      <!-- Recent Violations -->
+      <div class="sd-card sd-card--violations">
         <div class="sd-card__head">
           <div class="sd-card__title-wrap">
             <span class="sd-card__icon-badge sd-card__icon-badge--gold"><i class='bx bx-list-ul'></i></span>
@@ -113,24 +113,8 @@ require_once __DIR__ . '/../../core/View.php';
             <button class="sd-icon-btn" title="Filter"><i class='bx bx-filter-alt'></i></button>
           </div>
         </div>
-        <div class="sd-table-wrap">
-          <table class="sd-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="recentViolationsTableBody">
-              <tr>
-                <td colspan="4">
-                  <div class="sd-loading"><div class="sd-spinner"></div><span>Loading&hellip;</span></div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="sd-violations-list" id="recentViolationsList">
+          <div class="sd-loading"><div class="sd-spinner"></div><span>Loading&hellip;</span></div>
         </div>
       </div>
 

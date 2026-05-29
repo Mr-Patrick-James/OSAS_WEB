@@ -36,7 +36,7 @@ if ($_SESSION['role'] !== 'admin') {
   <link rel="stylesheet" href="../app/assets/styles/dashboard.css">
   <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://js.puter.com/v2/"></script>
+
 </head>
 
 <body>

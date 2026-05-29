@@ -1706,10 +1706,67 @@ body.dark .tn-dropdown-role { color: #9ca3af !important; }
 #switch-mode-top:checked + .tn-pill-track .tn-pill-thumb { transform: translateX(20px) !important; }
 
 .nav-notifications .notification-btn { width: 34px !important; height: 34px !important; border-radius: 10px !important; font-size: 17px !important; }
-.nav-notifications .notification-badge { width: 15px !important; height: 15px !important; font-size: 8px !important; top: 2px !important; right: 2px !important; }
+.nav-notifications .notification-badge { min-width: 18px !important; height: 18px !important; width: auto !important; font-size: 9px !important; top: -4px !important; right: -4px !important; border-radius: 50% !important; padding: 0 4px !important; display: flex !important; align-items: center !important; justify-content: center !important; line-height: 1 !important; }
 
 .tn-user-pill        { padding: 4px 10px 4px 4px !important; gap: 6px !important; border-radius: 30px !important; }
 .tn-avatar-ring      { width: 26px !important; height: 26px !important; }
 .tn-avatar-img       { width: 22px !important; height: 22px !important; }
 .tn-user-name        { font-size: 0.7rem !important; max-width: 100px !important; }
 .tn-chevron          { font-size: 14px !important; }
+
+/* ─── Notification modal responsive ─── */
+@media (max-width: 480px) {
+  .nav-notifications .notif-modal {
+    position: fixed;
+    top: 60px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: 100vw;
+    border-radius: 14px;
+  }
+
+  .nav-notifications .notif-modal-body {
+    max-height: 50vh;
+  }
+
+  .nav-notifications .notif-item {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .nav-notifications .notif-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav-notifications .notif-name {
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+
+  .nav-notifications .notif-desc {
+    font-size: 0.6rem;
+  }
+
+  .nav-notifications .notif-manage-btn {
+    padding: 4px 8px;
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .nav-notifications .notif-modal {
+    left: 4px;
+    right: 4px;
+    top: 56px;
+    border-radius: 12px;
+  }
+
+  .nav-notifications .notif-name {
+    max-width: 110px;
+  }
+}

@@ -593,28 +593,33 @@ select.settings-input {
 }
 
 /* Dark Mode Overrides (if needed) */
-body.dark-mode {
-  --settings-bg: #1e293b;
-  --settings-sidebar-bg: #0f172a;
-  --settings-border: #334155;
+body.dark-mode,
+body.dark {
+  --settings-bg: #1a1a1a;
+  --settings-sidebar-bg: #0f0f0f;
+  --settings-border: #2A2A2A;
   --settings-text-main: #f1f5f9;
   --settings-text-muted: #94a3b8;
 }
 
-body.dark-mode .settings-input {
-  background: #0f172a;
+body.dark-mode .settings-input,
+body.dark .settings-input {
+  background: #0f0f0f;
   color: #f1f5f9;
 }
 
-body.dark-mode .settings-sidebar-item.active {
-  background: #1e293b;
+body.dark-mode .settings-sidebar-item.active,
+body.dark .settings-sidebar-item.active {
+  background: #1a1a1a;
 }
 
-body.dark-mode .settings-sidebar-item:hover {
+body.dark-mode .settings-sidebar-item:hover,
+body.dark .settings-sidebar-item:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-body.dark-mode .settings-action-btn:hover {
+body.dark-mode .settings-action-btn:hover,
+body.dark .settings-action-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #f1f5f9;
 }
@@ -727,17 +732,20 @@ body.dark-mode .settings-action-btn:hover {
 }
 
 /* Dark mode overrides for profile */
-body.dark-mode .profile-image-preview {
+body.dark-mode .profile-image-preview,
+body.dark .profile-image-preview {
   border-color: var(--settings-bg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-body.dark-mode .profile-upload-button {
+body.dark-mode .profile-upload-button,
+body.dark .profile-upload-button {
   border-color: var(--settings-bg);
 }
 
-body.dark-mode .settings-input {
-  background: #0f172a;
+body.dark-mode .settings-input,
+body.dark .settings-input {
+  background: #0f0f0f;
   border-color: var(--settings-border);
 }
 
@@ -1014,3 +1022,60 @@ body.dark-mode .settings-input {
   margin-bottom: 12px;
 }
 
+
+
+/* ── Additional body.dark overrides ── */
+body.dark .settings-input:focus {
+  background: #1a1a1a !important;
+  border-color: var(--settings-primary);
+}
+
+body.dark .settings-input:hover {
+  background: #111 !important;
+}
+
+body.dark .settings-admin-create-form {
+  background: #0f0f0f;
+}
+
+body.dark .settings-admin-create-form .settings-input {
+  background: #1a1a1a !important;
+  border-color: #2A2A2A;
+  color: #f1f5f9;
+}
+
+body.dark .settings-admin-create-form .settings-input:focus {
+  background: #1a1a1a !important;
+  border-color: var(--settings-primary);
+}
+
+body.dark .pagination-btn {
+  background: #0f0f0f;
+  border-color: #2A2A2A;
+  color: #94a3b8;
+}
+
+body.dark .pagination-btn:hover:not(:disabled) {
+  background: #1a1a1a;
+}
+
+body.dark .pagination-btn:disabled {
+  background: #0f0f0f;
+}
+
+body.dark .settings-table th {
+  background: #0f0f0f;
+}
+
+body.dark .settings-table td {
+  color: #e2e8f0;
+  border-color: #2A2A2A;
+}
+
+body.dark .settings-sidebar-item.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+body.dark select.settings-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}

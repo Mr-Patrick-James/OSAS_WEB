@@ -217,7 +217,7 @@ class ViolationController extends Controller
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }
-        if (($_SESSION['role'] ?? '') !== 'admin') {
+        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
             $this->error('Access denied', 'Admin privileges required', 403);
         }
 
@@ -351,11 +351,59 @@ class ViolationController extends Controller
 
             try {
                 require_once __DIR__ . '/../services/PushNotificationService.php';
+                
+                // Get violation type and level names for a presentable notification
+                $typeInfo = $this->model->query("SELECT name FROM violation_types WHERE id = ?", [$violationType]);
+                $levelInfo = $this->model->query("SELECT name FROM violation_levels WHERE id = ?", [$violationLevel]);
+                $typeName = $typeInfo[0]['name'] ?? 'Violation';
+                $levelName = $levelInfo[0]['name'] ?? '';
+                
+                // Build student-friendly notification based on level
+                $studentFirstName = $student[0]['first_name'] ?? 'Student';
+                $levelLower = strtolower($levelName);
+                
+                if (strpos($levelLower, 'permitted') !== false) {
+                    // First time — gentle reminder
+                    $pushTitle = '📋 Dress Code Reminder';
+                    $pushBody = "Hi {$studentFirstName}, you've been noted for \"{$typeName}\". This is just a reminder — please follow the proper dress code next time.";
+                } elseif (strpos($levelLower, 'warning 1') !== false || strpos($levelLower, '1st') !== false) {
+                    $pushTitle = '⚠️ Warning 1 — Dress Code';
+                    $pushBody = "Hi {$studentFirstName}, this is your 1st warning for \"{$typeName}\". Please comply with the dress code policy to avoid further action.";
+                } elseif (strpos($levelLower, 'warning 2') !== false || strpos($levelLower, '2nd') !== false) {
+                    $pushTitle = '⚠️ Warning 2 — Dress Code';
+                    $pushBody = "Hi {$studentFirstName}, this is your 2nd warning for \"{$typeName}\". One more and you'll face disciplinary action. Please follow the policy.";
+                } elseif (strpos($levelLower, 'warning 3') !== false || strpos($levelLower, '3rd') !== false) {
+                    $pushTitle = '� Warning 3 — Disciplinary Action Required';
+                    $pushBody = "Hi {$studentFirstName}, you've reached your 3rd warning for \"{$typeName}\". Disciplinary action is now in effect. Please report to the Office of Student Affairs.";
+                } elseif (strpos($levelLower, 'disciplinary') !== false) {
+                    $pushTitle = '🔴 Disciplinary Notice';
+                    $pushBody = "Hi {$studentFirstName}, a disciplinary action has been recorded for repeated \"{$typeName}\" violations. Please report to the Office of Student Affairs immediately.";
+                } else {
+                    // Fallback for any other level names
+                    $pushTitle = '📋 Violation Notice';
+                    $pushBody = "Hi {$studentFirstName}, a \"{$typeName}\" violation ({$levelName}) has been recorded. Please check your E-OSAS portal for details.";
+                }
+                
                 (new PushNotificationService())->notifyStudent(
                     $studentId,
-                    'New violation recorded',
-                    'Case ' . $caseId . ' — open E-OSAS to view details.',
+                    $pushTitle,
+                    $pushBody,
                     ['type' => 'violation', 'id' => (int) $id, 'page' => 'user-page/my_violations', 'tag' => 'violation-' . $id]
+                );
+                
+                // Notify head admin about the new violation (so they know who recorded it)
+                $currentUserId = $_SESSION['user_id'] ?? null;
+                $recordedBy = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Staff';
+                $studentFullName = trim(($student[0]['first_name'] ?? '') . ' ' . ($student[0]['last_name'] ?? ''));
+                
+                $adminTitle = '📝 New Violation Recorded';
+                $adminBody = "{$recordedBy} recorded a \"{$typeName}\" ({$levelName}) violation for {$studentFullName} ({$studentId}).";
+                
+                (new PushNotificationService())->notifyAdmins(
+                    $adminTitle,
+                    $adminBody,
+                    ['type' => 'admin_violation', 'id' => (int) $id, 'page' => 'violations', 'tag' => 'admin-violation-' . $id],
+                    $currentUserId // exclude the admin who recorded it (they already know)
                 );
             } catch (Throwable $e) {
                 error_log('Violation push: ' . $e->getMessage());
@@ -389,7 +437,7 @@ class ViolationController extends Controller
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }
-        if (($_SESSION['role'] ?? '') !== 'admin') {
+        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
             $this->error('Access denied', 'Admin privileges required', 403);
         }
 
@@ -442,7 +490,7 @@ class ViolationController extends Controller
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
         }
-        if (($_SESSION['role'] ?? '') !== 'admin') {
+        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
             $this->error('Access denied', 'Admin privileges required', 403);
         }
 
@@ -610,6 +658,18 @@ class ViolationController extends Controller
         try {
             $res = $this->model->createSlipRequest($violationId, $studentIdCode, $userId);
             if ($res) {
+                // Notify admin that a student requested a slip
+                try {
+                    require_once __DIR__ . '/../services/PushNotificationService.php';
+                    $studentName = $_SESSION['full_name'] ?? 'A student';
+                    (new PushNotificationService())->notifyAdmins(
+                        '📄 Entrance Slip Request',
+                        "{$studentName} ({$studentIdCode}) is requesting an entrance slip. Please review in the Violations module.",
+                        ['type' => 'slip_request', 'page' => 'violations', 'tag' => 'slip-request-' . $violationId]
+                    );
+                } catch (Throwable $e) {
+                    error_log('Slip request push: ' . $e->getMessage());
+                }
                 $this->success('Slip request sent to admin for approval');
             } else {
                 $this->error('Failed to create slip request');
@@ -657,8 +717,31 @@ class ViolationController extends Controller
 
         try {
             $res = $this->model->updateSlipRequestStatus($requestId, 'approved');
-            if ($res) $this->success('Slip request approved');
-            else $this->error('Failed to approve request');
+            if ($res) {
+                // Notify the student that their slip was approved
+                try {
+                    require_once __DIR__ . '/../services/PushNotificationService.php';
+                    $request = $this->model->query(
+                        "SELECT sr.student_id_code, s.first_name FROM slip_requests sr LEFT JOIN students s ON BINARY TRIM(sr.student_id_code) = BINARY TRIM(s.student_id) WHERE sr.id = ?",
+                        [$requestId]
+                    );
+                    if (!empty($request)) {
+                        $studentId = $request[0]['student_id_code'];
+                        $firstName = $request[0]['first_name'] ?? 'Student';
+                        (new PushNotificationService())->notifyStudent(
+                            $studentId,
+                            '✅ Entrance Slip Approved',
+                            "Hi {$firstName}, your entrance slip request has been approved! You can now download it from your violations page.",
+                            ['type' => 'slip_approved', 'page' => 'user-page/my_violations', 'tag' => 'slip-approved-' . $requestId]
+                        );
+                    }
+                } catch (Throwable $e) {
+                    error_log('Slip approve push: ' . $e->getMessage());
+                }
+                $this->success('Slip request approved');
+            } else {
+                $this->error('Failed to approve request');
+            }
         } catch (Exception $e) {
             $this->error('Server error: ' . $e->getMessage());
         }
@@ -674,8 +757,31 @@ class ViolationController extends Controller
 
         try {
             $res = $this->model->updateSlipRequestStatus($requestId, 'denied');
-            if ($res) $this->success('Slip request denied');
-            else $this->error('Failed to deny request');
+            if ($res) {
+                // Notify the student that their slip was denied
+                try {
+                    require_once __DIR__ . '/../services/PushNotificationService.php';
+                    $request = $this->model->query(
+                        "SELECT sr.student_id_code, s.first_name FROM slip_requests sr LEFT JOIN students s ON BINARY TRIM(sr.student_id_code) = BINARY TRIM(s.student_id) WHERE sr.id = ?",
+                        [$requestId]
+                    );
+                    if (!empty($request)) {
+                        $studentId = $request[0]['student_id_code'];
+                        $firstName = $request[0]['first_name'] ?? 'Student';
+                        (new PushNotificationService())->notifyStudent(
+                            $studentId,
+                            '❌ Entrance Slip Denied',
+                            "Hi {$firstName}, your entrance slip request was denied. Please contact the Office of Student Affairs for more information.",
+                            ['type' => 'slip_denied', 'page' => 'user-page/my_violations', 'tag' => 'slip-denied-' . $requestId]
+                        );
+                    }
+                } catch (Throwable $e) {
+                    error_log('Slip deny push: ' . $e->getMessage());
+                }
+                $this->success('Slip request denied');
+            } else {
+                $this->error('Failed to deny request');
+            }
         } catch (Exception $e) {
             $this->error('Server error: ' . $e->getMessage());
         }

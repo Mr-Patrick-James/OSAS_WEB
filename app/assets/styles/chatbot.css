@@ -28,10 +28,56 @@
     padding: 0;
     transition: transform 0.25s ease;
     overflow: visible;
+    animation: chatbot-idle-float 3s ease-in-out infinite;
 }
 
-#chatbot-button:hover  { transform: scale(1.1); }
-#chatbot-button.active { transform: scale(0.95); }
+#chatbot-button:hover  { transform: scale(1.1); animation: none; }
+#chatbot-button.active { transform: scale(0.95); animation: none; }
+
+/* Idle floating animation */
+@keyframes chatbot-idle-float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-6px) rotate(2deg);
+    }
+    50% {
+        transform: translateY(-3px) rotate(0deg);
+    }
+    75% {
+        transform: translateY(-8px) rotate(-2deg);
+    }
+}
+
+/* Subtle pulse glow behind the bot */
+#chatbot-button::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+    animation: chatbot-idle-pulse 2.5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+#chatbot-button:hover::before,
+#chatbot-button.active::before {
+    animation: none;
+    opacity: 0;
+}
+
+@keyframes chatbot-idle-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1.4);
+        opacity: 0;
+    }
+}
 
 .chatbot-btn-img {
     width: 44px !important;

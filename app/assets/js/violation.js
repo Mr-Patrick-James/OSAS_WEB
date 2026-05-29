@@ -25,6 +25,17 @@ function initViolationsModule() {
         console.log('🔗 API Base Path:', API_BASE);
         console.log('🌐 Full API URL will be:', window.location.origin + API_BASE + 'violations.php');
 
+        /** Map removed location values for edit / legacy records */
+        const LEGACY_LOCATION_MAP = { gate_1: 'campus', gate_2: 'campus', cafeteria: 'canteen' };
+        function mapViolationLocation(loc) {
+            if (!loc) return 'campus';
+            return LEGACY_LOCATION_MAP[loc] || loc;
+        }
+        function setDefaultViolationLocation() {
+            const el = document.getElementById('violationLocation');
+            if (el) el.value = 'campus';
+        }
+
         // Helper function to convert relative image paths to absolute URLs
         function getImageUrl(imagePath, fallbackName = 'Student') {
             if (!imagePath || imagePath.trim() === '') {
@@ -121,6 +132,7 @@ function initViolationsModule() {
         let violations      = _cache.violations;
         let filteredViolations = [];
         let currentView     = 'current';
+        let displayMode     = 'latest'; // 'latest' = one per student, 'all' = full history
         let viewMode        = localStorage.getItem('violationsViewMode') || 'list'; // 'table', 'grid', 'list'
         let students        = _cache.students;
         let violationTypes  = _cache.violationTypes;
@@ -2114,22 +2126,24 @@ function initViolationsModule() {
             // Get archive filters if in archive view
             const archiveDeptFilter = document.getElementById('ArchiveDeptFilter');
             const archiveMonthFilter = document.getElementById('ArchiveMonthFilter');
+            const archiveYearFilter = document.getElementById('ArchiveYearFilter');
             const archiveDateFromFilter = document.getElementById('ArchiveDateFrom');
             const archiveDateToFilter = document.getElementById('ArchiveDateTo');
             const archiveSearchInput = document.getElementById('searchViolationArchive');
 
             const currentDept = currentView === 'current' ? deptValue : (archiveDeptFilter ? archiveDeptFilter.value : 'all');
             const currentMonth = currentView === 'archive' && archiveMonthFilter ? archiveMonthFilter.value : 'all';
+            const currentYear = currentView === 'archive' && archiveYearFilter ? archiveYearFilter.value : 'all';
             const currentDateFrom = currentView === 'current' ? dateFromValue : (archiveDateFromFilter ? archiveDateFromFilter.value : '');
             const currentDateTo = currentView === 'current' ? dateToValue : (archiveDateToFilter ? archiveDateToFilter.value : '');
             const currentSearchTerm = currentView === 'current' ? searchTerm : (archiveSearchInput ? archiveSearchInput.value.toLowerCase() : searchTerm);
 
             console.log('🔍 Filter values:', { currentSearchTerm, currentDept, currentMonth, currentDateFrom, currentDateTo, currentView });
 
-            // LOGIC CHANGE: Show only latest violation per student by default (when not searching)
+            // LOGIC CHANGE: Show only latest violation per student or all based on displayMode
             let sourceViolations = violations;
             
-            if (!currentSearchTerm && currentView === 'current') {
+            if (displayMode === 'latest' && !currentSearchTerm && currentView === 'current') {
                 const uniqueStudentMap = new Map();
                 violations.forEach(v => {
                     // Violations are sorted by date DESC from backend, so first encounter is latest
@@ -2168,6 +2182,20 @@ function initViolationsModule() {
                     }
                 }
 
+                // Year filtering for archive
+                let matchesYear = true;
+                if (currentYear !== 'all') {
+                    const violationDateStr = v.dateReported || v.violationDate;
+                    if (violationDateStr) {
+                        const violationDate = new Date(violationDateStr);
+                        if (violationDate.getFullYear().toString() !== currentYear) {
+                            matchesYear = false;
+                        }
+                    } else {
+                        matchesYear = false;
+                    }
+                }
+
                 // Date filtering logic
                 let matchesDate = true;
                 if (currentDateFrom || currentDateTo) {
@@ -2192,7 +2220,7 @@ function initViolationsModule() {
                     }
                 }
 
-                return matchesSearch && matchesDept && matchesStatus && matchesDate && matchesMonth;
+                return matchesSearch && matchesDept && matchesStatus && matchesDate && matchesMonth && matchesYear;
             });
 
             console.log('📋 Filtered violations:', filteredViolations.length, 'items');
@@ -2437,7 +2465,7 @@ function initViolationsModule() {
 
         function updateStats() {
             const total = violations.length;
-            const resolved = violations.filter(v => v.status === 'resolved').length;
+            const resolved = violations.filter(v => v.status === 'permitted').length;
             
             // Apply Warning 3 -> Disciplinary logic for counts
             const disciplinary = violations.filter(v => {
@@ -2669,7 +2697,7 @@ function initViolationsModule() {
                     // Set other fields
                     document.getElementById('violationDate').value = violation.dateReported;
                     document.getElementById('violationTime').value = violation.violationTime || '08:15';
-                    document.getElementById('violationLocation').value = violation.location;
+                    document.getElementById('violationLocation').value = mapViolationLocation(violation.location);
                     
                     const reportedByInput = document.getElementById('reportedBy');
                     if (reportedByInput) {
@@ -2695,6 +2723,7 @@ function initViolationsModule() {
                 }
                 if (form) {
                     form.reset();
+                    setDefaultViolationLocation();
                     populateAdminName();
                     
                     // Clear any previous levels and type selection
@@ -2733,7 +2762,7 @@ function initViolationsModule() {
                         const timeInput = document.getElementById('violationTime');
                         if (timeInput && !timeInput.value) timeInput.value = timeStr;
 
-                        // Also populate admin name after reset
+                        setDefaultViolationLocation();
                         populateAdminName();
                     }, 50);
                 }
@@ -2747,6 +2776,10 @@ function initViolationsModule() {
 
                 // Reset notes counter
                 updateNotesCounter(0);
+            }
+
+            if (!editId) {
+                setDefaultViolationLocation();
             }
 
             // Reset form validation state and progress
@@ -3010,12 +3043,13 @@ function initViolationsModule() {
             }
             
             detailsModal.dataset.viewingId = violationId;
+            detailsModal.dataset.viewingStudentId = violation.studentId || '';
             detailsModal.classList.add('active');
             document.body.style.overflow = 'hidden';
 
             // Update action buttons visibility based on status
             const detailResolveBtn = document.getElementById('detailResolveBtn');
-            const detailEscalateBtn = document.getElementById('detailEscalateBtn');
+            const detailPrintSlipBtn = document.getElementById('detailPrintSlipBtn');
             const detailSlipStatus = document.getElementById('detailSlipStatus');
             const detailApproveSlipBtn = document.getElementById('detailApproveSlipBtn');
             const detailDenySlipBtn = document.getElementById('detailDenySlipBtn');
@@ -3036,12 +3070,9 @@ function initViolationsModule() {
                 }
             }
 
-            if (detailEscalateBtn) {
-                if (violation.status === 'disciplinary' || violation.status === 'resolved') {
-                    detailEscalateBtn.style.display = 'none';
-                } else {
-                    detailEscalateBtn.style.display = 'inline-flex';
-                }
+            // Print Slip is always visible
+            if (detailPrintSlipBtn) {
+                detailPrintSlipBtn.style.display = 'inline-flex';
             }
 
             if (detailSlipStatus) {
@@ -3085,6 +3116,7 @@ function initViolationsModule() {
             // Reset form if exists
             const form = document.getElementById('ViolationRecordForm');
             if (form) form.reset();
+            setDefaultViolationLocation();
             
             // Hide student card
             const studentCard = document.getElementById('selectedStudentCard');
@@ -3110,6 +3142,7 @@ function initViolationsModule() {
             detailsModal.classList.remove('active');
             document.body.style.overflow = 'auto';
             delete detailsModal.dataset.viewingId;
+            delete detailsModal.dataset.viewingStudentId;
         }
 
         // ========== EVENT HANDLERS ==========
@@ -3381,8 +3414,9 @@ function initViolationsModule() {
 
         // Detail modal action buttons
         const detailEditBtn = document.getElementById('detailEditBtn');
+        const detailRecordNewBtn = document.getElementById('detailRecordNewBtn');
         const detailResolveBtn = document.getElementById('detailResolveBtn');
-        const detailEscalateBtn = document.getElementById('detailEscalateBtn');
+        const detailPrintSlipBtn = document.getElementById('detailPrintSlipBtn');
         const detailPrintBtn = document.getElementById('detailPrintBtn');
         const detailEntranceBtn = document.getElementById('detailEntranceBtn');
 
@@ -3392,6 +3426,28 @@ function initViolationsModule() {
                 if (violationId) {
                     closeDetailsModal();
                     openRecordModal(parseInt(violationId));
+                }
+            });
+        }
+
+        if (detailRecordNewBtn) {
+            detailRecordNewBtn.addEventListener('click', function() {
+                const studentId = detailsModal.dataset.viewingStudentId || '';
+                closeDetailsModal();
+                openRecordModal(); // open as new (no editId)
+                // Pre-fill student search and trigger lookup
+                if (studentId) {
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('studentSearch');
+                        if (searchInput) {
+                            searchInput.value = studentId;
+                            // Trigger the search button click to populate student card
+                            const searchBtn = document.getElementById('searchStudentBtn');
+                            if (searchBtn) {
+                                searchBtn.click();
+                            }
+                        }
+                    }, 150);
                 }
             });
         }
@@ -3440,8 +3496,8 @@ function initViolationsModule() {
             });
         }
 
-        if (detailEscalateBtn) {
-            detailEscalateBtn.addEventListener('click', async function() {
+        if (detailPrintSlipBtn) {
+            detailPrintSlipBtn.addEventListener('click', function() {
                 const violationId = detailsModal.dataset.viewingId;
                 if (!violationId) {
                     showNotification('No violation selected', 'error');
@@ -3454,16 +3510,7 @@ function initViolationsModule() {
                     return;
                 }
 
-                if (confirm(`Escalate violation ${violation.caseId} to disciplinary action?`)) {
-                    try {
-                        await updateViolation(violationId, { status: 'disciplinary' });
-                        showNotification('Violation escalated to disciplinary!', 'success');
-                        closeDetailsModal();
-                    } catch (error) {
-                        console.error('Error escalating violation:', error);
-                        showNotification('Failed to escalate violation. Please try again.', 'error');
-                    }
-                }
+                printEntranceSlip(violation);
             });
         }
 
@@ -4454,12 +4501,14 @@ function initViolationsModule() {
         // Archive filters
         const archiveDeptFilter = document.getElementById('ArchiveDeptFilter');
         const archiveMonthFilter = document.getElementById('ArchiveMonthFilter');
+        const archiveYearFilter = document.getElementById('ArchiveYearFilter');
         const archiveDateFromFilter = document.getElementById('ArchiveDateFrom');
         const archiveDateToFilter = document.getElementById('ArchiveDateTo');
         const archiveSearchInput = document.getElementById('searchViolationArchive');
 
         if (archiveDeptFilter) archiveDeptFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveMonthFilter) archiveMonthFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
+        if (archiveYearFilter) archiveYearFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveDateFromFilter) archiveDateFromFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveDateToFilter) archiveDateToFilter.addEventListener('change', () => { currentPage = 1; renderViolations(); });
         if (archiveSearchInput) archiveSearchInput.addEventListener('input', () => { currentPage = 1; renderViolations(); });
@@ -4472,12 +4521,28 @@ function initViolationsModule() {
                 localStorage.setItem('violationsViewMode', viewMode);
                 viewToggleBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                renderViolations();
+                if (currentView === 'requests') {
+                    loadSlipRequests();
+                } else {
+                    renderViolations();
+                }
             });
         });
         // Set initial active state from saved preference
         viewToggleBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.view === viewMode);
+        });
+
+        // 12c. DISPLAY MODE TOGGLE (Latest per student vs All history)
+        const displayToggleBtns = document.querySelectorAll('.Violations-display-btn');
+        displayToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                displayMode = btn.dataset.display;
+                displayToggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPage = 1;
+                renderViolations();
+            });
         });
 
         // Delegate clicks on grid and list views to the existing action handler
@@ -4563,43 +4628,112 @@ function initViolationsModule() {
 
         function renderSlipRequestsTable(requests) {
             const tbody = document.getElementById('slipRequestsTableBody');
-            if (!tbody) return;
+            const gridView = document.getElementById('slipRequestsGridView');
+            const gridBody = document.getElementById('slipRequestsGridBody');
+            const listView = document.getElementById('slipRequestsListView');
+            const tableView = document.getElementById('slipRequestsTableView');
+            
+            if (!tbody || !gridBody || !listView || !tableView) return;
+
+            // Show/hide based on viewMode
+            tableView.style.display = viewMode === 'table' ? '' : 'none';
+            gridView.style.display = viewMode === 'grid' ? '' : 'none';
+            listView.style.display = viewMode === 'list' ? '' : 'none';
 
             if (!requests || requests.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#999; font-size:12px;">No slip requests found.</td></tr>';
+                const emptyMsg = '<div style="text-align:center; padding:30px; color:#999; font-size:12px;">No slip requests found.</div>';
+                tbody.innerHTML = `<tr><td colspan="6">${emptyMsg}</td></tr>`;
+                gridBody.innerHTML = emptyMsg;
+                listView.innerHTML = emptyMsg;
                 return;
             }
 
+            // Table view
             tbody.innerHTML = requests.map(req => {
                 const status = req.status || 'pending';
                 const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                const actionsHtml = status === 'pending' ? `
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve"><i class='bx bx-check'></i></button>
+                        <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny"><i class='bx bx-x'></i></button>
+                    </div>` : `<span style="color:#aaa; font-size:10px;">—</span>`;
 
-                let actionsHtml = '';
-                if (status === 'pending') {
-                    actionsHtml = `
-                        <div style="display:flex; gap:5px; align-items:center;">
-                            <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve">
-                                <i class='bx bx-check'></i>
-                            </button>
-                            <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny">
-                                <i class='bx bx-x'></i>
-                            </button>
+                return `<tr>
+                    <td>${req.first_name || ''} ${req.last_name || ''}</td>
+                    <td>${req.student_id || ''}</td>
+                    <td>${new Date(req.request_date).toLocaleString()}</td>
+                    <td>${req.requested_by_name || 'System'}</td>
+                    <td><span class="slip-status-badge ${status}">${statusLabel}</span></td>
+                    <td>${actionsHtml}</td>
+                </tr>`;
+            }).join('');
+
+            // Grid view
+            gridBody.innerHTML = requests.map(req => {
+                const status = req.status || 'pending';
+                const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                const statusClass = status === 'approved' ? 'resolved' : status === 'denied' ? 'disciplinary' : 'warning';
+                const actionsHtml = status === 'pending' ? `
+                    <div class="violation-card-actions">
+                        <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve"><i class='bx bx-check'></i></button>
+                        <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny"><i class='bx bx-x'></i></button>
+                    </div>` : '';
+
+                return `<div class="violation-card ${statusClass}">
+                    <div class="violation-card-header">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-card-avatar">
+                        <div class="violation-card-name-block">
+                            <span class="violation-card-name">${req.first_name || ''} ${req.last_name || ''}</span>
+                            <span class="violation-card-id">${req.student_id || ''}</span>
                         </div>
-                    `;
-                } else {
-                    actionsHtml = `<span style="color:#aaa; font-size:10px;">—</span>`;
-                }
+                    </div>
+                    <div class="violation-card-body">
+                        <div class="violation-card-meta">
+                            <div class="violation-card-meta-item">
+                                <span class="violation-card-meta-label">Type</span>
+                                <span class="violation-type-badge" style="font-size:9px;padding:2px 7px;">Slip Request</span>
+                            </div>
+                            <div class="violation-card-meta-item">
+                                <span class="violation-card-meta-label">Date</span>
+                                <span style="font-size:10px;color:var(--dark);">${new Date(req.request_date).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="violation-card-footer">
+                        <span class="Violations-status-badge ${statusClass}">${statusLabel}</span>
+                        ${actionsHtml}
+                    </div>
+                </div>`;
+            }).join('');
 
-                return `
-                    <tr>
-                        <td>${req.first_name} ${req.last_name}</td>
-                        <td>${req.student_id}</td>
-                        <td>${new Date(req.request_date).toLocaleString()}</td>
-                        <td>${req.requested_by_name || 'System'}</td>
-                        <td><span class="slip-status-badge ${status}">${statusLabel}</span></td>
-                        <td>${actionsHtml}</td>
-                    </tr>
-                `;
+            // List view
+            listView.innerHTML = requests.map(req => {
+                const status = req.status || 'pending';
+                const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                const statusClass = status === 'approved' ? 'resolved' : status === 'denied' ? 'disciplinary' : 'warning';
+                const actionsHtml = status === 'pending' ? `
+                    <button class="slip-action-btn approve" onclick="approveSlipRequest(${req.id})" title="Approve"><i class='bx bx-check'></i></button>
+                    <button class="slip-action-btn deny" onclick="denySlipRequest(${req.id})" title="Deny"><i class='bx bx-x'></i></button>` : '';
+
+                return `<div class="violation-list-item ${statusClass}" data-id="${req.id}">
+                    <div class="violation-list-top">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-list-avatar">
+                        <div class="violation-list-name-block">
+                            <span class="violation-list-name">${req.first_name || ''} ${req.last_name || ''}</span>
+                            <span class="violation-list-id">${req.student_id || ''}</span>
+                        </div>
+                        <div class="violation-list-actions">
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                    <div class="violation-list-badges">
+                        <span class="violation-type-badge" style="font-size:9px;padding:2px 7px;">Slip Request</span>
+                        <span class="slip-status-badge ${status}" style="font-size:9px;padding:2px 7px;">${statusLabel}</span>
+                        <span style="font-size:9px;color:var(--dark-grey);margin-left:2px;">
+                            <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${new Date(req.request_date).toLocaleDateString()}
+                        </span>
+                    </div>
+                </div>`;
             }).join('');
         }
 
@@ -4963,8 +5097,8 @@ function initViolationsModule() {
                     dateReported: '2024-02-15',
                     violationTime: '08:15:00',
                     dateTime: 'Feb 15, 2024 • 08:15 AM',
-                    location: 'gate_1',
-                    locationLabel: 'Main Gate 1',
+                    location: 'campus',
+                    locationLabel: 'Campus',
                     reportedBy: 'Officer Maria Santos',
                     status: 'warning',
                     statusLabel: 'Warning',

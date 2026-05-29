@@ -258,13 +258,16 @@ class ViolationModel extends Model {
                 $statusLabel = $statusLabels[$row['status']] ?? ucfirst($row['status']);
 
                 $locationLabels = [
-                    'gate_1' => 'Main Gate 1',
-                    'gate_2' => 'Gate 2',
+                    'campus' => 'Campus',
+                    'canteen' => 'Canteen',
                     'classroom' => 'Classroom',
                     'library' => 'Library',
-                    'cafeteria' => 'Cafeteria',
                     'gym' => 'Gymnasium',
-                    'others' => 'Others'
+                    'others' => 'Others',
+                    // Legacy values (existing records before location update)
+                    'gate_1' => 'Main Gate 1',
+                    'gate_2' => 'Gate 2',
+                    'cafeteria' => 'Cafeteria',
                 ];
                 $locationLabel = $locationLabels[$row['location']] ?? ucfirst(str_replace('_', ' ', $row['location']));
 

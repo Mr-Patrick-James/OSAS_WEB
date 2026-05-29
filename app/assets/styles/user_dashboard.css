@@ -974,41 +974,100 @@ body.dark {
 }
 
 /* ============================================================
-   RECENT VIOLATIONS TABLE
+   RECENT VIOLATIONS LIST (Card Style)
    ============================================================ */
-.sd-table-wrap {
-  overflow-x: auto;
-  padding: 0 0 4px;
+.sd-violations-list {
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
 }
-.sd-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.sd-table thead th {
-  padding: 10px 20px;
-  font-size: .7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .6px;
+.sd-violations-empty {
+  text-align: center;
+  padding: 40px 20px;
   color: var(--text-3);
+}
+.sd-violations-empty i {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 8px;
+  opacity: .4;
+}
+.sd-violations-empty p {
+  font-size: .85rem;
+}
+
+.sd-violation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  text-align: left;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  transition: all .2s var(--ease);
+  cursor: pointer;
+}
+.sd-violation-item:hover {
+  border-color: var(--gold);
+  background: var(--gold-light);
+  transform: translateX(3px);
+}
+
+.sd-violation-item__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.sd-violation-item__icon--uniform  { background: rgba(239, 68, 68, .12); color: #ef4444; }
+.sd-violation-item__icon--footwear { background: rgba(245, 158, 11, .12); color: #f59e0b; }
+.sd-violation-item__icon--id       { background: rgba(59, 130, 246, .12); color: #3b82f6; }
+.sd-violation-item__icon--default  { background: var(--gold-light); color: var(--gold-dark); }
+
+.sd-violation-item__details {
+  flex: 1;
+  min-width: 0;
+}
+.sd-violation-item__details h4 {
+  font-size: .83rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.sd-table tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background .15s;
+.sd-violation-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.sd-table tbody tr:last-child { border-bottom: none; }
-.sd-table tbody tr:hover { background: var(--surface-2); }
-.sd-table tbody td {
-  padding: 13px 20px;
-  font-size: .82rem;
-  color: var(--text-2);
-  vertical-align: middle;
+.sd-violation-item__date {
+  font-size: .7rem;
+  color: var(--text-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
-.sd-table tbody td:first-child { color: var(--text-3); font-size: .78rem; }
+.sd-violation-item__date i {
+  font-size: .75rem;
+}
+.sd-violation-item__action {
+  flex-shrink: 0;
+}
+.sd-violation-item__action .sd-view-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
 
 /* Status badges */
 .sd-badge {
@@ -1311,6 +1370,10 @@ body.dark {
   border-radius: var(--r-lg) !important;
   border: 1px solid var(--border) !important;
 }
+body.dark .violation-student-info-card {
+  background: #222 !important;
+  border-color: #2A2A2A !important;
+}
 .violation-student-image img {
   width: 72px; height: 72px;
   border-radius: 50%;
@@ -1328,6 +1391,10 @@ body.dark {
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--surface-2);
+}
+body.dark .violation-details-grid {
+  background: #222 !important;
+  border-color: #2A2A2A !important;
 }
 .violation-details-grid.dragging { cursor: grabbing; }
 
@@ -1422,6 +1489,10 @@ body.dark {
   border: 1px solid var(--border);
   padding: 14px 16px;
 }
+body.dark .violation-notes-section {
+  background: #222 !important;
+  border-color: #2A2A2A !important;
+}
 .violation-notes-section h4 { font-size: .82rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .notes-content p { font-size: .82rem; color: var(--text-2); line-height: 1.6; }
 
@@ -1460,6 +1531,7 @@ body.dark {
 /* Badge variants used in modal */
 .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: var(--r-full); font-size: .72rem; font-weight: 700; }
 .student-dept.badge { background: var(--blue-light); color: var(--blue); }
+body.dark .student-dept.badge { background: rgba(59, 130, 246, 0.15) !important; color: #93c5fd !important; }
 
 /* ============================================================
    DARK MODE OVERRIDES
@@ -1470,26 +1542,24 @@ body.dark .sd-hero {
 }
 body.dark .sd-stat { background: var(--surface); }
 body.dark .sd-card { background: var(--surface); }
-body.dark .sd-table thead th { background: var(--surface-2); }
+body.dark .sd-violation-item { background: #1a1a1a; border-color: #2A2A2A; }
+body.dark .sd-violation-item:hover { background: rgba(245,197,24,.08); border-color: var(--gold); }
 body.dark .violation-type,
 body.dark .announcement-item,
 body.dark .sd-tip,
 body.dark .detail-item,
 body.dark .violation-notes-section,
 body.dark .case-header,
-body.dark .violation-student-info-card { background: var(--surface-2); }
-body.dark .Violations-modal-container { background: #ffffff !important; }
+body.dark .violation-student-info-card { background: #1a1a1a; }
+body.dark .Violations-modal-container { background: #1a1a1a !important; color: #e2e8f0 !important; }
 body.dark .Violations-modal-container .violation-details-content,
-body.dark .Violations-modal-container .case-header,
-body.dark .Violations-modal-container .violation-student-info-card,
-body.dark .Violations-modal-container .detail-item,
-body.dark .Violations-modal-container .violation-notes-section,
-body.dark .Violations-modal-container .violation-history,
-body.dark .Violations-modal-container .Violations-form-actions { background: #f5f5f5 !important; }
-body.dark .Violations-modal-container .case-header,
-body.dark .Violations-modal-container .violation-student-info-card,
-body.dark .Violations-modal-container .detail-item,
-body.dark .Violations-modal-container .violation-notes-section { background: #f0f0ed !important; border-color: rgba(0,0,0,0.1) !important; }
+body.dark .Violations-modal-container .Violations-form-actions { background: #0f0f0f !important; }
+body.dark .Violations-modal-container .case-header { background: #111 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .violation-student-info-card { background: #111 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .detail-item { background: #111 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .violation-notes-section { background: #111 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .violation-history { background: transparent !important; }
+body.dark .Violations-modal-container * { color: #e2e8f0; }
 body.dark .Violations-modal-container h2,
 body.dark .Violations-modal-container h3,
 body.dark .Violations-modal-container h4,
@@ -1497,11 +1567,20 @@ body.dark .Violations-modal-container .case-id,
 body.dark .Violations-modal-container .detail-value,
 body.dark .Violations-modal-container .detail-label,
 body.dark .Violations-modal-container .notes-content p,
+body.dark .Violations-modal-container p,
+body.dark .Violations-modal-container span,
+body.dark .Violations-modal-container .student-name,
 body.dark .Violations-modal-container .student-contact,
-body.dark .Violations-modal-container .student-meta span { color: #1a1a1a !important; }
-body.dark .Violations-modal-container .Violations-modal-header { background: linear-gradient(135deg, #fff9d6 0%, transparent 100%) !important; }
-body.dark .Violations-modal-container .Violations-close-btn { background: #f0f0ed !important; color: #888 !important; border-color: rgba(0,0,0,0.1) !important; }
-body.dark .Violations-modal-container .Violations-btn-outline { background: #f0f0ed !important; color: #4a4a4a !important; border-color: rgba(0,0,0,0.1) !important; }
+body.dark .Violations-modal-container .student-meta span { color: #f1f5f9 !important; }
+body.dark .Violations-modal-container .Violations-modal-header { background: linear-gradient(135deg, rgba(255,198,0,0.08) 0%, transparent 100%) !important; }
+body.dark .Violations-modal-container .Violations-close-btn { background: #222 !important; color: #94a3b8 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .Violations-btn-outline { background: #222 !important; color: #e2e8f0 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .violation-details-grid { background: #111 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .vd-table thead th { background: #0f0f0f !important; color: #94a3b8 !important; }
+body.dark .Violations-modal-container .vd-table tbody tr { background: #1a1a1a !important; }
+body.dark .Violations-modal-container .vd-table tbody td { color: #e2e8f0 !important; border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .violation-history .timeline-item { border-color: #2A2A2A !important; }
+body.dark .Violations-modal-container .violation-history .timeline-item .timeline-content { background: #111 !important; border-color: #2A2A2A !important; color: #e2e8f0 !important; }
 body.dark .Violations-modal-header { background: linear-gradient(135deg, rgba(245,197,24,.08) 0%, transparent 100%); }
 body.dark .download-modal-container { background: var(--surface); }
 body.dark .modern-alert-content { background: var(--surface); }
@@ -1592,45 +1671,10 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   .violation-details h4 { font-size: .8rem; }
   .violation-bar-wrap { width: 50px; }
 
-  /* Table â€” card layout on mobile */
-  .sd-table thead { display: none; }
-  .sd-table tbody tr {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    position: relative;
-  }
-  .sd-table tbody td {
-    padding: 0;
-    font-size: .8rem;
-    border: none;
-  }
-  /* Date â€” small muted label */
-  .sd-table tbody td:nth-child(1) {
-    font-size: .7rem;
-    color: var(--text-3);
-    order: 3;
-    margin-top: 4px;
-  }
-  /* Type â€” main label, bold */
-  .sd-table tbody td:nth-child(2) {
-    font-size: .88rem;
-    font-weight: 600;
-    color: var(--text);
-    order: 1;
-  }
-  /* Status badge */
-  .sd-table tbody td:nth-child(3) {
-    order: 2;
-  }
-  /* View button â€” absolute top-right */
-  .sd-table tbody td:nth-child(4) {
-    position: absolute;
-    top: 12px; right: 14px;
-    order: 4;
-  }
+  /* Table â€” Violations list - card layout on mobile */
+  .sd-violation-item { padding: 10px 12px; }
+  .sd-violation-item__icon { width: 30px; height: 30px; font-size: 15px; }
+  .sd-violation-item__details h4 { font-size: .78rem; }
 
   /* Announcements */
   .sd-announce-body { max-height: 260px; padding: 10px 14px; }
@@ -1837,8 +1881,8 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 .violation-details h4   { font-size: 0.78rem !important; }
 .violation-details p    { font-size: 0.68rem !important; }
 
-.sd-table thead th      { font-size: 0.62rem !important; padding: 8px 16px !important; }
-.sd-table tbody td      { font-size: 0.75rem !important; padding: 10px 16px !important; }
+.sd-violation-item__details h4 { font-size: 0.75rem !important; }
+.sd-violation-item__date { font-size: 0.62rem !important; }
 
 .announcement-details h4 { font-size: 0.75rem !important; }
 .announcement-details p  { font-size: 0.68rem !important; }
@@ -1855,8 +1899,8 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 .sd-hero__dl-btn { font-size: 0.68rem !important; padding: 7px 12px !important; }
 .sd-ring__pct { font-size: 0.82rem !important; }
 .violation-count { font-size: 1rem !important; }
-.sd-table thead th { font-size: 0.58rem !important; }
-.sd-table tbody td { font-size: 0.7rem !important; }
+.sd-violation-item__details h4 { font-size: 0.7rem !important; }
+.sd-violation-item__date { font-size: 0.58rem !important; }
 
 /* ============================================================
    MY VIOLATIONS PAGE  (uv-* namespace)
@@ -2211,4 +2255,34 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   .uv-table tbody td:nth-child(3) { font-size: .7rem; color: var(--text-3); order: 4; margin-top: 4px; }
   .uv-table tbody td:nth-child(4) { order: 3; }
   .uv-table tbody td:nth-child(5) { position: absolute; top: 12px; right: 14px; order: 5; }
+}
+
+
+/* ── NUCLEAR DARK MODE FIX for violation details modal ── */
+body.dark .Violations-modal-container .violation-student-info-card,
+body.dark .Violations-modal-container .violation-student-info-card.detailed {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+body.dark .Violations-modal-container .violation-details-grid {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+body.dark .Violations-modal-container .violation-notes-section {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+body.dark .Violations-modal-container .case-header {
+  background: #222222 !important;
+  border-color: #2A2A2A !important;
+}
+body.dark .Violations-modal-container .vd-table thead th {
+  background: #1a1a1a !important;
+  color: #94a3b8 !important;
+}
+body.dark .Violations-modal-container .vd-table tbody tr {
+  background: #1a1a1a !important;
+}
+body.dark .Violations-modal-container .vd-table tbody td {
+  color: #e2e8f0 !important;
 }

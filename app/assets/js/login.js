@@ -318,7 +318,9 @@ function handleLoginFormSubmit(e) {
                 }
 
                 setTimeout(() => {
-                    window.location.href = payload.role === 'admin'
+                    // Admin and staff roles go to admin dashboard, students go to user dashboard
+                    const isStaffRole = ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'].includes(payload.role);
+                    window.location.href = isStaffRole
                         ? './includes/dashboard.php'
                         : './includes/user_dashboard.php';
                 }, 1200);
@@ -361,7 +363,8 @@ function handleLoginFormSubmit(e) {
                                     const d = ['app','api','includes','assets','public'];
                                     return (p.length === 0 || d.includes(p[0])) ? '' : '/' + p[0];
                                 })();
-                                window.location.href = cached.role === 'admin'
+                                const isCachedAdmin = ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'].includes(cached.role);
+                                window.location.href = isCachedAdmin
                                     ? root + '/includes/dashboard.php'
                                     : root + '/includes/user_dashboard.php';
                             }, 1200);

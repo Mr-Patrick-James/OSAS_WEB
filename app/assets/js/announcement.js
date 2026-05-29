@@ -341,7 +341,11 @@
         document.body.style.overflow = 'hidden';
     }
 
+    let isSavingAnnouncement = false;
+
     async function saveAnnouncement() {
+        if (isSavingAnnouncement) return; // guard against double-clicks / Enter spam
+
         const id = document.getElementById('announcementId').value;
         const title = document.getElementById('announcementTitle').value.trim();
         const message = document.getElementById('announcementMessage').value.trim();
@@ -351,6 +355,28 @@
             notify('Title and message are required', 'error');
             return;
         }
+
+        const form = document.getElementById('announcementForm');
+        const submitBtn = form ? form.querySelector('.btn-submit') : null;
+        const btnText = submitBtn ? submitBtn.querySelector('.btn-text') : null;
+        const cancelBtn = form ? form.querySelector('.btn-cancel') : null;
+        const originalBtnText = btnText ? btnText.textContent : '';
+
+        const setLoading = (loading) => {
+            isSavingAnnouncement = loading;
+            if (submitBtn) {
+                submitBtn.disabled = loading;
+                submitBtn.classList.toggle('is-loading', loading);
+            }
+            if (cancelBtn) cancelBtn.disabled = loading;
+            if (btnText) {
+                btnText.innerHTML = loading
+                    ? `<i class='bx bx-loader-alt bx-spin'></i> ${id ? 'Updating...' : 'Saving...'}`
+                    : originalBtnText;
+            }
+        };
+
+        setLoading(true);
 
         try {
             const url = id ? `${ANNOUNCEMENT_API}?action=update` : `${ANNOUNCEMENT_API}?action=create`;
@@ -372,6 +398,8 @@
             }
         } catch (error) {
             notify('Error: ' + error.message, 'error');
+        } finally {
+            setLoading(false);
         }
     }
 

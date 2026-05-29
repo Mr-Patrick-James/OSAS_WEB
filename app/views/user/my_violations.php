@@ -85,8 +85,8 @@ require_once __DIR__ . '/../../core/View.php';
         <select id="statusFilter" class="uv-select" onchange="filterViolations()">
           <option value="all">All Status</option>
           <option value="resolved">Resolved / Permitted</option>
-          <option value="pending">Pending</option>
           <option value="warning">Warning</option>
+          <option value="disciplinary">Disciplinary</option>
         </select>
         <!-- View Toggle -->
         <div class="Violations-view-toggle">

@@ -88,32 +88,13 @@ function updateActiveNavItem(page) {
 // Privilege Check Helper
 function isMainAdmin() {
     const sessionStr = localStorage.getItem('userSession');
-    if (!sessionStr) {
-        console.log('❌ No userSession found in localStorage');
-        return false;
-    }
+    if (!sessionStr) return false;
     try {
         const session = JSON.parse(sessionStr);
-        // Debug: Log the session to help identify the user
-        console.log('🔍 Checking privileges for session user:', session);
-        
-        // Check both session.username (from new login.js) and session.name (as fallback)
-        const mainAdmins = ['admin_demo', 'adminOsas@colegio.edu', 'adminOsas'];
-        
-        // If session.username is available, check it
-        if (session.username && mainAdmins.includes(session.username)) {
-            return true;
-        }
-        
-        // If session.name is available and matches, check it (as a fallback)
-        if (session.name && mainAdmins.includes(session.name)) {
-            return true;
-        }
-        
-        console.log('⚠️ User is not recognized as a Main Admin');
-        return false;
+        // Only 'admin' role gets full settings access
+        // OSAS Staff gets dashboard access but limited settings
+        return session.role === 'admin';
     } catch (e) {
-        console.error('❌ Error parsing session in isMainAdmin:', e);
         return false;
     }
 }
@@ -260,10 +241,12 @@ function loadContent(page) {
     }
 
     // Show loading state
+    const pageName = page.replace('admin_page/', '').replace(/_/g, ' ');
+    const displayName = pageName.charAt(0).toUpperCase() + pageName.slice(1);
     mainContent.innerHTML = `
     <div class="loading-state">
       <div class="spinner"></div>
-      <p>Loading ${page.replace('admin_page/', '').replace(/_/g, ' ')}...</p>
+      <p>Loading ${displayName}...</p>
     </div>
   `;
 
@@ -277,17 +260,24 @@ function loadContent(page) {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 50px;
+        padding: 80px 20px;
         text-align: center;
+        font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      .loading-state p {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #666;
+        letter-spacing: 0.2px;
+        margin-top: 16px;
       }
       .spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #ffb84fff;
+        border: 3px solid #f0f0f0;
+        border-top: 3px solid #FFD700;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-        margin-bottom: 20px;
+        width: 40px;
+        height: 40px;
+        animation: spin 0.8s linear infinite;
       }
       @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -742,8 +732,8 @@ function createSettingsModal() {
                                     <option value="admin">Admin</option>
                                     <option value="OSAS Staff">OSAS Staff</option>
                                     <option value="CSC Officer">CSC Officer</option>
+                                    <option value="Officer">Officer</option>
                                     <option value="Faculty Member">Faculty Member</option>
-                                    <option value="Student">Student</option>
                                 </select>
                             </div>
                             <div class="settings-form-group">

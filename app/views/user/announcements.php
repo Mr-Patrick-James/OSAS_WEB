@@ -60,8 +60,13 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="announcements-table-card">
         <div class="table-header">
             <h3>Recent Announcements</h3>
+            <div class="announcements-view-toggle">
+                <button class="ann-view-btn" data-view="table" title="Table View"><i class='bx bx-table'></i></button>
+                <button class="ann-view-btn" data-view="grid" title="Grid View"><i class='bx bx-grid-alt'></i></button>
+                <button class="ann-view-btn active" data-view="list" title="List View"><i class='bx bx-list-ul'></i></button>
+            </div>
         </div>
-        <div class="table-wrapper">
+        <div class="table-wrapper" id="annTableView">
             <table id="announcementsTable">
                 <thead>
                     <tr>
@@ -82,6 +87,8 @@ require_once __DIR__ . '/../../core/View.php';
                 </tbody>
             </table>
         </div>
+        <div class="announcements-grid-view" id="annGridView" style="display:none;"></div>
+        <div class="announcements-list-view" id="annListView" style="display:none;"></div>
         <!-- Pagination -->
         <div class="announcements-pagination" id="announcementsPagination">
             <div class="announcements-page-info" id="announcementsPageInfo">

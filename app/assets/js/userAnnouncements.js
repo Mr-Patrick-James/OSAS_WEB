@@ -19,7 +19,8 @@
         announcements: [],
         readIds: JSON.parse(localStorage.getItem('readAnnouncements') || '[]'),
         pagination: { current: 1, total: 1, limit: 10, items: 0 },
-        filters: { category: 'all', search: '', status: 'all' }
+        filters: { category: 'all', search: '', status: 'all' },
+        viewMode: localStorage.getItem('annViewMode') || 'list'
     };
 
     // Helper to get API path safely
@@ -94,21 +95,31 @@
      */
     function render() {
         const tbody = document.getElementById('announcementsTableBody');
+        const gridView = document.getElementById('annGridView');
+        const listView = document.getElementById('annListView');
+        const tableView = document.getElementById('annTableView');
         const info = document.getElementById('announcementsPageInfo');
         const btns = document.getElementById('announcementsPageBtns');
         if (!tbody) return;
 
+        // Show/hide views based on viewMode
+        if (tableView) tableView.style.display = state.viewMode === 'table' ? '' : 'none';
+        if (gridView) gridView.style.display = state.viewMode === 'grid' ? '' : 'none';
+        if (listView) listView.style.display = state.viewMode === 'list' ? '' : 'none';
+
         // Render Table
         if (state.announcements.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 80px 20px;">
-                        <i class='bx bx-news' style="font-size: 48px; color: #cbd5e1;"></i>
-                        <p style="color: #64748b; font-weight: 500; margin-top: 10px;">No announcements found</p>
-                    </td>
-                </tr>
+            const emptyHtml = `
+                <div style="text-align: center; padding: 80px 20px;">
+                    <i class='bx bx-news' style="font-size: 48px; color: #cbd5e1;"></i>
+                    <p style="color: #64748b; font-weight: 500; margin-top: 10px;">No announcements found</p>
+                </div>
             `;
+            tbody.innerHTML = `<tr><td colspan="5">${emptyHtml}</td></tr>`;
+            if (gridView) gridView.innerHTML = emptyHtml;
+            if (listView) listView.innerHTML = emptyHtml;
         } else {
+            // Table view
             tbody.innerHTML = state.announcements.map(item => {
                 const isRead = state.readIds.includes(item.id) || parseInt(item.is_read) === 1;
                 const type = (item.type || item.category || 'info').toLowerCase();
@@ -129,6 +140,63 @@
                     </tr>
                 `;
             }).join('');
+
+            // Grid view
+            if (gridView) {
+                gridView.innerHTML = `<div class="ann-grid">${state.announcements.map(item => {
+                    const isRead = state.readIds.includes(item.id) || parseInt(item.is_read) === 1;
+                    const type = (item.type || item.category || 'info').toLowerCase();
+                    const date = formatTimeAgo(item.created_at);
+                    return `
+                        <div class="ann-card ${isRead ? 'read' : 'unread'}" data-id="${item.id}">
+                            <div class="ann-card-top ${type}"></div>
+                            <div class="ann-card-body">
+                                <div class="ann-card-header">
+                                    <span class="announcement-type ${type}">${type}</span>
+                                    <span class="status-badge ${isRead ? 'read' : 'unread'}">${isRead ? 'Read' : 'Unread'}</span>
+                                </div>
+                                <h4 class="ann-card-title">${escapeHtml(item.title)}</h4>
+                                <p class="ann-card-preview">${escapeHtml((item.message || item.content || '').substring(0, 80))}${(item.message || item.content || '').length > 80 ? '...' : ''}</p>
+                            </div>
+                            <div class="ann-card-footer">
+                                <span class="ann-card-date"><i class='bx bx-calendar'></i> ${date}</span>
+                                <div class="action-buttons">
+                                    <button class="action-btn view" onclick="viewAnnouncement(${item.id})" title="View"><i class='bx bx-show'></i></button>
+                                    ${!isRead ? `<button class="action-btn mark-read" onclick="markAsRead(${item.id}, this)" title="Mark Read"><i class='bx bx-check'></i></button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}</div>`;
+            }
+
+            // List view
+            if (listView) {
+                listView.innerHTML = state.announcements.map(item => {
+                    const isRead = state.readIds.includes(item.id) || parseInt(item.is_read) === 1;
+                    const type = (item.type || item.category || 'info').toLowerCase();
+                    const date = formatTimeAgo(item.created_at);
+                    return `
+                        <div class="ann-list-item ${isRead ? 'read' : 'unread'}" data-id="${item.id}">
+                            <div class="ann-list-left">
+                                <div class="ann-list-icon ${type}"><i class='bx bx-bell'></i></div>
+                                <div class="ann-list-info">
+                                    <span class="ann-list-title">${escapeHtml(item.title)}</span>
+                                    <span class="ann-list-meta">
+                                        <span class="announcement-type ${type}">${type}</span>
+                                        <span class="status-badge ${isRead ? 'read' : 'unread'}">${isRead ? 'Read' : 'Unread'}</span>
+                                        <span class="ann-list-date"><i class='bx bx-calendar'></i> ${date}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="ann-list-actions">
+                                <button class="action-btn view" onclick="viewAnnouncement(${item.id})" title="View"><i class='bx bx-show'></i></button>
+                                ${!isRead ? `<button class="action-btn mark-read" onclick="markAsRead(${item.id}, this)" title="Mark Read"><i class='bx bx-check'></i></button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
 
         // Render Pagination
@@ -196,6 +264,19 @@
     function init() {
         const container = document.getElementById('announcementsTableBody');
         if (!container) return;
+
+        // Setup view toggle
+        const viewBtns = document.querySelectorAll('.ann-view-btn');
+        viewBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === state.viewMode);
+            btn.addEventListener('click', () => {
+                state.viewMode = btn.dataset.view;
+                localStorage.setItem('annViewMode', state.viewMode);
+                viewBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                render();
+            });
+        });
 
         // Setup filters
         const category = document.getElementById('categoryFilter');

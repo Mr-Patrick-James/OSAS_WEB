@@ -67,7 +67,7 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-check-circle'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Resolved</h3>
+        <h3 class="Violations-stat-title">Permitted</h3>
         <div class="Violations-stat-value" id="resolvedViolations">0</div>
         <div class="Violations-stat-percentage" id="resolvedViolationsPct">0%</div>
       </div>
@@ -78,7 +78,7 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-time-five'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Pending</h3>
+        <h3 class="Violations-stat-title">Warning</h3>
         <div class="Violations-stat-value" id="pendingViolations">0</div>
         <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
       </div>
@@ -154,13 +154,25 @@ require_once __DIR__ . '/../../core/View.php';
             <option value="all">All Departments</option>
             <!-- Departments will be loaded via JS -->
           </select>
+
+          <select id="ArchiveYearFilter" class="Violations-filter-select" style="min-width:90px;">
+            <option value="all">All Years</option>
+            <?php
+            $currentYear = (int)date('Y');
+            for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
+                $selected = ($y == $currentYear) ? 'selected' : '';
+                echo "<option value='$y' $selected>$y</option>";
+            }
+            ?>
+          </select>
           
-          <select id="ArchiveMonthFilter" class="Violations-filter-select">
+          <select id="ArchiveMonthFilter" class="Violations-filter-select" style="min-width:90px;">
             <option value="all">All Months</option>
             <?php
             for ($i = 1; $i <= 12; $i++) {
-                $month = date('F', mktime(0, 0, 0, $i, 1));
-                echo "<option value='$i'>$month</option>";
+                $month = date('M', mktime(0, 0, 0, $i, 1));
+                $selected = ($i == date('n')) ? 'selected' : '';
+                echo "<option value='$i' $selected>$month</option>";
             }
             ?>
           </select>
@@ -169,6 +181,16 @@ require_once __DIR__ . '/../../core/View.php';
         <button class="Violations-filter-btn" title="More filters">
           <i class='bx bx-filter-alt'></i>
         </button>
+
+        <!-- Display Mode Toggle: Latest per student vs All records -->
+        <div class="Violations-view-toggle" id="displayModeToggle">
+          <button class="Violations-display-btn active" data-display="latest" title="Latest per student">
+            <i class='bx bx-user'></i>
+          </button>
+          <button class="Violations-display-btn" data-display="all" title="All violations (full history)">
+            <i class='bx bx-history'></i>
+          </button>
+        </div>
 
         <!-- View Toggle -->
         <div class="Violations-view-toggle">
@@ -259,23 +281,28 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
     </div>
 
-    <!-- Slip Requests Table (Initially Hidden) -->
-    <div class="Violations-table-container" id="slipRequestsContainer" style="display: none;">
-      <table class="Violations-table" id="slipRequestsTable">
-        <thead>
-          <tr>
-            <th>Student</th>
-            <th>Student ID</th>
-            <th>Request Date</th>
-            <th>Requested By</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="slipRequestsTableBody">
-          <!-- Data will be loaded dynamically -->
-        </tbody>
-      </table>
+    <!-- Slip Requests (Initially Hidden) -->
+    <div id="slipRequestsContainer" style="display: none;">
+      <div class="Violations-table-container" id="slipRequestsTableView">
+        <table class="Violations-table" id="slipRequestsTable">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Student ID</th>
+              <th>Request Date</th>
+              <th>Requested By</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="slipRequestsTableBody">
+          </tbody>
+        </table>
+      </div>
+      <div class="Violations-grid-container" id="slipRequestsGridView" style="display:none;">
+        <div class="Violations-grid" id="slipRequestsGridBody"></div>
+      </div>
+      <div id="slipRequestsListView" style="display:none;"></div>
     </div>
   </div>
 
@@ -380,12 +407,10 @@ require_once __DIR__ . '/../../core/View.php';
           <div class="Violations-form-group">
             <label for="violationLocation">Location</label>
             <select id="violationLocation" name="violationLocation">
-              <option value="">Select location</option>
-              <option value="gate_1">Main Gate 1</option>
-              <option value="gate_2">Gate 2</option>
+              <option value="campus" selected>Campus</option>
+              <option value="canteen">Canteen</option>
               <option value="classroom">Classroom</option>
               <option value="library">Library</option>
-              <option value="cafeteria">Cafeteria</option>
               <option value="gym">Gymnasium</option>
               <option value="others">Others</option>
             </select>
@@ -557,8 +582,8 @@ require_once __DIR__ . '/../../core/View.php';
           <button class="Violations-action-btn resolve" id="detailResolveBtn" title="Mark Resolved">
             <i class='bx bx-check'></i> Mark Resolved
           </button>
-          <button class="Violations-action-btn escalate" id="detailEscalateBtn" title="Escalate">
-            <i class='bx bx-alarm'></i> Escalate
+          <button class="Violations-action-btn print" id="detailPrintSlipBtn" title="Print Entrance Slip" style="background: #f59e0b; color: white;">
+            <i class='bx bx-file'></i> Print Slip
           </button>
           <button class="Violations-action-btn resolve" id="detailApproveSlipBtn" title="Approve Slip Download">
             <i class='bx bx-check-shield'></i> Approve Slip

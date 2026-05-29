@@ -22,7 +22,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE
 }
 
 if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
-    if ($_SESSION['role'] === 'admin') {
+    if (in_array($_SESSION['role'], ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
         header('Location: ' . $prefix . '/includes/dashboard.php');
         exit;
     } elseif ($_SESSION['role'] === 'user') {
@@ -1331,8 +1331,8 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         align-items: center;
         z-index: 10000;
         opacity: 0;
-        transition: opacity 0.3s ease;
         padding: 20px;
+        transition: opacity 0.35s ease;
     }
 
     .login-modal-overlay.show {
@@ -1348,15 +1348,30 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         border-radius: 20px;
         border: 1px solid var(--border);
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        transform: translateY(20px);
-        transition: transform 0.3s ease;
+        transform: scale(0.7) translateY(30px);
+        opacity: 0;
+        transition: none;
         position: relative;
         max-height: 90vh;
         overflow-y: auto;
     }
 
     .login-modal-overlay.show .login-modal-content {
-        transform: translateY(0);
+        animation: loginModalPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes loginModalPop {
+        0% {
+            opacity: 0;
+            transform: scale(0.7) translateY(30px);
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
     }
 
     .close-login-modal {

@@ -438,6 +438,8 @@ class ReportModel extends Model {
                         'status' => $row['status'],
                         'statusLabel' => $statusLabel,
                         'lastUpdated' => $row['last_violation_date'] ?? date('Y-m-d'),
+                        'periodStart' => $row['report_period_start'] ?? null,
+                        'periodEnd' => $row['report_period_end'] ?? null,
                         'history' => $history,
                         'recommendations' => $recommendations
                     ];
@@ -461,15 +463,18 @@ class ReportModel extends Model {
      */
     private function getReportViolationHistory($reportId) {
         $query = "SELECT 
-                    violation_type,
-                    violation_level,
-                    violation_date,
-                    violation_time,
-                    status,
-                    notes
-                  FROM report_violations
-                  WHERE report_id = ?
-                  ORDER BY violation_date DESC, violation_time DESC LIMIT 10";
+                    rv.violation_type,
+                    rv.violation_level,
+                    rv.violation_date,
+                    rv.violation_time,
+                    rv.status,
+                    rv.notes,
+                    v.location,
+                    v.reported_by
+                  FROM report_violations rv
+                  LEFT JOIN violations v ON rv.violation_id = v.id
+                  WHERE rv.report_id = ?
+                  ORDER BY rv.violation_date DESC, rv.violation_time DESC LIMIT 10";
         
         try {
             $results = $this->query($query, [$reportId]);
@@ -489,22 +494,48 @@ class ReportModel extends Model {
                 'warning3' => 'Warning 3',
                 'disciplinary' => 'Disciplinary'
             ];
+
+            $locationLabels = [
+                'campus' => 'Campus',
+                'canteen' => 'Canteen',
+                'classroom' => 'Classroom',
+                'library' => 'Library',
+                'gym' => 'Gymnasium',
+                'others' => 'Others',
+                'gate_1' => 'Main Gate 1',
+                'gate_2' => 'Gate 2',
+                'cafeteria' => 'Cafeteria'
+            ];
             
             foreach ($results as $row) {
                 $violationType = $violationTypeLabels[$row['violation_type']] ?? ucfirst(str_replace('_', ' ', $row['violation_type']));
-                $violationLevel = $violationLevelLabels[$row['violation_level']] ?? ucfirst($row['violation_level']);
+                $violationLevel = $violationLevelLabels[$row['violation_level']] ?? ucfirst($row['violation_level'] ?? '');
                 
                 $date = $row['violation_date'] ?? '';
+                $time = $row['violation_time'] ?? '';
                 $formattedDate = '';
+                $formattedTime = '';
                 if ($date) {
                     $dateObj = new DateTime($date);
                     $formattedDate = $dateObj->format('M d, Y');
                 }
+                if ($time) {
+                    $timeObj = new DateTime($time);
+                    $formattedTime = $timeObj->format('g:i A');
+                }
+
+                $location = $locationLabels[$row['location'] ?? ''] ?? ucfirst(str_replace('_', ' ', $row['location'] ?? ''));
+                $status = $row['status'] ?? 'warning';
+                $reportedBy = $row['reported_by'] ?? '';
                 
                 $history[] = [
                     'date' => $formattedDate,
-                    'title' => $violationType . ' - ' . $violationLevel,
-                    'desc' => $row['notes'] ?? 'No additional notes'
+                    'time' => $formattedTime,
+                    'title' => $violationLevel . ' - ' . $violationType,
+                    'desc' => $row['notes'] ?? 'No additional notes',
+                    'location' => $location,
+                    'status' => $status,
+                    'reportedBy' => $reportedBy
                 ];
             }
             

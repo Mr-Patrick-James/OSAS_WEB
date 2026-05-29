@@ -38,7 +38,7 @@ if ($_SESSION['role'] !== 'user') {
   <link rel="stylesheet" href="../app/assets/styles/settings.css">
   <link rel="stylesheet" href="../app/assets/styles/chatbot.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://js.puter.com/v2/"></script>
+
 </head>
 
 <body>

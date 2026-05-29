@@ -73,14 +73,13 @@ class UserDashboardData {
     }
 
     displayNoStudentIdMessage() {
-        const tbody = document.querySelector('.violation-history tbody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" style="text-align:center; color:red; padding:40px;">
-                        Student ID not found. Please login again.
-                    </td>
-                </tr>
+        const container = document.getElementById('recentViolationsList') ||
+                          document.querySelector('.sd-violations-list');
+        if (container) {
+            container.innerHTML = `
+                <div class="sd-violations-empty" style="color:red;">
+                    Student ID not found. Please login again.
+                </div>
             `;
         }
     }
@@ -124,6 +123,13 @@ class UserDashboardData {
             // SYNC with userViolations.js so viewViolationDetails works
             window.userViolations = this.violations;
             window.allUserViolations = this.allViolations;
+            // Also update the let-declared variables in userViolations.js
+            if (typeof userViolations !== 'undefined') {
+                userViolations = this.violations;
+            }
+            if (typeof allUserViolations !== 'undefined') {
+                allUserViolations = this.allViolations;
+            }
 
             this.calculateViolationStats();
         } catch (error) {
@@ -339,17 +345,16 @@ class UserDashboardData {
     }
 
     updateRecentViolationsTable() {
-        const tbody = document.querySelector('.sd-table tbody') ||
-                      document.querySelector('.violation-history tbody') ||
-                      document.getElementById('recentViolationsTableBody');
-        if (!tbody) return;
+        const container = document.getElementById('recentViolationsList') ||
+                      document.querySelector('.sd-violations-list');
+        if (!container) return;
 
         if (this.violations.length === 0) {
-            tbody.innerHTML = `
-                <tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-3);">
-                    <i class='bx bx-info-circle' style="font-size:2.5rem; display:block; margin-bottom:8px; opacity:.4;"></i>
-                    No violations found
-                </td></tr>`;
+            container.innerHTML = `
+                <div class="sd-violations-empty">
+                    <i class='bx bx-info-circle'></i>
+                    <p>No violations found</p>
+                </div>`;
             return;
         }
 
@@ -367,8 +372,16 @@ class UserDashboardData {
             return 'bxs-info-circle';
         };
 
-        tbody.innerHTML = sorted.map(v => {
-            const typeLabel = v.violationTypeLabel || v.violation_type || v.type || 'Unknown';
+        const getIconColor = (label) => {
+            const lower = (label || '').toLowerCase();
+            if (lower.includes('uniform')) return 'uniform';
+            if (lower.includes('footwear') || lower.includes('shoe')) return 'footwear';
+            if (lower.includes('id')) return 'id';
+            return 'default';
+        };
+
+        container.innerHTML = sorted.map(v => {
+            const typeLabel = v.violationTypeLabel || v.violation_type_name || v.violation_type || v.type || 'Unknown';
             const date = new Date(v.date || v.created_at || v.violation_date)
                 .toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -378,10 +391,8 @@ class UserDashboardData {
 
             let badgeClass, badgeText;
             if (status === 'resolved') {
-                // Only disciplinary violations approved by admin become "Resolved"
                 badgeClass = 'sd-badge--resolved'; badgeText = 'Resolved';
             } else if (status === 'permitted') {
-                // Normal violations cleared by admin = "Permitted"
                 badgeClass = 'sd-badge--resolved'; badgeText = 'Permitted';
             } else if (status === 'disciplinary' || isDisciplinary) {
                 badgeClass = 'sd-badge--warning'; badgeText = 'Disciplinary';
@@ -391,19 +402,26 @@ class UserDashboardData {
                 badgeClass = 'sd-badge--pending'; badgeText = 'Pending';
             }
 
+            const iconType = getIconColor(typeLabel);
+
             return `
-                <tr>
-                    <td>${date}</td>
-                    <td><i class='bx ${getIcon(typeLabel)}' style="vertical-align:middle; margin-right:5px;"></i>${this.escapeHtml(typeLabel)}</td>
-                    <td><span class="sd-badge ${badgeClass}">${badgeText}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="sd-view-btn" onclick="viewViolationDetails(${v.id || v.violation_id})" title="View Details">
-                                <i class='bx bx-show'></i>
-                            </button>
+                <div class="sd-violation-item" onclick="viewViolationDetails(${v.id || v.violation_id})">
+                    <div class="sd-violation-item__icon sd-violation-item__icon--${iconType}">
+                        <i class='bx ${getIcon(typeLabel)}'></i>
+                    </div>
+                    <div class="sd-violation-item__details">
+                        <h4>${this.escapeHtml(this.formatViolationType(typeLabel))}</h4>
+                        <div class="sd-violation-item__meta">
+                            <span class="sd-violation-item__date"><i class='bx bx-calendar'></i> ${date}</span>
+                            <span class="sd-badge ${badgeClass}">${badgeText}</span>
                         </div>
-                    </td>
-                </tr>`;
+                    </div>
+                    <div class="sd-violation-item__action">
+                        <button class="sd-view-btn" title="View Details">
+                            <i class='bx bx-chevron-right'></i>
+                        </button>
+                    </div>
+                </div>`;
         }).join('');
     }
 
@@ -556,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Only load if we're on dashboard page
         const mainContent = document.getElementById('main-content');
-        if (mainContent && (mainContent.innerHTML.includes('My Dashboard') || mainContent.innerHTML.includes('violation-history'))) {
+        if (mainContent && (mainContent.innerHTML.includes('My Dashboard') || mainContent.innerHTML.includes('sd-violations-list') || mainContent.innerHTML.includes('student-dash'))) {
             window.userDashboardData.loadAllData();
         }
     }, 100);

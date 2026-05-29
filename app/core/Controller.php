@@ -96,7 +96,7 @@ class Controller {
      */
     protected function requireAdmin() {
         $this->requireAuth();
-        if ($_SESSION['role'] !== 'admin') {
+        if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member'])) {
             $this->error('Access denied', 'Admin privileges required', 403);
         }
     }
