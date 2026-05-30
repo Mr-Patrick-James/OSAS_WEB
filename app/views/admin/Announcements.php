@@ -62,14 +62,14 @@ require_once __DIR__ . '/../../core/View.php';
                     </select>
                 </div>
                 <div class="view-toggles">
-                    <button class="view-btn active" title="Table View" data-view="table"><i class='bx bx-table'></i></button>
+                    <button class="view-btn" title="Table View" data-view="table"><i class='bx bx-table'></i></button>
                     <button class="view-btn" title="Grid View" data-view="grid"><i class='bx bx-grid-alt'></i></button>
-                    <button class="view-btn" title="List View" data-view="list"><i class='bx bx-list-ul'></i></button>
+                    <button class="view-btn active" title="List View" data-view="list"><i class='bx bx-list-ul'></i></button>
                 </div>
             </div>
         </div>
 
-        <div id="announcementsTableView" class="table-wrapper" style="display: block;">
+        <div id="announcementsTableView" class="table-wrapper" style="display: none;">
             <table id="announcementsTable">
                 <thead>
                     <tr>
@@ -95,7 +95,7 @@ require_once __DIR__ . '/../../core/View.php';
             <div id="announcementsGridBody" class="grid-view"></div>
         </div>
 
-        <div id="announcementsListView" class="list-container" style="display: none; padding: 16px;">
+        <div id="announcementsListView" class="list-container" style="display: block; padding: 16px;">
             <div id="announcementsListBody" class="list-view"></div>
         </div>
 

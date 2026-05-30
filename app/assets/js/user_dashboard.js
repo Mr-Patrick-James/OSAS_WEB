@@ -398,7 +398,40 @@ function checkAuthentication() {
   if (s) {
     try { const session = JSON.parse(s); updateUserInfo(session); return session; } catch(e) {}
   }
+  // Fetch fresh profile data to update topnav avatar
+  fetchAndUpdateUserTopnavAvatar();
   return { role: 'user' };
+}
+
+// Fetch profile picture from API and update user topnav avatar
+function fetchAndUpdateUserTopnavAvatar() {
+  fetch(getAPIBase() + 'users.php?action=profile')
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success' && data.data && data.data.profile && data.data.profile.profile_picture) {
+        const avatarPath = resolveUserPath(data.data.profile.profile_picture) + '?t=' + Date.now();
+
+        // Update user topnav avatar: swap initials for image
+        const initials = document.querySelector('.user-avatar-ring .user-avatar-initials');
+        if (initials && initials.style.display !== 'none') {
+          const img = document.createElement('img');
+          img.src = avatarPath;
+          img.alt = 'User Avatar';
+          img.className = 'user-avatar-img';
+          img.onerror = function() { this.remove(); if(initials) initials.style.display='flex'; };
+          initials.style.display = 'none';
+          initials.parentNode.insertBefore(img, initials);
+        }
+
+        // Also update localStorage so next load is instant
+        try {
+          const stored = JSON.parse(localStorage.getItem('userSession') || '{}');
+          stored.profile_picture = data.data.profile.profile_picture;
+          localStorage.setItem('userSession', JSON.stringify(stored));
+        } catch(e) {}
+      }
+    })
+    .catch(() => {}); // Silently fail if offline
 }
 
 function redirectToLogin() {
@@ -1248,6 +1281,17 @@ function createUserSettingsModal() {
 
   const defaultAvatar = resolveUserPath('assets/img/default.png');
 
+  // Generate initials from session name
+  let userSessionName = 'User';
+  try {
+      const storedSession = JSON.parse(localStorage.getItem('userSession') || '{}');
+      userSessionName = storedSession.full_name || storedSession.name || storedSession.username || 'User';
+  } catch(e) {}
+  const userNameParts = userSessionName.trim().split(/\s+/);
+  const userInitials = userNameParts.length > 1
+      ? (userNameParts[0][0] + userNameParts[userNameParts.length - 1][0]).toUpperCase()
+      : userNameParts[0][0].toUpperCase();
+
   overlay.innerHTML = `
     <div class="settings-modal user-settings-modal">
       <aside class="settings-sidebar">
@@ -1273,7 +1317,7 @@ function createUserSettingsModal() {
           <form id="userSettingsProfileForm" enctype="multipart/form-data">
             <div class="settings-profile-header">
               <div class="profile-upload-container">
-                <img id="userProfileImagePreview" class="profile-image-preview" src="${defaultAvatar}" alt="Profile Picture">
+                <span id="userProfileImagePreview" class="profile-initials-avatar">${userInitials}</span>
                 <label for="userProfilePictureInput" class="profile-upload-button">
                   <i class='bx bx-camera'></i>
                 </label>
@@ -1479,7 +1523,16 @@ async function loadUserSettingsProfile() {
       if (file) {
         const reader = new FileReader();
         reader.onload = function (ev) {
-          profileImagePreview.src = ev.target.result;
+          if (profileImagePreview.tagName === 'SPAN') {
+            const img = document.createElement('img');
+            img.id = 'userProfileImagePreview';
+            img.className = 'profile-image-preview';
+            img.alt = 'Profile Picture';
+            img.src = ev.target.result;
+            profileImagePreview.replaceWith(img);
+          } else {
+            profileImagePreview.src = ev.target.result;
+          }
         };
         reader.readAsDataURL(file);
       }
@@ -1498,9 +1551,16 @@ async function loadUserSettingsProfile() {
 
       if (profile.profile_picture && profileImagePreview) {
         const fullPath = resolveUserPath(profile.profile_picture);
-        profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
-      } else if (profileImagePreview) {
-        profileImagePreview.src = resolveUserPath('assets/img/default.png');
+        if (profileImagePreview.tagName === 'SPAN') {
+          const img = document.createElement('img');
+          img.id = 'userProfileImagePreview';
+          img.className = 'profile-image-preview';
+          img.alt = 'Profile Picture';
+          img.src = fullPath + '?t=' + new Date().getTime();
+          profileImagePreview.replaceWith(img);
+        } else {
+          profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
+        }
       }
     }
   } catch (error) {
@@ -1564,10 +1624,31 @@ async function submitUserSettingsProfile() {
 
       if (profilePicture) {
         const fullPath = resolveUserPath(profilePicture) + '?t=' + new Date().getTime();
-        const preview = document.getElementById('userProfileImagePreview');
-        if (preview) preview.src = fullPath;
-        const topnavAvatar = document.querySelector('.nav-user-menu .user-avatar img');
-        if (topnavAvatar) topnavAvatar.src = fullPath;
+        let preview = document.getElementById('userProfileImagePreview');
+        if (preview && preview.tagName === 'SPAN') {
+          const img = document.createElement('img');
+          img.id = 'userProfileImagePreview';
+          img.className = 'profile-image-preview';
+          img.alt = 'Profile Picture';
+          img.src = fullPath;
+          preview.replaceWith(img);
+        } else if (preview) {
+          preview.src = fullPath;
+        }
+
+        // Update topnav avatar: swap initials for image
+        const topnavInitials = document.querySelector('.user-avatar-ring .user-avatar-initials');
+        if (topnavInitials) {
+          const tnImg = document.createElement('img');
+          tnImg.src = fullPath;
+          tnImg.alt = 'User Avatar';
+          tnImg.className = 'user-avatar-img';
+          topnavInitials.replaceWith(tnImg);
+        } else {
+          const topnavImg = document.querySelector('.user-avatar-ring .user-avatar-img');
+          if (topnavImg) topnavImg.src = fullPath;
+        }
+
         const sidebarAvatar = document.getElementById('sidebarProfileImage');
         if (sidebarAvatar) sidebarAvatar.src = fullPath;
       }

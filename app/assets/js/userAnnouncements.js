@@ -238,13 +238,16 @@
             state.readIds.push(id);
             localStorage.setItem('readAnnouncements', JSON.stringify(state.readIds));
         }
-        const row = btn ? btn.closest('tr') : document.querySelector(`tr[data-id="${id}"]`);
-        if (row) {
-            row.classList.replace('unread', 'read');
-            const badge = row.querySelector('.status-badge');
+
+        // Update all views (table row, list item, grid card)
+        document.querySelectorAll(`[data-id="${id}"]`).forEach(el => {
+            el.classList.remove('unread');
+            el.classList.add('read');
+            const badge = el.querySelector('.status-badge');
             if (badge) { badge.className = 'status-badge read'; badge.textContent = 'Read'; }
-            row.querySelector('.action-btn.mark-read')?.remove();
-        }
+            const markBtn = el.querySelector('.action-btn.mark-read');
+            if (markBtn) markBtn.remove();
+        });
     }
 
     function viewAnnouncement(id) {
@@ -315,10 +318,19 @@
 
     // Export functions to window safely
     window.markAllAsRead = () => {
-        document.querySelectorAll('#announcementsTableBody tr.unread').forEach(row => {
-            const id = parseInt(row.dataset.id);
-            if (id) markAsRead(id, row.querySelector('.mark-read'));
+        document.querySelectorAll('[data-id].unread').forEach(el => {
+            const id = parseInt(el.dataset.id);
+            if (id && !state.readIds.includes(id)) {
+                state.readIds.push(id);
+            }
+            el.classList.remove('unread');
+            el.classList.add('read');
+            const badge = el.querySelector('.status-badge');
+            if (badge) { badge.className = 'status-badge read'; badge.textContent = 'Read'; }
+            const markBtn = el.querySelector('.action-btn.mark-read');
+            if (markBtn) markBtn.remove();
         });
+        localStorage.setItem('readAnnouncements', JSON.stringify(state.readIds));
     };
     window.refreshAnnouncements = () => loadAnnouncements(state.pagination.current);
     window.viewAnnouncement = viewAnnouncement;

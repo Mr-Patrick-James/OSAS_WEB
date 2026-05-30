@@ -1,7 +1,19 @@
 ﻿<?php
 require_once __DIR__ . '/../../core/View.php';
 
-$userImage = View::asset('img/user.jpg');
+$username = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Admin';
+$role     = $_SESSION['role'] ?? 'admin';
+
+// Generate initials from the user's name (first letter of first & last name)
+$nameParts = explode(' ', trim($username));
+$initials = strtoupper(substr($nameParts[0], 0, 1));
+if (count($nameParts) > 1) {
+    $initials .= strtoupper(substr(end($nameParts), 0, 1));
+}
+
+// Check if user has a profile picture
+$hasProfilePic = false;
+$userImage = '';
 if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture'])) {
     $profilePic = $_SESSION['profile_picture'];
     if (strpos($profilePic, 'public/') === 0) {
@@ -9,9 +21,8 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
     } else {
         $userImage = View::asset($profilePic);
     }
+    $hasProfilePic = true;
 }
-$username = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Admin';
-$role     = $_SESSION['role'] ?? 'admin';
 ?>
 <!-- TOP NAVIGATION -->
 <nav class="top-nav">
@@ -101,15 +112,25 @@ $role     = $_SESSION['role'] ?? 'admin';
     <!-- User profile pill -->
     <div class="tn-user-pill" id="tnUserPill">
       <span class="tn-avatar-ring">
-        <img src="<?= $userImage ?>" alt="Avatar" class="tn-avatar-img"
-             onerror="this.src='<?= View::asset('img/default.png') ?>'">
+        <?php if ($hasProfilePic): ?>
+          <img src="<?= $userImage ?>" alt="Avatar" class="tn-avatar-img"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="tn-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+        <?php else: ?>
+          <span class="tn-avatar-initials"><?= htmlspecialchars($initials) ?></span>
+        <?php endif; ?>
       </span>
       <span class="tn-user-name"><?= htmlspecialchars($username) ?></span>
       <i class='bx bx-chevron-down tn-chevron'></i>
       <div class="tn-user-dropdown" id="tnUserDropdown">
         <div class="tn-dropdown-header">
-          <img src="<?= $userImage ?>" alt="Avatar" class="tn-dropdown-avatar"
-               onerror="this.src='<?= View::asset('img/default.png') ?>'">
+          <?php if ($hasProfilePic): ?>
+            <img src="<?= $userImage ?>" alt="Avatar" class="tn-dropdown-avatar"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <span class="tn-dropdown-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+          <?php else: ?>
+            <span class="tn-dropdown-avatar-initials"><?= htmlspecialchars($initials) ?></span>
+          <?php endif; ?>
           <div class="tn-dropdown-info">
             <span class="tn-dropdown-name"><?= htmlspecialchars($username) ?></span>
             <span class="tn-dropdown-role"><?= ucfirst($role) ?></span>

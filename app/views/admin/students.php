@@ -399,10 +399,15 @@ require_once __DIR__ . '/../../config/db_connect.php';
     <div class="Students-modal-overlay" id="ProfileModalOverlay"></div>
     <div class="Students-modal-container" style="max-width: 600px;">
       <div class="Students-modal-header">
-        <h2>
-          <i class='bx bx-user-circle'></i>
-          <span>Student Profile</span>
-        </h2>
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,215,0,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class='bx bxs-user-detail' style="font-size:20px;color:#d4af37;"></i>
+        </div>
+        <div style="flex:1;">
+          <h2 style="margin:0;font-size:1.05rem;font-weight:700;">
+            <span>Student Profile</span>
+          </h2>
+          <p style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">View student information.</p>
+        </div>
         <button class="Students-close-btn" id="closeProfileModal">
           <i class='bx bx-x'></i>
         </button>
@@ -411,45 +416,44 @@ require_once __DIR__ . '/../../config/db_connect.php';
         <div class="profile-details-wrapper" style="padding: 20px;">
           <div class="profile-header" style="display: flex; gap: 20px; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
             <div class="profile-avatar-large">
-              <img id="profileAvatar" src="" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold);">
+              <img id="profileAvatar" src="" alt="Avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold);">
             </div>
             <div class="profile-main-info">
-              <h3 id="profileFullName" style="font-size: 1.5rem; color: var(--dark); margin-bottom: 5px;"></h3>
-              <p id="profileId" style="color: var(--gold); font-weight: 600; font-size: 1rem;"></p>
+              <h3 id="profileFullName" style="font-size: 1.3rem; color: var(--dark); margin-bottom: 4px; font-weight: 700;"></h3>
+              <p id="profileId" style="color: var(--gold); font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;"></p>
               <span id="profileStatusBadge" class="status-badge"></span>
             </div>
           </div>
           
-          <div class="profile-info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
-            <div class="info-group">
-              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Department</label>
-              <p id="profileDept" style="font-weight: 500; color: var(--dark);"></p>
+          <div class="profile-info-grid" style="display: grid; grid-template-columns: 1fr; gap: 14px;">
+            <div class="info-group" style="display:grid; grid-template-columns: 120px 1fr; align-items:baseline;">
+              <label style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600;">Department</label>
+              <p id="profileDept" style="font-weight: 500; color: var(--dark); font-size: 0.88rem; margin:0;"></p>
             </div>
-            <div class="info-group">
-              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Section</label>
-              <p id="profileSection" style="font-weight: 500; color: var(--dark);"></p>
+            <div class="info-group" style="display:grid; grid-template-columns: 120px 1fr; align-items:baseline;">
+              <label style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600;">Section</label>
+              <p id="profileSection" style="font-weight: 500; color: var(--dark); font-size: 0.88rem; margin:0;"></p>
             </div>
-            <div class="info-group">
-              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Year Level</label>
-              <p id="profileYear" style="font-weight: 500; color: var(--dark);"></p>
+            <div class="info-group" style="display:grid; grid-template-columns: 120px 1fr; align-items:baseline;">
+              <label style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600;">Year Level</label>
+              <p id="profileYear" style="font-weight: 500; color: var(--dark); font-size: 0.88rem; margin:0;"></p>
             </div>
-            <div class="info-group">
-              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Email</label>
-              <p id="profileEmail" style="font-weight: 500; color: var(--dark);"></p>
+            <div class="info-group" style="display:grid; grid-template-columns: 120px 1fr; align-items:baseline;">
+              <label style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600;">Email</label>
+              <p id="profileEmail" style="font-weight: 500; color: var(--dark); font-size: 0.88rem; margin:0; word-break: break-all;"></p>
             </div>
-            <div class="info-group">
-              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Contact</label>
-              <p id="profileContact" style="font-weight: 500; color: var(--dark);"></p>
+            <div class="info-group" style="display:grid; grid-template-columns: 120px 1fr; align-items:baseline;">
+              <label style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600;">Contact</label>
+              <p id="profileContact" style="font-weight: 500; color: var(--dark); font-size: 0.88rem; margin:0;"></p>
             </div>
-            <div class="info-group">
-              <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Enrollment Date</label>
-              <p id="profileDate" style="font-weight: 500; color: var(--dark);"></p>
+            <div class="info-group" style="display:grid; grid-template-columns: 120px 1fr; align-items:baseline;">
+              <label style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600;">Enrolled</label>
+              <p id="profileDate" style="font-weight: 500; color: var(--dark); font-size: 0.88rem; margin:0;"></p>
             </div>
-          </div>
-          
-          <div class="info-group" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-            <label style="display: block; font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase;">Address</label>
-            <p id="profileAddress" style="font-weight: 500; color: var(--dark); line-height: 1.5;"></p>
+            <div class="info-group" style="display:grid; grid-template-columns: 120px 1fr; align-items:baseline;">
+              <label style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600;">Address</label>
+              <p id="profileAddress" style="font-weight: 500; color: var(--dark); font-size: 0.88rem; margin:0; line-height: 1.5;"></p>
+            </div>
           </div>
         </div>
       </div>

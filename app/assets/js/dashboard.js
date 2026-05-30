@@ -145,7 +145,52 @@ function checkAuthentication() {
     if (s) {
         try { updateUserInfo(JSON.parse(s)); } catch(e) {}
     }
+    // Also fetch fresh profile data to ensure topnav avatar is up to date
+    fetchAndUpdateTopnavAvatar();
     return true;
+}
+
+// Fetch profile picture from API and update topnav avatar
+function fetchAndUpdateTopnavAvatar() {
+    fetch(getAPIBase() + 'users.php?action=profile')
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success' && data.data && data.data.profile && data.data.profile.profile_picture) {
+                const avatarPath = resolvePath(data.data.profile.profile_picture);
+                
+                // Update topnav pill avatar
+                const tnInitials = document.querySelector('.tn-avatar-ring .tn-avatar-initials');
+                if (tnInitials && tnInitials.style.display !== 'none') {
+                    const tnImg = document.createElement('img');
+                    tnImg.src = avatarPath + '?t=' + Date.now();
+                    tnImg.alt = 'Avatar';
+                    tnImg.className = 'tn-avatar-img';
+                    tnImg.onerror = function() { this.remove(); if(tnInitials) tnInitials.style.display='flex'; };
+                    tnInitials.style.display = 'none';
+                    tnInitials.parentNode.insertBefore(tnImg, tnInitials);
+                }
+
+                // Update dropdown avatar
+                const ddInitials = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar-initials');
+                if (ddInitials && ddInitials.style.display !== 'none') {
+                    const ddImg = document.createElement('img');
+                    ddImg.src = avatarPath + '?t=' + Date.now();
+                    ddImg.alt = 'Avatar';
+                    ddImg.className = 'tn-dropdown-avatar';
+                    ddImg.onerror = function() { this.remove(); if(ddInitials) ddInitials.style.display='flex'; };
+                    ddInitials.style.display = 'none';
+                    ddInitials.parentNode.insertBefore(ddImg, ddInitials);
+                }
+
+                // Also update localStorage so next load is instant
+                try {
+                    const stored = JSON.parse(localStorage.getItem('userSession') || '{}');
+                    stored.profile_picture = data.data.profile.profile_picture;
+                    localStorage.setItem('userSession', JSON.stringify(stored));
+                } catch(e) {}
+            }
+        })
+        .catch(() => {}); // Silently fail if offline
 }
 
 // Enhanced user info update
@@ -602,7 +647,18 @@ function createSettingsModal() {
     overlay.id = 'settingsModalOverlay';
     overlay.className = 'settings-modal-overlay';
     const defaultAvatar = resolvePath('assets/img/default.png');
-    const userAvatar = resolvePath('assets/img/user.jpg');
+    const userAvatar = resolvePath('assets/img/default.png');
+    
+    // Generate initials from session name
+    let sessionName = 'Admin';
+    try {
+        const storedSession = JSON.parse(localStorage.getItem('userSession') || '{}');
+        sessionName = storedSession.full_name || storedSession.name || storedSession.username || 'Admin';
+    } catch(e) {}
+    const nameParts = sessionName.trim().split(/\s+/);
+    const userInitials = nameParts.length > 1 
+        ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+        : nameParts[0][0].toUpperCase();
     
     // Check privileges
     const isMain = isMainAdmin();
@@ -656,7 +712,7 @@ function createSettingsModal() {
                         <!-- Profile Header -->
                         <div class="settings-profile-header">
                             <div class="profile-upload-container">
-                                <img id="profileImagePreview" class="profile-image-preview" src="${userAvatar}" onerror="this.src='${defaultAvatar}'" alt="Profile Picture">
+                                <span id="profileImagePreview" class="profile-initials-avatar">${userInitials}</span>
                                 <label for="profilePictureInput" class="profile-upload-button">
                                     <i class='bx bx-camera'></i>
                                 </label>
@@ -1235,7 +1291,17 @@ async function loadUserProfile() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    profileImagePreview.src = e.target.result;
+                    // Swap initials span for an img if needed
+                    if (profileImagePreview.tagName === 'SPAN') {
+                        const img = document.createElement('img');
+                        img.id = 'profileImagePreview';
+                        img.className = 'profile-image-preview';
+                        img.alt = 'Profile Picture';
+                        img.src = e.target.result;
+                        profileImagePreview.replaceWith(img);
+                    } else {
+                        profileImagePreview.src = e.target.result;
+                    }
                 }
                 reader.readAsDataURL(file);
             }
@@ -1258,13 +1324,51 @@ async function loadUserProfile() {
             }
             
             // Update profile image preview if exists
-            if (data.data.profile.profile_picture && profileImagePreview) {
+            if (data.data.profile.profile_picture && data.data.profile.profile_picture.trim() !== '' && profileImagePreview) {
                 const fullPath = resolvePath(data.data.profile.profile_picture);
-                // Add timestamp to prevent caching issues
-                profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
-            } else if (profileImagePreview) {
-                 // Set default if no profile picture
-                 profileImagePreview.src = resolvePath('assets/img/user.jpg');
+                if (profileImagePreview.tagName === 'SPAN') {
+                    const img = document.createElement('img');
+                    img.id = 'profileImagePreview';
+                    img.className = 'profile-image-preview';
+                    img.alt = 'Profile Picture';
+                    img.src = fullPath + '?t=' + new Date().getTime();
+                    // If image fails to load, revert to initials
+                    img.onerror = function() {
+                        const displayName = data.data.profile.full_name || data.data.profile.username || 'Admin';
+                        const parts = displayName.trim().split(/\s+/);
+                        const initials = parts.length > 1 
+                            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                            : parts[0][0].toUpperCase();
+                        const span = document.createElement('span');
+                        span.id = 'profileImagePreview';
+                        span.className = 'profile-initials-avatar';
+                        span.textContent = initials;
+                        img.replaceWith(span);
+                    };
+                    profileImagePreview.replaceWith(img);
+                } else {
+                    profileImagePreview.src = fullPath + '?t=' + new Date().getTime();
+                    profileImagePreview.onerror = function() {
+                        const displayName = data.data.profile.full_name || data.data.profile.username || 'Admin';
+                        const parts = displayName.trim().split(/\s+/);
+                        const initials = parts.length > 1 
+                            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                            : parts[0][0].toUpperCase();
+                        const span = document.createElement('span');
+                        span.id = 'profileImagePreview';
+                        span.className = 'profile-initials-avatar';
+                        span.textContent = initials;
+                        profileImagePreview.replaceWith(span);
+                    };
+                }
+            } else if (profileImagePreview && profileImagePreview.tagName === 'SPAN') {
+                // No profile picture — update initials with actual name from API
+                const displayName = data.data.profile.full_name || data.data.profile.username || 'Admin';
+                const parts = displayName.trim().split(/\s+/);
+                const initials = parts.length > 1 
+                    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                    : parts[0][0].toUpperCase();
+                profileImagePreview.textContent = initials;
             }
         }
     } catch (error) {
@@ -1337,10 +1441,31 @@ async function submitProfileForm() {
                      profileDisplayName.textContent = data.data.full_name || data.data.username;
                  }
 
+                 // Update initials avatar in settings modal
+                 const updatedName = data.data.full_name || data.data.username || 'Admin';
+                 const updatedParts = updatedName.trim().split(/\s+/);
+                 const updatedInitials = updatedParts.length > 1
+                     ? (updatedParts[0][0] + updatedParts[updatedParts.length - 1][0]).toUpperCase()
+                     : updatedParts[0][0].toUpperCase();
+                 const initialsEl = document.getElementById('profileImagePreview');
+                 if (initialsEl && initialsEl.classList.contains('profile-initials-avatar')) {
+                     initialsEl.textContent = updatedInitials;
+                 }
+
                  // Update the top navigation username if present
                  const navUsername = document.querySelector('.nav-user-menu .user-name');
                  if (navUsername) {
                      navUsername.textContent = data.data.full_name || data.data.username;
+                 }
+
+                 // Update top nav initials
+                 const navInitials = document.querySelector('.tn-avatar-initials');
+                 if (navInitials) {
+                     navInitials.textContent = updatedInitials;
+                 }
+                 const dropdownInitials = document.querySelector('.tn-dropdown-avatar-initials');
+                 if (dropdownInitials) {
+                     dropdownInitials.textContent = updatedInitials;
                  }
             }
             
@@ -1348,16 +1473,49 @@ async function submitProfileForm() {
             if (data.data && data.data.profile_picture) {
                 const profilePics = document.querySelectorAll('.profile-photo, .user-avatar img, .nav-profile-photo');
                 const fullPath = resolvePath(data.data.profile_picture);
+                const cacheBust = fullPath + '?t=' + new Date().getTime();
                 
                 profilePics.forEach(img => {
-                    // Add timestamp to bust cache
-                    img.src = fullPath + '?t=' + new Date().getTime();
+                    img.src = cacheBust;
                 });
                 
-                // Also update preview
-                const preview = document.getElementById('profileImagePreview');
-                if (preview) {
-                    preview.src = fullPath + '?t=' + new Date().getTime();
+                // Also update preview (may be a span with initials)
+                let preview = document.getElementById('profileImagePreview');
+                if (preview && preview.tagName === 'SPAN') {
+                    const img = document.createElement('img');
+                    img.id = 'profileImagePreview';
+                    img.className = 'profile-image-preview';
+                    img.alt = 'Profile Picture';
+                    img.src = cacheBust;
+                    preview.replaceWith(img);
+                } else if (preview) {
+                    preview.src = cacheBust;
+                }
+
+                // Update topnav avatar: swap initials for image
+                const tnInitials = document.querySelector('.tn-avatar-ring .tn-avatar-initials');
+                if (tnInitials) {
+                    const tnImg = document.createElement('img');
+                    tnImg.src = cacheBust;
+                    tnImg.alt = 'Avatar';
+                    tnImg.className = 'tn-avatar-img';
+                    tnInitials.replaceWith(tnImg);
+                } else {
+                    const tnImg = document.querySelector('.tn-avatar-ring .tn-avatar-img');
+                    if (tnImg) tnImg.src = cacheBust;
+                }
+
+                // Update dropdown avatar
+                const ddInitials = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar-initials');
+                if (ddInitials) {
+                    const ddImg = document.createElement('img');
+                    ddImg.src = cacheBust;
+                    ddImg.alt = 'Avatar';
+                    ddImg.className = 'tn-dropdown-avatar';
+                    ddInitials.replaceWith(ddImg);
+                } else {
+                    const ddImg = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar');
+                    if (ddImg) ddImg.src = cacheBust;
                 }
             }
         } else {
@@ -1547,7 +1705,20 @@ async function submitAdminForm() {
         console.log('Create Admin Response:', text); // Debug response
 
         if (!response.ok) {
-            throw new Error(`Server returned status ${response.status}: ${text}`);
+            // Try to parse the error response for a user-friendly message
+            let errorMessage = 'Something went wrong. Please try again.';
+            try {
+                const errorData = JSON.parse(text);
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                // If not JSON, use a generic message
+                console.error('Raw server error:', text);
+            }
+            alertBox.className = 'settings-alert error';
+            alertBox.textContent = errorMessage;
+            return;
         }
 
         let payload;
@@ -1555,7 +1726,6 @@ async function submitAdminForm() {
             payload = JSON.parse(text);
         } catch (error) {
             console.error('Failed to parse create admin response', error);
-            console.error('Response text:', text);
             alertBox.className = 'settings-alert error';
             alertBox.textContent = 'Server returned an invalid response.';
             return;
@@ -1587,7 +1757,7 @@ async function submitAdminForm() {
         }
 
         alertBox.className = 'settings-alert error';
-        alertBox.textContent = 'Network error: ' + (error.message || 'Unknown error');
+        alertBox.textContent = 'A network error occurred. Please check your connection and try again.';
     } finally {
         submitButton.disabled = false;
     }
@@ -1611,7 +1781,17 @@ async function deleteAdmin(id, username) {
         console.log('Archive Admin Response:', text); // Debug response
 
         if (!response.ok) {
-            throw new Error(`Server returned status ${response.status}: ${text}`);
+            let errorMessage = 'Something went wrong. Please try again.';
+            try {
+                const errorData = JSON.parse(text);
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                console.error('Raw server error:', text);
+            }
+            alert(errorMessage);
+            return;
         }
 
         let payload;
@@ -1619,7 +1799,7 @@ async function deleteAdmin(id, username) {
             payload = JSON.parse(text);
         } catch (e) {
             console.error('Invalid JSON:', text);
-            alert('Server error: Invalid JSON response');
+            alert('Server returned an invalid response.');
             return;
         }
 
@@ -1660,7 +1840,7 @@ async function deleteAdmin(id, username) {
             // This is likely a false positive in the UI flow, suppress alert if operation succeeded
             return;
         }
-        alert('Network error: ' + (error.message || 'Unknown error'));
+        alert('A network error occurred. Please check your connection and try again.');
     }
 }
 
@@ -2517,6 +2697,9 @@ async function loadArchivedAccounts() {
                             <button type="button" class="settings-action-btn" onclick="restoreUser(${user.id}, '${user.username}')" title="Restore User">
                                 <i class='bx bx-undo'></i>
                             </button>
+                            <button type="button" class="settings-action-btn delete" onclick="permanentDeleteUser(${user.id}, '${user.username}')" title="Permanently Delete">
+                                <i class='bx bx-trash'></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -2569,6 +2752,40 @@ async function restoreUser(id, username) {
         }
     } catch (error) {
         console.error('Error restoring user:', error);
+        alert('Network error');
+    }
+}
+
+async function permanentDeleteUser(id, username) {
+    const confirmed = await showModernAlert({
+        title: 'Permanently Delete Account',
+        message: `Are you sure you want to permanently delete "${username}"? This action cannot be undone and all associated data will be removed.`,
+        icon: 'warning',
+        confirmText: 'Yes, Delete Permanently'
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch('../api/users.php?action=permanentDelete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}`
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+            if (typeof showNotification === 'function') {
+                showNotification(`User "${username}" has been permanently deleted.`, 'success');
+            }
+            loadArchivedAccounts();
+        } else {
+            alert(data.message || 'Failed to delete user.');
+        }
+    } catch (error) {
+        console.error('Error permanently deleting user:', error);
         alert('Network error');
     }
 }

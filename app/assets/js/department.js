@@ -827,8 +827,10 @@ function initDepartmentModule() {
       if (span) {
         span.textContent = 'Edit Department';
       } else {
-        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Edit Department</span>';
+        modalTitle.textContent = 'Edit Department';
       }
+      const subtitle = document.querySelector('.dept-modal-subtitle');
+      if (subtitle) subtitle.textContent = 'Update department information.';
 
       const dept = departments.find(d => String(d.id) === String(viewId));
 
@@ -862,8 +864,10 @@ function initDepartmentModule() {
       if (span) {
         span.textContent = 'View Department';
       } else {
-        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>View Department</span>';
+        modalTitle.textContent = 'View Department';
       }
+      const subtitle = document.querySelector('.dept-modal-subtitle');
+      if (subtitle) subtitle.textContent = 'Viewing department details and configuration.';
       
       const dept = departments.find(d => String(d.id) === String(viewId));
       
@@ -891,8 +895,10 @@ function initDepartmentModule() {
       if (span) {
         span.textContent = 'Add New Department';
       } else {
-        modalTitle.innerHTML = '<i class=\'bx bxs-building\'></i><span>Add New Department</span>';
+        modalTitle.textContent = 'Add New Department';
       }
+      const subtitle = document.querySelector('.dept-modal-subtitle');
+      if (subtitle) subtitle.textContent = 'Create and manage academic departments.';
       if (form) {
         form.reset();
         form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));

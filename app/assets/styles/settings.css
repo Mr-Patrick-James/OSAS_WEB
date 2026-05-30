@@ -660,6 +660,32 @@ body.dark .settings-action-btn:hover {
   transform: scale(1.02);
 }
 
+/* Initials-based avatar for profile */
+.profile-initials-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFD700;
+  color: #1a1a1a;
+  font-size: 2.5rem;
+  font-weight: 400;
+  font-family: var(--poppins);
+  border: 4px solid white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  letter-spacing: 1px;
+  line-height: 1;
+  user-select: none;
+}
+
+body.dark .profile-initials-avatar,
+body.dark-mode .profile-initials-avatar {
+  border-color: var(--settings-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
 .profile-upload-button {
   position: absolute;
   bottom: 5px;

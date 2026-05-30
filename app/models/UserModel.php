@@ -147,5 +147,17 @@ class UserModel extends Model {
         $stmt->close();
         return $result;
     }
+
+    /**
+     * Permanently delete a user from the database
+     */
+    public function permanentDelete($id) {
+        $query = "DELETE FROM {$this->table} WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("i", $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
 }
 

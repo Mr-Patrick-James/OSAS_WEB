@@ -466,4 +466,44 @@ class UserController extends Controller {
             $this->error('Error restoring user: ' . $e->getMessage());
         }
     }
+
+    public function permanentDelete() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Invalid request method');
+        }
+
+        $this->requireAdmin();
+
+        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+
+        if ($id <= 0) {
+            $this->error('Invalid user ID.');
+        }
+
+        // Prevent deleting yourself
+        if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $id) {
+            $this->error('You cannot delete your own account.');
+        }
+
+        try {
+            $user = $this->model->getById($id);
+            if (!$user) {
+                $this->error('User not found.');
+            }
+
+            // Only allow permanent delete of archived accounts
+            if (($user['status'] ?? '') !== 'archived') {
+                $this->error('Only archived accounts can be permanently deleted.');
+            }
+
+            if ($this->model->permanentDelete($id)) {
+                Logger::log('User Permanently Deleted', "Account permanently deleted: {$user['username']} (ID: {$id})");
+                $this->success('User permanently deleted.');
+            } else {
+                $this->error('Failed to permanently delete user.');
+            }
+        } catch (Exception $e) {
+            $this->error('Error permanently deleting user: ' . $e->getMessage());
+        }
+    }
 }

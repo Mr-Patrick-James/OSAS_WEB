@@ -478,7 +478,7 @@
         }
     }
 
-    let currentViewMode = 'table';
+    let currentViewMode = 'list';
 
     function setViewMode(mode) {
         currentViewMode = mode;

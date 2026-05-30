@@ -346,7 +346,13 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Reports-modal-overlay" id="ReportsModalOverlay"></div>
     <div class="Reports-modal-container">
       <div class="Reports-modal-header">
-        <h2 id="ReportsModalTitle">Generate Custom Report</h2>
+        <div class="header-icon" style="width:40px;height:40px;border-radius:10px;background:rgba(255,215,0,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class='bx bxs-report' style="font-size:20px;color:#d4af37;"></i>
+        </div>
+        <div class="header-text" style="flex:1;">
+          <h2 id="ReportsModalTitle" style="margin:0;font-size:1.1rem;">Generate Custom Report</h2>
+          <p style="margin:4px 0 0;font-size:0.78rem;color:#6b7280;">Configure and generate a violation analysis report.</p>
+        </div>
         <button class="Reports-close-btn" id="closeReportsModal">
           <i class='bx bx-x'></i>
         </button>
@@ -443,10 +449,15 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Reports-modal-overlay" id="DetailsModalOverlay"></div>
     <div class="Reports-modal-container wide">
       <div class="Reports-modal-header">
-        <h2>
-          <i class='bx bxs-file-blank'></i>
-          <span>Report Details</span>
-        </h2>
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,215,0,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class='bx bxs-file-blank' style="font-size:20px;color:#d4af37;"></i>
+        </div>
+        <div style="flex:1;">
+          <h2 style="margin:0;font-size:1.05rem;font-weight:700;display:block;">
+            <span>Report Details</span>
+          </h2>
+          <p style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">View student violation analysis and history.</p>
+        </div>
         <div class="modal-actions">
           <button class="Reports-action-btn export">
             <i class='bx bx-download'></i> Export

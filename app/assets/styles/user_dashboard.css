@@ -2286,3 +2286,48 @@ body.dark .Violations-modal-container .vd-table tbody tr {
 body.dark .Violations-modal-container .vd-table tbody td {
   color: #e2e8f0 !important;
 }
+
+
+/* ============================================================
+   MOBILE: Disable modal animations for instant popup (performance)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Kill transitions/animations on modals only (not alerts/toasts) */
+  .download-modal-container,
+  .download-modal,
+  .modal,
+  .modal .modal-container,
+  .modal.active .modal-container,
+  #ViolationRecordModal,
+  #ViolationDetailsModal,
+  #ViolationModalOverlay,
+  .Violations-modal,
+  .Violations-modal-container,
+  .Violations-modal-panel,
+  .Violations-details-panel,
+  .sections-modal,
+  .sections-modal-container,
+  .Students-modal,
+  .Students-modal-container,
+  .Reports-modal,
+  .Reports-modal-container,
+  .announcement-modal,
+  .announcement-modal-panel,
+  .settings-modal,
+  .settings-modal-overlay {
+    transition: none !important;
+    animation: none !important;
+    animation-duration: 0s !important;
+  }
+
+  /* Ensure modals appear instantly when active */
+  .download-modal.active .download-modal-container {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+
+  /* Kill keyframe animations on modal elements */
+  @keyframes modalSlideIn { from { opacity: 1; transform: none; } to { opacity: 1; transform: none; } }
+  @keyframes modalIn { from { opacity: 1; transform: none; } to { opacity: 1; transform: none; } }
+}

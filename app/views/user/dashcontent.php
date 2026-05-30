@@ -183,7 +183,13 @@ require_once __DIR__ . '/../../core/View.php';
   <div class="Violations-modal-overlay" id="modalOverlay" onclick="closeViolationModal()"></div>
   <div class="Violations-modal-container">
     <div class="Violations-modal-header">
-      <h2><i class='bx bxs-info-circle'></i><span>Violation Details</span></h2>
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,215,0,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class='bx bxs-info-circle' style="font-size:20px;color:#d4af37;"></i>
+      </div>
+      <div style="flex:1;">
+        <h2 style="margin:0;font-size:1.05rem;font-weight:700;display:block;"><span>Violation Details</span></h2>
+        <p style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">View your violation record details.</p>
+      </div>
       <button class="Violations-close-btn" onclick="closeViolationModal()"><i class='bx bx-x'></i></button>
     </div>
     <div class="violation-details-content">

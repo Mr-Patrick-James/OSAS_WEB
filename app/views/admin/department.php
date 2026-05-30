@@ -180,10 +180,15 @@ require_once __DIR__ . '/../../config/db_connect.php';
       <div class="modal-overlay" id="modalOverlay"></div>
       <div class="modal-container" style="max-width: 450px;">
         <div class="modal-header">
-          <h2 id="modalTitle">
-            <i class='bx bxs-building'></i>
-            <span>Add New Department</span>
-          </h2>
+          <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,215,0,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class='bx bxs-building' style="font-size:20px;color:#d4af37;"></i>
+          </div>
+          <div style="flex:1;">
+            <h2 id="modalTitle" style="margin:0;font-size:1.05rem;font-weight:700;display:block;">
+              <span>Add New Department</span>
+            </h2>
+            <p class="dept-modal-subtitle" style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">Create and manage academic departments.</p>
+          </div>
           <button class="close-btn" id="closeModal">
             <i class='bx bx-x'></i>
           </button>

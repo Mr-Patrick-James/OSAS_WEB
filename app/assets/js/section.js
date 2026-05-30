@@ -911,8 +911,10 @@ function initSectionsModule() {
                 if (span) {
                     span.textContent = 'View Section';
                 } else {
-                    modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>View Section</span>';
+                    modalTitle.textContent = 'View Section';
                 }
+                const subtitle = document.querySelector('.sections-modal-subtitle');
+                if (subtitle) subtitle.textContent = 'Viewing section details and configuration.';
                 
                 const section = sections.find(s => String(s.id) === String(viewId));
                 
@@ -939,8 +941,10 @@ function initSectionsModule() {
                 if (span) {
                     span.textContent = 'Add New Section';
                 } else {
-                    modalTitle.innerHTML = '<i class=\'bx bxs-layer\'></i><span>Add New Section</span>';
+                    modalTitle.textContent = 'Add New Section';
                 }
+                const subtitle = document.querySelector('.sections-modal-subtitle');
+                if (subtitle) subtitle.textContent = 'Create and manage class sections.';
                 if (form) {
                     form.reset();
                     form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));

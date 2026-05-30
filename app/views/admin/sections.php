@@ -190,10 +190,15 @@ if ($deptResult && $deptResult->num_rows > 0) {
       <div class="sections-modal-overlay" id="sectionsModalOverlay"></div>
       <div class="sections-modal-container">
         <div class="sections-modal-header">
-          <h2 id="sectionsModalTitle">
-            <i class='bx bxs-layer'></i>
-            <span>Add New Section</span>
-          </h2>
+          <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,215,0,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class='bx bxs-layer' style="font-size:20px;color:#d4af37;"></i>
+          </div>
+          <div style="flex:1;">
+            <h2 id="sectionsModalTitle" style="margin:0;font-size:1.05rem;font-weight:700;display:block;">
+              <span>Add New Section</span>
+            </h2>
+            <p class="sections-modal-subtitle" style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">Create and manage class sections.</p>
+          </div>
           <button class="sections-close-btn" id="closeSectionsModal">
             <i class='bx bx-x'></i>
           </button>

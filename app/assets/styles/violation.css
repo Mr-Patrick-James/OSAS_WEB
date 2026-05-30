@@ -1235,11 +1235,11 @@ body.dark {
 }
 
 .Violations-modal-header {
-  padding: 32px 36px;
+  padding: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   background: linear-gradient(135deg, rgba(255,215,0,.12) 0%, transparent 100%);
   box-shadow: none;
   flex-shrink: 0;
@@ -2494,6 +2494,34 @@ body.dark {
 .Violations-modal-header h2,
 .Violations-modal-header h2 span {
   font-size: 15px !important;
+}
+
+#ViolationRecordModal .Violations-modal-header h2,
+#ViolationRecordModal .Violations-modal-header h2 span {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+}
+
+#ViolationRecordModal .Violations-modal-header h2 {
+  display: block !important;
+  padding-right: 0 !important;
+  flex: none !important;
+}
+
+#ViolationRecordModal .Violations-modal-header > div:first-child {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+}
+
+#ViolationDetailsModal .Violations-modal-header h2,
+#ViolationDetailsModal .Violations-modal-header h2 span {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+}
+
+#ViolationRecordModal .Violations-modal-header > div:first-child i {
+  font-size: 24px !important;
 }
 
 .violation-notes-section h4,
@@ -4540,8 +4568,8 @@ body.dark {
 #ViolationDetailsModal .Violations-modal-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
+  gap: 12px;
+  padding: 16px 24px;
   border-bottom: 1px solid rgba(0,0,0,0.08);
   background: linear-gradient(135deg, rgba(255,215,0,.15) 0%, transparent 100%);
   position: sticky;
@@ -4552,19 +4580,24 @@ body.dark {
 
 #ViolationDetailsModal .Violations-modal-header h2 {
   margin: 0;
-  font-size: 1rem !important;
+  font-size: 1.15rem !important;
   font-weight: 700;
   color: var(--dark, #1A1A1A);
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: block;
   padding-right: 0;
-  flex: 1;
+  flex: none;
 }
 
-#ViolationDetailsModal .Violations-modal-header h2 i {
-  font-size: 1.2rem;
-  color: var(--gold, #FFD700);
+#ViolationDetailsModal .Violations-modal-header > div:first-child {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  border-radius: 12px !important;
+}
+
+#ViolationDetailsModal .Violations-modal-header > div:first-child i {
+  font-size: 22px !important;
+  color: #d4af37 !important;
 }
 
 /* Close button */
@@ -5138,4 +5171,27 @@ body.dark #ViolationDetailsModal .vd-table thead th {
 body.dark #ViolationDetailsModal .timeline-content {
   background: #222 !important;
   border-color: #2A2A2A !important;
+}
+
+
+/* ============================================================
+   MOBILE: Disable modal animations for instant popup (performance)
+   ============================================================ */
+@media (max-width: 768px) {
+  #ViolationRecordModal,
+  #ViolationDetailsModal,
+  #ViolationModalOverlay,
+  #ExportViolationsModal,
+  .Violations-modal,
+  .Violations-modal-container,
+  .Violations-modal-overlay,
+  .Violations-modal-panel,
+  .Violations-details-panel,
+  #ViolationRecordModal .Violations-modal-container,
+  #ViolationDetailsModal .Violations-modal-container,
+  #ExportViolationsModal .Violations-modal-container {
+    transition: none !important;
+    animation: none !important;
+    animation-duration: 0s !important;
+  }
 }

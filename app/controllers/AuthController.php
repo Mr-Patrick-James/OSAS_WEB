@@ -105,7 +105,10 @@ class AuthController extends Controller {
                 ];
 
                 error_log("Login successful for username: " . $username . ", role: " . $user['role']);
-                Logger::log('Login', "User logged in: {$user['username']} (Role: {$user['role']})");
+                // Only log admin activity to system logs
+                if ($user['role'] !== 'user') {
+                    Logger::log('Login', "User logged in: {$user['username']} (Role: {$user['role']})");
+                }
                 $this->success('Login successful', $responseData);
 
             } else {
@@ -134,7 +137,10 @@ class AuthController extends Controller {
             session_start();
         }
         if (isset($_SESSION['user_id'])) {
-            Logger::log('Logout', "User logged out: {$_SESSION['username']}");
+            // Only log admin activity to system logs
+            if (isset($_SESSION['role']) && $_SESSION['role'] !== 'user') {
+                Logger::log('Logout', "User logged out: {$_SESSION['username']}");
+            }
         }
         session_destroy();
 

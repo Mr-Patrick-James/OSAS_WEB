@@ -36,11 +36,24 @@ function initViolationsModule() {
             if (el) el.value = 'campus';
         }
 
+        // Helper function to generate a local initials avatar as SVG data URI (works offline)
+        function getInitialsAvatar(name, size = 80) {
+            const cleanName = (name || 'Student').trim();
+            const parts = cleanName.split(/\s+/);
+            const initials = parts.length > 1
+                ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                : (parts[0][0] || 'S').toUpperCase();
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" rx="${size/2}" fill="%23ffd700"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,sans-serif" font-size="${size * 0.4}" font-weight="bold" fill="%23333">${initials}</text></svg>`;
+            return `data:image/svg+xml,${svg}`;
+        }
+        // Expose globally for inline onerror handlers
+        window.getInitialsAvatar = getInitialsAvatar;
+
         // Helper function to convert relative image paths to absolute URLs
         function getImageUrl(imagePath, fallbackName = 'Student') {
             if (!imagePath || imagePath.trim() === '') {
-                // Return a default avatar with the name
-                return `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=ffd700&color=333&size=80`;
+                // Return a local SVG initials avatar (works offline)
+                return getInitialsAvatar(fallbackName);
             }
             
             // If it's already a full URL (http/https or data:), return as-is
@@ -145,14 +158,23 @@ function initViolationsModule() {
         let selectedFiles   = [];
 
         function getCurrentAdminName() {
+            // Try localStorage session first
             const sessionStr = localStorage.getItem('userSession');
-            if (!sessionStr) return 'Admin';
-            try {
-                const session = JSON.parse(sessionStr);
-                return session.full_name || session.name || session.username || 'Admin';
-            } catch (e) {
-                return 'Admin';
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    // Only use full_name/name if it doesn't look like an email
+                    const name = session.full_name || session.name || '';
+                    if (name && !name.includes('@')) return name;
+                } catch (e) {}
             }
+            // Fallback: try cookie
+            const cookieName = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('full_name='));
+            if (cookieName) {
+                const val = decodeURIComponent(cookieName.split('=')[1]);
+                if (val && !val.includes('@')) return val;
+            }
+            return 'Admin';
         }
 
         // Student data will be loaded dynamically
@@ -775,7 +797,7 @@ function initViolationsModule() {
             const violationTypeId = parseInt(violationTypeInput.value);
 
             // 3. Filter violations for this student and type
-            // Note: violations array contains history
+            // Include both synced and pending/offline violations for level progression
             const studentHistory = violations.filter(v => 
                 v.studentId === studentId && 
                 (v.violationType == violationTypeId)
@@ -801,7 +823,7 @@ function initViolationsModule() {
                 const typeId = parseInt(input.value);
                 
                 // 3. Find history for this student and type
-                // Use the global violations array
+                // Include both synced and pending violations for badge display
                 const history = violations.filter(v => 
                     v.studentId === studentId && 
                     (v.violationType == typeId)
@@ -870,12 +892,21 @@ function initViolationsModule() {
                 if (matchingHistory.length > 0) {
                     const latest = matchingHistory[0];
                     const latestDate = latest.dateReported || latest.violationDate;
+                    const isPending = latest.status === 'pending' || String(latest.id).startsWith('TEMP-');
                     
-                    // Mark as recorded and disabled
-                    input.disabled = true;
-                    if (optionContainer) {
-                        optionContainer.classList.add('recorded', 'disabled');
-                        optionContainer.classList.remove('active'); // Deselect if active
+                    // Only disable if it's a synced (confirmed) violation, not pending
+                    if (!isPending) {
+                        input.disabled = true;
+                        if (optionContainer) {
+                            optionContainer.classList.add('recorded', 'disabled');
+                            optionContainer.classList.remove('active');
+                        }
+                    } else {
+                        // Pending: mark visually but don't disable
+                        if (optionContainer) {
+                            optionContainer.classList.add('recorded');
+                            optionContainer.classList.remove('disabled');
+                        }
                     }
 
                     // Add Badge
@@ -883,8 +914,12 @@ function initViolationsModule() {
                     if (label) {
                         const badge = document.createElement('span');
                         badge.className = 'violation-history-badge';
-                        badge.innerHTML = `<i class='bx bx-history'></i> Recorded (${matchingHistory.length})`;
-                        badge.title = `Last recorded: ${latestDate}`;
+                        badge.innerHTML = isPending 
+                            ? `<i class='bx bx-time'></i> Pending Sync`
+                            : `<i class='bx bx-history'></i> Recorded (${matchingHistory.length})`;
+                        badge.title = isPending 
+                            ? 'Recorded offline - pending sync'
+                            : `Last recorded: ${latestDate}`;
                         
                         // Append to the title
                         const titleSpan = label.querySelector('.level-title');
@@ -1057,7 +1092,9 @@ function initViolationsModule() {
                         studentId:           studentId,
                         studentName:         student ? `${student.firstName} ${student.lastName}` : (formData.get('studentName') || 'Unknown'),
                         studentImage:        student ? student.avatar : '',
+                        violationType:       vtypeId,
                         violationTypeLabel:  vtype ? vtype.name : (formData.get('violationTypeName') || 'Pending Sync'),
+                        violationLevel:      vlevelId,
                         violationLevelLabel: vlevelLabel || formData.get('violationLevelName') || '—',
                         department:          formData.get('department') || student?.department || 'N/A',
                         section:             student?.section || formData.get('section') || 'N/A',
@@ -1089,8 +1126,10 @@ function initViolationsModule() {
                     
                     // Close modal
                     if (recordModal) {
-                        recordModal.style.display = 'none';
+                        recordModal.classList.remove('active');
+                        recordModal.style.display = '';
                         if (recordOverlay) recordOverlay.style.display = 'none';
+                        document.body.style.overflow = '';
                     }
                     
                     return { status: 'offline', data: offlineViolation };
@@ -1976,7 +2015,7 @@ function initViolationsModule() {
                 <div class="student-profile-image">
                     <img src="${studentImageUrl}"
                          alt="${fullName}"
-                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=80'">
+                         onerror="this.src=getInitialsAvatar('${fullName.replace(/'/g, "\\'")}', 80)">
                 </div>
                 <div class="student-profile-info">
                     <h3>${fullName}</h3>
@@ -2270,6 +2309,10 @@ function initViolationsModule() {
             function getDisplayStatus(v) {
                 let displayStatus = v.status;
                 let displayStatusLabel = v.statusLabel;
+                // Don't override pending status — keep "Pending Sync" for offline violations
+                if (displayStatus === 'pending') {
+                    return { displayStatus, displayStatusLabel: displayStatusLabel || 'Pending Sync' };
+                }
                 const ll = (v.violationLevelLabel || '').toLowerCase();
                 if ((ll.includes('warning 3') || ll.includes('3rd')) && displayStatus !== 'resolved') {
                     displayStatus = 'disciplinary';
@@ -2293,7 +2336,7 @@ function initViolationsModule() {
                         <div class="violation-student-info">
                             <div class="violation-student-image">
                                 <img src="${v.studentImage}" alt="${v.studentName}" class="student-avatar"
-                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=32'">
+                                     onerror="this.src=getInitialsAvatar('${v.studentName.replace(/'/g, "\\'")}', 32)">
                             </div>
                             <div class="violation-student-name">
                                 <strong>${v.studentName}</strong>
@@ -2362,7 +2405,7 @@ function initViolationsModule() {
                             <div class="violation-card-body">
                                 <div class="violation-card-student">
                                     <img src="${v.studentImage}" alt="${v.studentName}" class="violation-card-avatar"
-                                         onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=44'">
+                                         onerror="this.src=getInitialsAvatar('${v.studentName.replace(/'/g, "\\'")}', 44)">
                                     <div class="violation-card-student-info">
                                         <p class="violation-card-name">${v.studentName}</p>
                                         <p class="violation-card-id">${v.studentId}</p>
@@ -2425,7 +2468,7 @@ function initViolationsModule() {
                         <div class="violation-list-item ${displayStatus}" data-id="${v.id}">
                             <div class="violation-list-top">
                                 <img src="${v.studentImage}" alt="${v.studentName}" class="violation-list-avatar"
-                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(v.studentName)}&background=ffd700&color=333&size=36'">
+                                     onerror="this.src=getInitialsAvatar('${v.studentName.replace(/'/g, "\\'")}', 36)">
                                 <div class="violation-list-name-block">
                                     <span class="violation-list-name">${v.studentName}</span>
                                     <span class="violation-list-id">${v.studentId}</span>
@@ -2525,6 +2568,7 @@ function initViolationsModule() {
         
         function openRecordModal(editId = null) {
             console.log('🎯 Opening record modal...');
+            recordModal.style.display = '';  // Clear any inline display:none
             recordModal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
@@ -2555,18 +2599,10 @@ function initViolationsModule() {
             const populateAdminName = () => {
                 const reportedByInput = document.getElementById('reportedBy');
                 if (reportedByInput) {
-                    const sessionStr = localStorage.getItem('userSession');
-                    if (sessionStr) {
-                        try {
-                            const session = JSON.parse(sessionStr);
-                            // Prioritize full_name, then name, then username
-                            const adminName = session.full_name || session.name || session.username || '';
-                            reportedByInput.value = adminName;
-                            console.log('👤 Auto-populated reporter:', adminName);
-                        } catch (e) {
-                            console.error('Error parsing session for reporter:', e);
-                        }
-                    }
+                    // Use getCurrentAdminName which handles email fallback properly
+                    const adminName = getCurrentAdminName();
+                    reportedByInput.value = adminName;
+                    console.log('👤 Auto-populated reporter:', adminName);
                 }
             };
             
@@ -2589,7 +2625,7 @@ function initViolationsModule() {
                         modalStudentImage.src = violation.studentImage;
                         modalStudentImage.onerror = function() {
                             this.onerror = null;
-                            this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(violation.studentName)}&background=ffd700&color=333&size=80`;
+                            this.src = getInitialsAvatar(violation.studentName, 80);
                         };
                     }
                     document.getElementById('modalStudentDept').textContent = violation.studentDept;
@@ -3283,7 +3319,7 @@ function initViolationsModule() {
                 img.src = imageUrl;
                 img.onerror = function() {
                     this.onerror = null;
-                    this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=ffd700&color=333&size=80`;
+                    this.src = getInitialsAvatar(fullName, 80);
                 };
                 document.getElementById('modalStudentDept').textContent      = department;
                 document.getElementById('modalStudentSection').textContent   = section;
@@ -4150,10 +4186,22 @@ function initViolationsModule() {
             if (!fileInput) return;
 
             // Browse button click
-            if (browseBtn) browseBtn.addEventListener('click', () => fileInput.click());
+            if (browseBtn) browseBtn.addEventListener('click', () => {
+                if (!navigator.onLine) {
+                    showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                    return;
+                }
+                fileInput.click();
+            });
             // Clicking anywhere on dropzone also opens file picker
             if (dropzone) dropzone.addEventListener('click', e => {
-                if (e.target !== browseBtn) fileInput.click();
+                if (e.target !== browseBtn) {
+                    if (!navigator.onLine) {
+                        showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                        return;
+                    }
+                    fileInput.click();
+                }
             });
 
             // Drag & drop
@@ -4163,11 +4211,20 @@ function initViolationsModule() {
                 dropzone.addEventListener('drop', e => {
                     e.preventDefault();
                     dropzone.classList.remove('dragover');
+                    if (!navigator.onLine) {
+                        showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                        return;
+                    }
                     addFiles(e.dataTransfer.files);
                 });
             }
 
             fileInput.addEventListener('change', function() {
+                if (!navigator.onLine) {
+                    showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
+                    this.value = '';
+                    return;
+                }
                 addFiles(this.files);
                 this.value = '';
             });
@@ -4226,9 +4283,21 @@ function initViolationsModule() {
                 if (sessionStr) {
                     try {
                         const session = JSON.parse(sessionStr);
-                        enforcedAdminName = session.full_name || session.name || session.username || reportedBy;
+                        const name = session.full_name || session.name || '';
+                        // Only use if it's a real name (not an email)
+                        if (name && !name.includes('@')) {
+                            enforcedAdminName = name;
+                        }
                     } catch (e) {
                         console.error('Error parsing session for reporter enforcement:', e);
+                    }
+                }
+                // Fallback: check cookie if still looks like email
+                if (!enforcedAdminName || enforcedAdminName.includes('@')) {
+                    const cookieName = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('full_name='));
+                    if (cookieName) {
+                        const val = decodeURIComponent(cookieName.split('=')[1]);
+                        if (val && !val.includes('@')) enforcedAdminName = val;
                     }
                 }
                 
@@ -4681,7 +4750,7 @@ function initViolationsModule() {
 
                 return `<div class="violation-card ${statusClass}">
                     <div class="violation-card-header">
-                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-card-avatar">
+                        <img src="${getInitialsAvatar((req.first_name || '') + ' ' + (req.last_name || ''), 36)}" alt="" class="violation-card-avatar">
                         <div class="violation-card-name-block">
                             <span class="violation-card-name">${req.first_name || ''} ${req.last_name || ''}</span>
                             <span class="violation-card-id">${req.student_id || ''}</span>
@@ -4717,7 +4786,7 @@ function initViolationsModule() {
 
                 return `<div class="violation-list-item ${statusClass}" data-id="${req.id}">
                     <div class="violation-list-top">
-                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent((req.first_name || '') + ' ' + (req.last_name || ''))}&background=ffd700&color=333&size=36" alt="" class="violation-list-avatar">
+                        <img src="${getInitialsAvatar((req.first_name || '') + ' ' + (req.last_name || ''), 36)}" alt="" class="violation-list-avatar">
                         <div class="violation-list-name-block">
                             <span class="violation-list-name">${req.first_name || ''} ${req.last_name || ''}</span>
                             <span class="violation-list-id">${req.student_id || ''}</span>
@@ -5084,7 +5153,7 @@ function initViolationsModule() {
                     caseId: 'VIOL-2024-001',
                     studentId: '2024-001',
                     studentName: 'John Doe',
-                    studentImage: 'https://ui-avatars.com/api/?name=John+Doe&background=ffd700&color=333&size=40',
+                    studentImage: getInitialsAvatar('John Doe', 40),
                     studentDept: 'BSIT',
                     studentSection: 'BSIT-1A',
                     studentContact: '+63 912 345 6789',
@@ -5118,7 +5187,7 @@ function initViolationsModule() {
                     contact: '+63 912 345 6789',
                     department: 'BSIT',
                     section: 'BSIT-1A',
-                    avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=ffd700&color=333&size=80'
+                    avatar: getInitialsAvatar('John Doe', 80)
                 }
             ];
             renderViolations();

@@ -865,8 +865,8 @@ body.dark #departmentModal .close-btn:hover {
   padding: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   background: linear-gradient(135deg, rgba(255,215,0,.12) 0%, transparent 100%) !important;
   box-shadow: none;
   flex-shrink: 0;
@@ -1648,4 +1648,16 @@ body.dark #departmentModal .close-btn:hover {
 #department-page .action-buttons .action-btn {
   width: 32px !important;
   height: 32px !important;
+}
+
+
+/* MOBILE: Disable modal animations for instant popup */
+@media (max-width: 768px) {
+  .modal, .modal .modal-container, .modal.active .modal-container,
+  #departmentModal, #departmentModal .modal-container,
+  #ExportDepartmentsModal, #ExportDepartmentsModal .modal-container {
+    transition: none !important;
+    animation: none !important;
+    animation-duration: 0s !important;
+  }
 }

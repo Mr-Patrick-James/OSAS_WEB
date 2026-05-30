@@ -49,6 +49,9 @@ try {
             case 'restoreUser':
                 $controller->restoreUser();
                 break;
+            case 'permanentDelete':
+                $controller->permanentDelete();
+                break;
             case 'updateStatus':
                 $controller->updateStatus();
                 break;

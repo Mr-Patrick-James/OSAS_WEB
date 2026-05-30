@@ -1,33 +1,50 @@
 <?php
 require_once __DIR__ . '/../../core/View.php';
-// Get user profile image or default
-$userImage = View::asset('img/default.png');
-if (file_exists(__DIR__ . '/../../assets/img/user.jpg')) {
-    $userImage = View::asset('img/user.jpg');
-}
 
 $username = $_SESSION['username'] ?? 'User';
 $role = $_SESSION['role'] ?? 'user';
 
 // Use passed student data if available
+$hasProfilePic = false;
+$userImage = '';
 if (isset($student) && $student) {
     // Construct full name
     $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''));
     if (!empty($fullName)) {
         $username = $fullName;
     }
-    
-    // Set avatar
+    // Check for avatar (ignore generated ui-avatars URLs and default.png)
     if (!empty($student['avatar'])) {
-        // If avatar is a URL, use it directly
-        if (filter_var($student['avatar'], FILTER_VALIDATE_URL)) {
-            $userImage = $student['avatar'];
-        } else {
-            // Use View::asset to resolve the path
-            // The StudentModel returns paths starting with app/assets/..., which View::asset handles
-            $userImage = View::asset($student['avatar']);
+        $avatar = $student['avatar'];
+        $isGenerated = (strpos($avatar, 'ui-avatars.com') !== false);
+        $isDefault = (strpos($avatar, 'default.png') !== false);
+        if (!$isGenerated && !$isDefault) {
+            if (filter_var($avatar, FILTER_VALIDATE_URL)) {
+                $userImage = $avatar;
+            } else {
+                $userImage = View::asset($avatar);
+            }
+            $hasProfilePic = true;
         }
     }
+}
+
+// Also check session profile picture
+if (!$hasProfilePic && isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture'])) {
+    $profilePic = $_SESSION['profile_picture'];
+    if (strpos($profilePic, 'public/') === 0) {
+        $userImage = View::url($profilePic) . '?t=' . time();
+    } else {
+        $userImage = View::asset($profilePic);
+    }
+    $hasProfilePic = true;
+}
+
+// Generate initials from the user's name (first letter of first & last name)
+$nameParts = explode(' ', trim($username));
+$initials = strtoupper(substr($nameParts[0], 0, 1));
+if (count($nameParts) > 1) {
+    $initials .= strtoupper(substr(end($nameParts), 0, 1));
 }
 ?>
 <!-- TOP NAVIGATION -->
@@ -105,7 +122,15 @@ if (isset($student) && $student) {
     <!-- User Menu -->
     <div class="nav-user-menu">
       <div class="user-avatar">
-        <img src="<?= $userImage ?>" alt="User Avatar">
+        <span class="user-avatar-ring">
+          <?php if ($hasProfilePic): ?>
+            <img src="<?= $userImage ?>" alt="User Avatar" class="user-avatar-img"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <span class="user-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+          <?php else: ?>
+            <span class="user-avatar-initials"><?= htmlspecialchars($initials) ?></span>
+          <?php endif; ?>
+        </span>
         <span class="user-name"><?= htmlspecialchars($username) ?></span>
         <i class='bx bx-chevron-down'></i>
       </div>

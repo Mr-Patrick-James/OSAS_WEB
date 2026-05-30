@@ -1068,8 +1068,8 @@ body.dark {
   padding: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   background: linear-gradient(135deg, rgba(255,215,0,.12) 0%, transparent 100%);
   box-shadow: none;
   flex-shrink: 0;
@@ -1970,5 +1970,16 @@ body.dark {
 @media (max-width: 480px) {
   .Students-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+/* MOBILE: Disable modal animations for instant popup */
+@media (max-width: 768px) {
+  .Students-modal, .Students-modal-container, .Students-modal-overlay,
+  .Students-modal.active .Students-modal-container {
+    transition: none !important;
+    animation: none !important;
+    animation-duration: 0s !important;
   }
 }
