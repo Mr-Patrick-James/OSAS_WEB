@@ -705,15 +705,16 @@ body.dark {
   position: relative;
   background: var(--surface);
   border-radius: var(--r-lg);
-  padding: 22px 20px;
+  padding: 28px 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: transform .25s var(--spring), box-shadow .25s var(--ease);
   cursor: default;
+  min-height: 100px;
 }
 .sd-stat:hover {
   transform: translateY(-5px);
@@ -769,7 +770,7 @@ body.dark {
 /* Keep old glow hidden */
 .sd-stat__glow { display: none; }
 .sd-stat__icon {
-  width: 52px; height: 52px;
+  width: 56px; height: 56px;
   border-radius: var(--r-md);
   display: flex; align-items: center; justify-content: center;
   font-size: 24px;
@@ -784,7 +785,7 @@ body.dark {
 }
 .sd-stat__val {
   font-family: var(--poppins);
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--text);
   line-height: 1;
@@ -794,7 +795,7 @@ body.dark {
   white-space: nowrap;
 }
 .sd-stat__lbl {
-  font-size: .72rem;
+  font-size: .78rem;
   font-weight: 500;
   color: var(--text-3);
   text-transform: uppercase;
@@ -1026,9 +1027,9 @@ body.dark {
   font-size: 18px;
   flex-shrink: 0;
 }
-.sd-violation-item__icon--uniform  { background: rgba(239, 68, 68, .12); color: #ef4444; }
-.sd-violation-item__icon--footwear { background: rgba(245, 158, 11, .12); color: #f59e0b; }
-.sd-violation-item__icon--id       { background: rgba(59, 130, 246, .12); color: #3b82f6; }
+.sd-violation-item__icon--uniform  { background: rgba(212, 175, 55, .12); color: #D4AF37; }
+.sd-violation-item__icon--footwear { background: rgba(212, 175, 55, .12); color: #D4AF37; }
+.sd-violation-item__icon--id       { background: rgba(212, 175, 55, .12); color: #D4AF37; }
 .sd-violation-item__icon--default  { background: var(--gold-light); color: var(--gold-dark); }
 
 .sd-violation-item__details {
@@ -1238,7 +1239,7 @@ body.dark {
   width: 38px; height: 38px;
   border-radius: var(--r-md);
   background: linear-gradient(135deg, var(--gold) 0%, var(--orange) 100%);
-  color: #000;
+  color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
@@ -2001,35 +2002,35 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   position: relative;
   background: var(--surface);
   border-radius: var(--r-lg);
-  padding: 12px 14px;
+  padding: 20px 18px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   border: 1px solid var(--border);
   border-left: 4px solid var(--gold);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: transform .25s var(--spring), box-shadow .25s;
   cursor: default;
+  min-height: 80px;
 }
 .uv-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 
 .uv-stat__icon {
-  width: 36px; height: 36px;
-  border-radius: 8px;
+  width: 44px; height: 44px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   color: var(--dark);
   display: flex; align-items: center; justify-content: center;
-  font-size: 17px;
+  font-size: 20px;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(255,215,0,.3);
 }
 .uv-stat__body {
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 3px;
   min-width: 0;
 }
 .uv-stat__lbl {
-  font-size: .68rem;
+  font-size: .72rem;
   font-weight: 500;
   color: var(--text-3);
   line-height: 1.2;
@@ -2039,7 +2040,7 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
 }
 .uv-stat__val {
   font-family: var(--poppins);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text);
   line-height: 1;
@@ -2330,4 +2331,125 @@ body.dark .Violations-modal-container .vd-table tbody td {
   /* Kill keyframe animations on modal elements */
   @keyframes modalSlideIn { from { opacity: 1; transform: none; } to { opacity: 1; transform: none; } }
   @keyframes modalIn { from { opacity: 1; transform: none; } to { opacity: 1; transform: none; } }
+}
+
+/* ============================================================
+   MY VIOLATIONS — PAGINATION
+   ============================================================ */
+.uv-table-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.uv-pagination-info {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.uv-pagination-info span {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.uv-pagination {
+  display: flex;
+  gap: 6px;
+}
+
+.uv-pagination-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.2s var(--ease);
+}
+
+.uv-pagination-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.uv-pagination-btn.active {
+  background: var(--gold);
+  color: #1A1A1A;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.uv-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .uv-table-footer {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 12px;
+  }
+
+  .uv-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .uv-pagination-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+}
+
+/* Dark mode — pagination */
+body.dark .uv-table-footer {
+  border-top-color: #2A2A2A;
+}
+
+body.dark .uv-pagination-btn {
+  background: #1a1a1a;
+  border-color: #3a3a3a;
+  color: #ccc;
+}
+
+body.dark .uv-pagination-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+body.dark .uv-pagination-btn.active {
+  background: var(--gold);
+  color: #1a1a1a;
+  border-color: var(--gold);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+body.dark .uv-pagination-btn:disabled {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+  color: #555;
+  opacity: 0.6;
+}
+
+body.dark .uv-pagination-info {
+  color: #64748b;
+}
+
+body.dark .uv-pagination-info span {
+  color: #ccc;
 }

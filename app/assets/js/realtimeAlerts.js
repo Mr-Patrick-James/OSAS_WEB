@@ -5,8 +5,9 @@
 (function () {
     'use strict';
 
-    const POLL_MS = 45000;
-    const STORAGE_KEY = 'eosas_last_alert_snapshot';
+    const POLL_MS        = 20000; // 20s for violations (was 45s)
+    const ANNOUNCE_MS   = 45000; // 45s for announcements
+    const STORAGE_KEY    = 'eosas_last_alert_snapshot';
 
     function apiBase() {
         const p = location.pathname.split('/').filter(Boolean);
@@ -80,9 +81,8 @@
                     lastViolationId: latestV?.id,
                     lastAnnouncementId: latestA?.id
                 });
-                if (typeof window.initializeNotifications === 'function') {
-                    /* refresh dropdown if loaded */
-                }
+                // Initial badge count from unread violations
+                _updateBadgeFromViolations(violations);
                 return;
             }
 
@@ -92,9 +92,9 @@
                 const isNew = !snap.lastViolationId || Number(latestV.id) > Number(snap.lastViolationId);
                 if (isNew && latestV.is_read != 1) {
                     notifyUser(
-                        'New violation',
+                        'New Violation Recorded',
                         (latestV.case_id ? 'Case ' + latestV.case_id + ' — ' : '') +
-                            (latestV.violation_type_name || latestV.violation_type || 'See details in app'),
+                            (latestV.violation_type_name || latestV.violation_type || 'Check your violations tab'),
                         'violation-' + latestV.id
                     );
                     newCount++;
@@ -106,8 +106,8 @@
                 const isNew = !snap.lastAnnouncementId || Number(latestA.id) > Number(snap.lastAnnouncementId);
                 if (isNew) {
                     notifyUser(
-                        'New announcement',
-                        latestA.title || 'Campus update',
+                        'New Announcement',
+                        latestA.title || 'New campus update posted',
                         'announcement-' + latestA.id
                     );
                     newCount++;
@@ -117,26 +117,41 @@
 
             saveSnapshot(snap);
 
-            if (violations.length) {
-                const seen = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
-                const latest = violations[0];
-                const unseen = (!seen.includes(String(latest.id)) && latest.is_read != 1) ? 1 : 0;
-                updateBadge(unseen + (newCount > 0 ? newCount : 0));
+            // Always silently update the badge count
+            if (typeof window.refreshNotificationBadge === 'function') {
+                window.refreshNotificationBadge();
+            } else {
+                _updateBadgeFromViolations(violations, newCount);
             }
 
-            if (newCount > 0 && typeof window.initializeNotifications === 'function') {
-                const btn = document.getElementById('notificationBtn');
-                if (btn) btn.click();
+            // If dropdown is already open, refresh it silently
+            const dropdown = document.getElementById('notificationDropdown');
+            if (dropdown && dropdown.classList.contains('show')) {
+                if (typeof window.refreshNotificationDropdown === 'function') {
+                    window.refreshNotificationDropdown();
+                }
             }
+
         } catch (e) {
             console.warn('Realtime alerts:', e);
         }
     }
 
+    function _updateBadgeFromViolations(violations, extraNew = 0) {
+        const seen = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+        const read = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+        const unreadViolations = violations.filter(v =>
+            !read.includes('v-' + v.id) &&
+            !seen.includes('v-' + v.id) &&
+            v.is_read != 1
+        ).length;
+        updateBadge(unreadViolations + extraNew);
+    }
+
     function startRealtimeAlerts() {
         if (!document.getElementById('notificationBtn')) return;
         checkForUpdates();
-        setInterval(checkForUpdates, POLL_MS);
+        setInterval(checkForUpdates, POLL_MS); // poll every 20s
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') checkForUpdates();
         });

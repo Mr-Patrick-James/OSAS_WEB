@@ -81,7 +81,8 @@ if (!$student_id) {
     <meta name="theme-color" content="#D4AF37">
     <link rel="icon" type="image/png" href="<?= View::asset('img/default.png') ?>">
     <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">
-    <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/user_topnav.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/settings.css') ?>?v=<?= time() ?>">

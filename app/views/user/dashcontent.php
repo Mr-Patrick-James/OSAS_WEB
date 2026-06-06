@@ -55,7 +55,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="sd-stat__icon"><i class='bx bxs-check-shield'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statResolvedViolations">—</span>
-        <span class="sd-stat__lbl">Permitted</span>
+        <span class="sd-stat__lbl">Resolved</span>
       </div>
       <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
@@ -63,7 +63,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="sd-stat__icon"><i class='bx bxs-error'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statActiveViolations">—</span>
-        <span class="sd-stat__lbl">Warning</span>
+        <span class="sd-stat__lbl">Disciplinary</span>
       </div>
       <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
@@ -156,7 +156,7 @@ require_once __DIR__ . '/../../core/View.php';
             </div>
           </div>
           <div class="sd-tip">
-            <div class="sd-tip__icon"><i class='bx bxs-shopping-bag-alt'></i></div>
+            <div class="sd-tip__icon"><i class='fas fa-shoe-prints'></i></div>
             <div class="sd-tip__body">
               <h4>Appropriate Footwear</h4>
               <p>School-approved shoes only. Keep them clean and in good repair.</p>

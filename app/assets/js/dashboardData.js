@@ -874,6 +874,7 @@ class DashboardData {
         if (this.topViolators && this.topViolators.length > 0) {
             topViolators = this.topViolators.map(v => ({
                 name: `${v.first_name || ''} ${v.last_name || ''}`.trim() || 'Unknown Student',
+                studentId: v.student_id || '',
                 count: v.violation_count || 0
             }));
         } else {
@@ -915,6 +916,7 @@ class DashboardData {
 
             const li = document.createElement('li');
             li.className = priority;
+            li.style.cursor = 'pointer';
             li.innerHTML = `
                 <div class="violator-info">
                     <span class="rank">${index + 1}</span>
@@ -923,10 +925,44 @@ class DashboardData {
                 </div>
                 <i class='bx bx-chevron-right'></i>
             `;
+            li.addEventListener('click', () => {
+                if (typeof loadContent === 'function') {
+                    loadContent('admin_page/Violations');
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('searchViolation');
+                        if (searchInput) {
+                            // Use student ID if available, otherwise use full name
+                            searchInput.value = violator.studentId || violator.name;
+                            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }, 500);
+                }
+            });
             violatorList.appendChild(li);
         });
         
         console.log('✅ Top violators updated:', topViolators.length);
+
+        // Setup click handlers for Top Violators buttons
+        const refreshBtn = document.getElementById('refreshTopViolators');
+        const filterBtn = document.getElementById('filterTopViolators');
+        
+        if (refreshBtn && !refreshBtn.dataset.bound) {
+            refreshBtn.dataset.bound = 'true';
+            refreshBtn.addEventListener('click', () => {
+                this.loadAllData();
+            });
+        }
+        
+        if (filterBtn && !filterBtn.dataset.bound) {
+            filterBtn.dataset.bound = 'true';
+            filterBtn.addEventListener('click', () => {
+                // Navigate to violations page
+                if (typeof loadContent === 'function') {
+                    loadContent('admin_page/Violations');
+                }
+            });
+        }
     }
 
     /**

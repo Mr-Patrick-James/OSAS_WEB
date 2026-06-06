@@ -564,22 +564,22 @@ require_once __DIR__ . '/../../core/View.php';
             <div class="timeline-item">
               <div class="timeline-date">Mar 15, 2024</div>
               <div class="timeline-content">
-                <span class="timeline-title">Improper Uniform - Warning 3</span>
-                <span class="timeline-desc">Third offense for improper uniform</span>
+                <span class="timeline-title">Improper Uniform - 5th Offense</span>
+                <span class="timeline-desc">Fifth offense for improper uniform</span>
               </div>
             </div>
             <div class="timeline-item">
               <div class="timeline-date">Mar 1, 2024</div>
               <div class="timeline-content">
-                <span class="timeline-title">Improper Footwear - Warning 2</span>
-                <span class="timeline-desc">Second offense for improper footwear</span>
+                <span class="timeline-title">Improper Footwear - 4th Offense</span>
+                <span class="timeline-desc">Fourth offense for improper footwear</span>
               </div>
             </div>
             <div class="timeline-item">
               <div class="timeline-date">Feb 15, 2024</div>
               <div class="timeline-content">
-                <span class="timeline-title">No ID - Warning 1</span>
-                <span class="timeline-desc">First offense for not wearing ID</span>
+                <span class="timeline-title">No ID - 3rd Offense</span>
+                <span class="timeline-desc">Third offense for not wearing ID</span>
               </div>
             </div>
           </div>

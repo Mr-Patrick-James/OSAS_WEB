@@ -458,9 +458,8 @@ function initSectionsModule() {
             
             let startY = 67;
 
-            const tableColumn = ["ID", "Section Name", "Department", "Academic Year", "Students", "Status"];
+            const tableColumn = ["Section Name", "Department", "Academic Year", "Students", "Status"];
             const tableRows = sections.map(s => [
-                s.section_id || 'SEC-' + String(s.id).padStart(3, '0'),
                 s.name,
                 s.department,
                 s.academic_year,
@@ -527,7 +526,6 @@ function initSectionsModule() {
                             <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Total Records: ${sections.length}</td></tr>
                             <tr><td colspan="6" style="height: 20px;"></td></tr>
                             <tr class="data-table">
-                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section ID</th>
                                 <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section Name</th>
                                 <th width="250" style="width: 250px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
                                 <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Academic Year</th>
@@ -539,7 +537,6 @@ function initSectionsModule() {
                 sections.forEach(s => {
                     html += `
                         <tr>
-                            <td>${s.section_id || 'SEC-' + String(s.id).padStart(3, '0')}</td>
                             <td>${s.name || ''}</td>
                             <td>${s.department || ''}</td>
                             <td>${s.academic_year || ''}</td>
@@ -629,7 +626,7 @@ function initSectionsModule() {
                 
                 const tableHeader = new TableRow({
                     children: [
-                        "Section ID", "Section Name", "Department", "Academic Year", "Students", "Status"
+                        "Section Name", "Department", "Academic Year", "Students", "Status"
                     ].map(text => new TableCell({
                         children: [new Paragraph({ 
                             children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
@@ -649,7 +646,6 @@ function initSectionsModule() {
                     
                     return new TableRow({
                         children: [
-                            s.section_id || 'SEC-' + String(s.id).padStart(3, '0'),
                             s.name || '',
                             s.department || '',
                             s.academic_year || '',

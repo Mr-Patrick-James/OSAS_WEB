@@ -9,6 +9,11 @@ let allUserViolations = []; // includes archived
 let currentViolationId = null;
 let uvViewMode = 'list'; // default view
 
+// Pagination state
+let uvCurrentPage = 1;
+let uvItemsPerPage = 10;
+let uvTotalPages = 1;
+
 /*********************************************************
  * VIEW TOGGLE
  *********************************************************/
@@ -16,8 +21,10 @@ function setUvView(mode) {
     uvViewMode = mode;
     const tableView = document.getElementById('uvTableView');
     const listView  = document.getElementById('uvListView');
+    const gridView  = document.getElementById('uvGridView');
     if (tableView) tableView.style.display = mode === 'table' ? 'block' : 'none';
     if (listView)  listView.style.display  = mode === 'list'  ? 'block' : 'none';
+    if (gridView)  gridView.style.display  = mode === 'grid'  ? 'block' : 'none';
 
     // Update active toggle button
     document.querySelectorAll('.Violations-view-btn[data-view]').forEach(btn => {
@@ -243,17 +250,37 @@ function renderViolationTable() {
     if (filtered.length === 0) {
         if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#666;">No violations found matching your filters</td></tr>`;
         if (listBody) listBody.innerHTML = `<div style="text-align:center; padding:40px; color: #666;">No violations found matching your filters</div>`;
+        const gridBody = document.getElementById('violationsGridBody');
+        if (gridBody) gridBody.innerHTML = `<div style="text-align:center; padding:40px; color: #666;">No violations found matching your filters</div>`;
+        renderUvPagination(0);
         return;
     }
 
+    // ── PAGINATION ──
+    uvTotalPages = Math.ceil(filtered.length / uvItemsPerPage) || 1;
+    if (uvCurrentPage > uvTotalPages) uvCurrentPage = uvTotalPages;
+    const startIdx = (uvCurrentPage - 1) * uvItemsPerPage;
+    const endIdx = startIdx + uvItemsPerPage;
+    const paginatedItems = filtered.slice(startIdx, endIdx);
+
+    // Update pagination info
+    const uvShowingStart = document.getElementById('uvShowingStart');
+    const uvShowingEnd = document.getElementById('uvShowingEnd');
+    const uvTotalFiltered = document.getElementById('uvTotalFiltered');
+    if (uvShowingStart) uvShowingStart.textContent = filtered.length > 0 ? startIdx + 1 : 0;
+    if (uvShowingEnd) uvShowingEnd.textContent = Math.min(endIdx, filtered.length);
+    if (uvTotalFiltered) uvTotalFiltered.textContent = filtered.length;
+
+    renderUvPagination(filtered.length);
+
     // ── TABLE VIEW ──
     if (tbody) {
-        tbody.innerHTML = filtered.map(v => {
+        tbody.innerHTML = paginatedItems.map(v => {
         const status = (v.status || 'pending').toLowerCase();
         
         const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '1';
         const levelVal = String(level).toLowerCase();
-        const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+        const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
        
         let statusClass = 'warning';
         let statusText = 'Pending';
@@ -295,11 +322,11 @@ function renderViolationTable() {
 
     // ── LIST VIEW ──
     if (listBody) {
-        listBody.innerHTML = filtered.map(v => {
+        listBody.innerHTML = paginatedItems.map(v => {
             const status = (v.status || 'pending').toLowerCase();
             const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '-';
             const levelVal = String(level).toLowerCase();
-            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('disciplinary');
+            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
 
             let statusClass = 'warning';
             let statusText = 'Pending';
@@ -346,10 +373,107 @@ function renderViolationTable() {
             </div>`;
         }).join('');
     }
+
+    // ── GRID VIEW ──
+    const gridBody = document.getElementById('violationsGridBody');
+    if (gridBody) {
+        gridBody.innerHTML = paginatedItems.map(v => {
+            const status = (v.status || 'pending').toLowerCase();
+            const level = v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '-';
+            const levelVal = String(level).toLowerCase();
+            const isDisciplinary = levelVal.includes('warning 3') || levelVal.includes('3rd') || levelVal.includes('5th offense') || levelVal.includes('disciplinary');
+
+            let statusClass = 'warning';
+            let statusText = 'Pending';
+            if (status === 'resolved') { statusClass = 'resolved'; statusText = 'Resolved'; }
+            else if (status === 'permitted') { statusClass = 'permitted'; statusText = 'Permitted'; }
+            else if (isDisciplinary || status === 'disciplinary') { statusClass = 'disciplinary'; statusText = 'Disciplinary'; }
+            else if (status === 'warning') { statusClass = 'warning'; statusText = 'Warning'; }
+
+            const violationType = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Unknown';
+            const violationTypeFormatted = formatViolationType(String(violationType));
+            const typeClass  = getViolationTypeClass(violationType);
+            const levelClass = getViolationLevelClass(level);
+
+            return `
+            <div class="violation-card ${statusClass}" data-id="${v.id}" style="background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px;cursor:pointer;" onclick="viewViolationDetails(${v.id})">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                    <span class="violation-type-badge ${typeClass}" style="font-size:10px;padding:3px 8px;">${escapeHtml(violationTypeFormatted)}</span>
+                    <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${statusText}</span>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px;">${escapeHtml(level)}</span>
+                </div>
+                <div style="font-size:11px;color:var(--text-3,#64748b);display:flex;align-items:center;gap:4px;">
+                    <i class='bx bx-calendar' style="font-size:12px;"></i>
+                    ${formatDate(v.created_at || v.violation_date || v.date)}
+                </div>
+            </div>`;
+        }).join('');
+    }
 }
 
 function filterViolations() {
+    uvCurrentPage = 1;
     renderViolationTable();
+}
+
+/*********************************************************
+ * PAGINATION
+ *********************************************************/
+function renderUvPagination(totalItems) {
+    const container = document.getElementById('uvPagination');
+    if (!container) return;
+    container.innerHTML = '';
+
+    uvTotalPages = Math.ceil(totalItems / uvItemsPerPage) || 1;
+
+    const makeBtn = (label, opts = {}) => {
+        const btn = document.createElement('button');
+        btn.className = 'uv-pagination-btn' + (opts.active ? ' active' : '');
+        btn.innerHTML = label;
+        if (opts.disabled) btn.disabled = true;
+        if (opts.page) btn.dataset.page = opts.page;
+        if (opts.action) btn.dataset.action = opts.action;
+        return btn;
+    };
+
+    // Prev button
+    container.appendChild(makeBtn('<i class="bx bx-chevron-left"></i>', { disabled: uvCurrentPage === 1, action: 'prev' }));
+
+    // Page numbers
+    const maxButtons = 7;
+    let startPage = Math.max(1, uvCurrentPage - 3);
+    let endPage = Math.min(uvTotalPages, startPage + maxButtons - 1);
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+        container.appendChild(makeBtn(String(p), { active: p === uvCurrentPage, page: p }));
+    }
+
+    // Next button
+    container.appendChild(makeBtn('<i class="bx bx-chevron-right"></i>', { disabled: uvCurrentPage === uvTotalPages, action: 'next' }));
+
+    // Event delegation
+    container.onclick = function(e) {
+        const target = e.target.closest('button');
+        if (!target || target.disabled) return;
+        const action = target.dataset.action;
+        const pageAttr = target.dataset.page;
+        if (action === 'prev') {
+            if (uvCurrentPage > 1) uvCurrentPage--;
+        } else if (action === 'next') {
+            if (uvCurrentPage < uvTotalPages) uvCurrentPage++;
+        } else if (pageAttr) {
+            const pageNum = parseInt(pageAttr, 10);
+            if (!isNaN(pageNum)) uvCurrentPage = pageNum;
+        } else {
+            return;
+        }
+        renderViolationTable();
+    };
 }
 
 /*********************************************************
@@ -384,11 +508,14 @@ function getViolationTypeClass(typeLabel) {
 
 function getViolationLevelClass(level) {
     if (level === null || level === undefined) return 'default';
-    const levelStr = String(level);
-    const lowerLevel = levelStr.toLowerCase();
-    if (lowerLevel.startsWith('permitted')) return 'permitted';
-    if (lowerLevel.startsWith('warning')) return 'warning';
-    if (lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
+    const lowerLevel = String(level).toLowerCase();
+    // 1st & 2nd Offense = green (permitted), 3rd & 4th = orange (warning), 5th/Disciplinary = red
+    if (lowerLevel.includes('1st offense') || lowerLevel.includes('2nd offense') ||
+        lowerLevel.startsWith('permitted')) return 'permitted';
+    if (lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
+        lowerLevel.startsWith('warning 1') || lowerLevel.startsWith('warning 2')) return 'warning';
+    if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
+        lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
     return 'default';
 }
 
@@ -450,7 +577,7 @@ function viewViolationDetails(id) {
     let displayStatusLabel = v.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : 'Unknown');
 
     const levelLabel = (v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '').toLowerCase();
-    const isDisciplinary = levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('disciplinary');
+    const isDisciplinary = levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense') || levelLabel.includes('disciplinary');
 
     if (displayStatus === 'resolved') {
         displayStatusLabel = 'Resolved';
@@ -553,7 +680,7 @@ function viewViolationDetails(id) {
         let itemStatusLabel = sv.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'Unknown');
         
         const svLevelLabel = (sv.violation_level_name || sv.violationLevelLabel || sv.level || sv.offense_level || '').toLowerCase();
-        const svIsDisciplinary = svLevelLabel.includes('warning 3') || svLevelLabel.includes('3rd') || svLevelLabel.includes('disciplinary');
+        const svIsDisciplinary = svLevelLabel.includes('warning 3') || svLevelLabel.includes('3rd') || svLevelLabel.includes('5th offense') || svLevelLabel.includes('disciplinary');
         
         if (itemStatus === 'resolved') {
             itemStatusLabel = 'Resolved';
@@ -656,7 +783,7 @@ function viewViolationDetails(id) {
                 
                 let itemStatus = (h.status || '').toLowerCase();
                 const hlLabel = hLevel.toLowerCase();
-                const hIsDisciplinary = hlLabel.includes('warning 3') || hlLabel.includes('3rd') || hlLabel.includes('disciplinary');
+                const hIsDisciplinary = hlLabel.includes('warning 3') || hlLabel.includes('3rd') || hlLabel.includes('5th offense') || hlLabel.includes('disciplinary');
                 
                 let statusHtml = '';
                 if (itemStatus === 'resolved' || itemStatus === 'permitted') {

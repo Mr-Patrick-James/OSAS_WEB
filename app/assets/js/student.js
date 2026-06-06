@@ -1202,13 +1202,12 @@ function initStudentsModule() {
                 let startY = 67;
 
                 // Table
-                const tableColumn = ["ID", "Student ID", "Name", "Dept", "Section", "Year Level", "Contact No", "Status"];
+                const tableColumn = ["Student ID", "Name", "Dept", "Section", "Year Level", "Contact No", "Status"];
                 const tableRows = [];
 
                 exportStudents.forEach(s => {
                     const fullName = `${s.firstName || ''} ${s.middleName ? s.middleName + ' ' : ''}${s.lastName || ''}`;
                     const rowData = [
-                        s.id,
                         s.studentId,
                         fullName,
                         s.department || 'N/A',
@@ -1273,12 +1272,11 @@ function initStudentsModule() {
                 lines.push('');
                 
                 // Column headers
-                lines.push(['ID', 'Student ID', 'First Name', 'Middle Name', 'Last Name', 'Email', 'Contact', 'Address', 'Department', 'Section', 'Year Level', 'Status'].map(csvEscape).join(','));
+                lines.push(['Student ID', 'First Name', 'Middle Name', 'Last Name', 'Email', 'Contact', 'Address', 'Department', 'Section', 'Year Level', 'Status'].map(csvEscape).join(','));
                 
                 // Data rows
                 exportStudents.forEach(s => {
                     lines.push([
-                        s.id,
                         s.studentId,
                         s.firstName || '',
                         s.middleName || '',
@@ -1369,22 +1367,12 @@ function initStudentsModule() {
                     children: [
                         new TableCell({ 
                             children: [new Paragraph({ 
-                                children: [new TextRun({ text: "ID", bold: true, size: 18, color: "FFFFFF" })],
-                                alignment: AlignmentType.CENTER
-                            })],
-                            shading: { fill: "2C3E50", val: "clear", color: "auto" },
-                            verticalAlign: VerticalAlign.CENTER,
-                            width: { size: 5, type: WidthType.PERCENTAGE },
-                            margins: { top: 80, bottom: 80, left: 80, right: 80 }
-                        }),
-                        new TableCell({ 
-                            children: [new Paragraph({ 
                                 children: [new TextRun({ text: "Student ID", bold: true, size: 18, color: "FFFFFF" })],
                                 alignment: AlignmentType.CENTER
                             })],
                             shading: { fill: "2C3E50", val: "clear", color: "auto" },
                             verticalAlign: VerticalAlign.CENTER,
-                            width: { size: 12, type: WidthType.PERCENTAGE },
+                            width: { size: 14, type: WidthType.PERCENTAGE },
                             margins: { top: 80, bottom: 80, left: 80, right: 80 }
                         }),
                         new TableCell({ 
@@ -1462,22 +1450,12 @@ function initStudentsModule() {
                         children: [
                             new TableCell({ 
                                 children: [new Paragraph({ 
-                                    children: [new TextRun({ text: String(s.id), size: 18 })],
-                                    alignment: AlignmentType.CENTER
-                                })],
-                                shading: { fill: rowColor, val: "clear", color: "auto" },
-                                verticalAlign: VerticalAlign.CENTER,
-                                width: { size: 5, type: WidthType.PERCENTAGE },
-                                margins: { top: 60, bottom: 60, left: 80, right: 80 }
-                            }),
-                            new TableCell({ 
-                                children: [new Paragraph({ 
                                     children: [new TextRun({ text: s.studentId || '', size: 18 })],
                                     alignment: AlignmentType.LEFT
                                 })],
                                 shading: { fill: rowColor, val: "clear", color: "auto" },
                                 verticalAlign: VerticalAlign.CENTER,
-                                width: { size: 12, type: WidthType.PERCENTAGE },
+                                width: { size: 14, type: WidthType.PERCENTAGE },
                                 margins: { top: 60, bottom: 60, left: 80, right: 80 }
                             }),
                             new TableCell({ 

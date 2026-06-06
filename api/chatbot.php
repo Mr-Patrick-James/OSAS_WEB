@@ -71,6 +71,8 @@ $user_id = $_SESSION['user_id'] ?? null;
 $user_role = $_SESSION['role'] ?? null;
 
 // Build system prompt with optional database context
+$isStudentRole = ($user_role === 'user');
+
 $system_prompt = <<<PROMPT
 You are **OSAS Bot**, the intelligent virtual assistant for the **E-OSAS (Electronic Office of Student Affairs System)** — a web-based student discipline and records management platform used by the Office of Student Affairs.
 
@@ -84,83 +86,96 @@ IDENTITY & PERSONALITY
 - System Owner/Administrator/Head: Cedrick H. Almarez
 
 ═══════════════════════════════════════════
-CORE CAPABILITIES
-═══════════════════════════════════════════
-You can help with:
-1. **Student Records** — Look up student info, counts, departments, sections
-2. **Violations & Discipline** — Explain violation types, levels, statuses, sanctions, and processes
-3. **Announcements** — Summarize active announcements, explain how to create/manage them
-4. **Reports** — Explain report generation, types, and how to export data
-5. **Departments & Sections** — List, explain, and help manage organizational units
-6. **System Navigation** — Guide users on how to use each module/page of E-OSAS
-7. **Policies & Procedures** — Explain the student discipline process, due process, and sanctions
-8. **Troubleshooting** — Help with common issues (login problems, data not showing, etc.)
-
-═══════════════════════════════════════════
 VIOLATION LEVELS & SANCTIONS KNOWLEDGE
 ═══════════════════════════════════════════
-- **Minor Offense (Level 1):** First offense = verbal warning; Second = written warning; Third = community service or counseling referral
-- **Major Offense (Level 2):** First offense = suspension (1-3 days); Second = suspension (3-5 days) + parent conference; Third = recommendation for dismissal
-- **Serious Offense (Level 3):** Immediate suspension pending investigation; may lead to expulsion after due process
+- **1st Offense:** Verbal reminder — please comply with dress code
+- **2nd Offense:** Written reminder — dress code must be followed
+- **3rd Offense:** First formal warning — counseling referral possible
+- **4th Offense:** Second formal warning — parent conference required
+- **5th Offense:** Final warning — automatically triggers Disciplinary Action
+- **Disciplinary Action:** Referral to discipline office; suspension or serious sanctions apply
 - Due process: Notice → Hearing → Decision → Appeal (if applicable)
-- All violations are recorded and tracked per semester; records may be archived at semester end
-
-═══════════════════════════════════════════
-SYSTEM MODULES KNOWLEDGE
-═══════════════════════════════════════════
-- **Dashboard:** Overview of statistics — total students, violations this month, departments, recent activity
-- **Students Module:** Add, import (Excel), edit, search, and view student profiles with photos
-- **Violations Module:** Record new violations, assign types/levels, track status (pending → resolved → archived), generate entrance slips
-- **Departments Module:** Create and manage academic departments with codes
-- **Sections Module:** Create sections linked to departments
-- **Announcements Module:** Create, edit, publish announcements with audience targeting (all, students, staff)
-- **Reports Module:** Generate PDF/Excel reports filtered by date, department, violation type, etc.
-- **Settings:** System configuration, user management, backup/restore
-- **Entrance Slip:** Auto-generated document a student must present to return to class after a violation
+- All violations are tracked per semester; records may be archived at semester end
 
 ═══════════════════════════════════════════
 RESPONSE RULES
 ═══════════════════════════════════════════
-1. **DATA ACCURACY:** ONLY use ACTUAL DATA from the context provided below. NEVER invent or fabricate student names, IDs, case numbers, or statistics.
-2. **Unknown Info:** If you don't have specific data in your context, say: "I don't have that specific information in my current data. You may want to check the [relevant module] directly."
-3. **Formatting:** Use bullet points, numbered lists, and bold text for clarity. Keep responses scannable.
-4. **Length:** Be concise but complete. For simple questions, 1-3 sentences. For how-to guides, use step-by-step format.
-5. **Scope:** Only answer questions related to E-OSAS, student affairs, school discipline, and system usage. For unrelated questions, politely redirect: "I'm designed to help with E-OSAS and student affairs topics. Is there something about the system I can help you with?"
-6. **Student Privacy:** When discussing specific student records, only share data that the current user's role permits them to see.
-7. **Proactive Help:** If a user seems confused, offer related suggestions or ask clarifying questions.
-8. **Error Guidance:** If a user reports a problem, provide troubleshooting steps (clear cache, check connection, verify permissions, contact admin).
-9. **Conversational Style:** Be casual and approachable like a helpful classmate or colleague. Use natural language, contractions, and a warm tone. Avoid sounding robotic or overly formal. If the user uses slang or Taglish, match their energy.
-
-═══════════════════════════════════════════
-HOW-TO GUIDES (for common questions)
-═══════════════════════════════════════════
-**How to record a violation:**
-1. Go to Violations module → Click "Add Violation"
-2. Search and select the student
-3. Choose violation type and level
-4. Fill in date, description, and evidence (if any)
-5. Click Save — the violation is now tracked
-
-**How to import students:**
-1. Go to Students module → Click "Import"
-2. Download the Excel template
-3. Fill in student data following the template format
-4. Upload the completed file
-5. Review and confirm the import
-
-**How to generate a report:**
-1. Go to Reports module
-2. Select report type (violations, students, department summary)
-3. Set date range and filters
-4. Click Generate → Download as PDF or Excel
-
-**How to create an announcement:**
-1. Go to Announcements module → Click "New Announcement"
-2. Enter title, message content, and select audience
-3. Choose type (general, urgent, event)
-4. Publish immediately or schedule
+1. **DATA ACCURACY:** ONLY use ACTUAL DATA from the context provided. NEVER invent student names, IDs, case numbers, or statistics.
+2. **Formatting:** Use bullet points, numbered lists, and bold text for clarity.
+3. **Length:** Be concise. Simple questions get 1-3 sentences. How-to guides use step-by-step format.
+4. **Scope:** Only answer questions related to E-OSAS, student affairs, and school discipline.
+5. **Conversational Style:** Be casual and approachable. Match the user's language (English, Filipino, or Taglish).
+6. **Troubleshooting:** For problems, suggest: clear cache, check connection, verify login, contact admin.
 
 PROMPT;
+
+if ($isStudentRole) {
+    $system_prompt .= <<<STUDENT_PROMPT
+
+═══════════════════════════════════════════
+CURRENT USER: STUDENT
+═══════════════════════════════════════════
+You are talking to a STUDENT. The student portal has ONLY these 3 pages:
+
+1. **My Dashboard** — Shows compliance overview: total violations, permitted count, warning count, recent violations list, and "Tips to Stay Compliant".
+2. **My Violations** — The student's own violation records only. Can filter by time period, type, and status. Has list/table/grid views. Has a "Download Report" button for their own records.
+3. **Announcements** — Read-only list of school announcements. Can filter by category and status.
+
+WHAT STUDENTS CAN DO:
+- View and filter their own violations
+- Download their own violation report
+- Read school announcements
+- Ask about violation policies, levels, and what their status means
+- Ask about the entrance slip process and how to appeal
+
+WHAT STUDENTS CANNOT DO — NEVER describe these as available to students:
+- There is NO Departments page, NO Students module, NO Reports module, NO Settings page
+- Students CANNOT record, create, edit, or delete violations
+- Students CANNOT see other students' records, names, IDs, or counts
+
+HOW-TO FOR STUDENTS:
+- Check violations: Click "My Violations" in the top navigation
+- Filter violations: Use the time period, type, and status dropdowns
+- Download report: Click "Download Report" button on the My Violations page
+- Read announcements: Click "Announcements" in the top navigation
+- Entrance slip: Show it to your instructor to return to class after a violation
+- Appeal: Contact the OSAS office directly
+
+PRIVACY RULES (STRICT):
+- If asked about other students' data, total students, department counts, or system-wide stats, say: "That information is only available to authorized OSAS administrators and staff. I can only help you with your own records."
+- NEVER reveal other students' violation records, names, IDs, or any personal data.
+
+STUDENT_PROMPT;
+} else {
+    $system_prompt .= <<<STAFF_PROMPT
+
+═══════════════════════════════════════════
+CURRENT USER: ADMIN / STAFF ({$user_role})
+═══════════════════════════════════════════
+You are talking to an authorized OSAS staff member or administrator with FULL system access.
+
+ADMIN PORTAL PAGES:
+1. **Dashboard** — System overview: total students, active violations, departments, recent activity
+2. **Students** — Add, import (Excel), edit, search, view student profiles with photos
+3. **Violations** — Record violations, assign types/levels, track status, generate entrance slips, archive records
+4. **Departments** — Create and manage academic departments with codes
+5. **Sections** — Create sections linked to departments
+6. **Announcements** — Create, edit, publish announcements with audience targeting (all/students/staff)
+7. **Reports** — Generate PDF/Excel reports filtered by date, department, violation type
+8. **Settings** — System config, user management, backup/restore
+
+HOW-TO GUIDES:
+- Record a violation: Violations → Add Violation → Select student → Choose type/level → Save
+- Import students: Students → Import → Download template → Fill data → Upload → Confirm
+- Generate report: Reports → Select type → Set filters → Generate → Download PDF/Excel
+- Create announcement: Announcements → New → Enter title/message → Select audience → Publish
+- Add department: Departments → Add → Enter name and code → Save
+- Backup system: Settings → Backup → Download database backup
+
+Use ALL data from the context below freely. Cite specific numbers and records when available.
+
+STAFF_PROMPT;
+}
 
 
 // Optionally add database context
@@ -218,107 +233,104 @@ try {
  */
 function getDatabaseContext($conn, $user_id, $user_role) {
     $context = [];
-    
+    $isStudent = ($user_role === 'user');
     try {
-        // Get basic stats
+        // ── General stats (safe for all roles) ──
         $stats = [];
-        
-        // Count students
-        $result = @$conn->query("SELECT COUNT(*) as count FROM students");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['total_students'] = $row['count'] ?? 0;
-        }
-        
-        // Count departments
-        $result = @$conn->query("SELECT COUNT(*) as count FROM departments");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['total_departments'] = $row['count'] ?? 0;
-        }
-        
-        // Count active violations (this month)
-        $result = @$conn->query("SELECT COUNT(*) as count FROM violations WHERE is_archived = 0");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['active_violations'] = $row['count'] ?? 0;
+
+        // Students only see department/section counts, not total student headcount
+        if (!$isStudent) {
+            $result = @$conn->query("SELECT COUNT(*) as count FROM students");
+            if ($result) { $stats['total_students'] = $result->fetch_assoc()['count'] ?? 0; }
         }
 
-        // Count all-time violations
-        $result = @$conn->query("SELECT COUNT(*) as count FROM violations");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $stats['total_violations_all_time'] = $row['count'] ?? 0;
+        $result = @$conn->query("SELECT COUNT(*) as count FROM departments");
+        if ($result) { $stats['total_departments'] = $result->fetch_assoc()['count'] ?? 0; }
+
+        // Students only see total counts, not per-student breakdowns
+        if (!$isStudent) {
+            $result = @$conn->query("SELECT COUNT(*) as count FROM violations WHERE is_archived = 0");
+            if ($result) { $stats['active_violations'] = $result->fetch_assoc()['count'] ?? 0; }
+
+            $result = @$conn->query("SELECT COUNT(*) as count FROM violations");
+            if ($result) { $stats['total_violations_all_time'] = $result->fetch_assoc()['count'] ?? 0; }
         }
-        
+
         $context[] = "SYSTEM STATISTICS: " . json_encode($stats);
 
-        // Get departments list
+        // ── Departments (safe for all, but students only see names not full list) ──
         $result = @$conn->query("SELECT department_code, department_name FROM departments ORDER BY department_name");
         if ($result && $result->num_rows > 0) {
             $depts = [];
             while ($row = $result->fetch_assoc()) {
                 $depts[] = $row['department_name'] . " (" . $row['department_code'] . ")";
             }
-            $context[] = "DEPARTMENTS: " . implode(', ', $depts);
-        }
-
-        // Get sections list
-        $result = @$conn->query("SELECT s.section_name, s.section_code, d.department_code FROM sections s LEFT JOIN departments d ON s.department_id = d.id ORDER BY s.section_name LIMIT 30");
-        if ($result && $result->num_rows > 0) {
-            $sections = [];
-            while ($row = $result->fetch_assoc()) {
-                $sections[] = $row['section_name'] . " (" . ($row['department_code'] ?? '') . ")";
+            if (!$isStudent) {
+                $context[] = "DEPARTMENTS: " . implode(', ', $depts);
             }
-            $context[] = "SECTIONS: " . implode(', ', $sections);
+            // Students only know their own department exists, not the full list
         }
 
-        // Get recent violations with student info (actual data)
-        $result = @$conn->query("
-            SELECT v.id, v.case_id, v.student_id, v.violation_date, v.status,
-                   CONCAT(s.first_name, ' ', COALESCE(s.middle_name, ''), ' ', s.last_name) as student_name,
-                   s.department,
-                   vt.name as violation_type,
-                   vl.name as violation_level
-            FROM violations v
-            LEFT JOIN students s ON v.student_id = s.student_id
-            LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
-            LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
-            WHERE v.is_archived = 0
-            ORDER BY v.created_at DESC
-            LIMIT 20
-        ");
-        if ($result && $result->num_rows > 0) {
-            $violations = [];
-            while ($row = $result->fetch_assoc()) {
-                $violations[] = "Case " . ($row['case_id'] ?? $row['id']) . ": " . trim($row['student_name']) . 
-                    " (ID: " . $row['student_id'] . ", Dept: " . ($row['department'] ?? 'N/A') . 
-                    ") - Type: " . ($row['violation_type'] ?? 'Unknown') . 
-                    ", Level: " . ($row['violation_level'] ?? 'Unknown') . 
-                    ", Status: " . ($row['status'] ?? 'pending') . 
-                    ", Date: " . ($row['violation_date'] ?? 'N/A');
+        // ── Sections — admin/staff only ──
+        if (!$isStudent) {
+            $result = @$conn->query("SELECT s.section_name, s.section_code, d.department_code FROM sections s LEFT JOIN departments d ON s.department_id = d.id ORDER BY s.section_name LIMIT 30");
+            if ($result && $result->num_rows > 0) {
+                $sections = [];
+                while ($row = $result->fetch_assoc()) {
+                    $sections[] = $row['section_name'] . " (" . ($row['department_code'] ?? '') . ")";
+                }
+                $context[] = "SECTIONS: " . implode(', ', $sections);
             }
-            $context[] = "RECENT VIOLATIONS (actual records):\n" . implode("\n", $violations);
         }
 
-        // Get violation type counts
-        $result = @$conn->query("
-            SELECT vt.name as type_name, COUNT(*) as count 
-            FROM violations v 
-            LEFT JOIN violation_types vt ON v.violation_type_id = vt.id 
-            WHERE v.is_archived = 0 
-            GROUP BY vt.name 
-            ORDER BY count DESC
-        ");
-        if ($result && $result->num_rows > 0) {
-            $typeCounts = [];
-            while ($row = $result->fetch_assoc()) {
-                $typeCounts[] = ($row['type_name'] ?? 'Unknown') . ": " . $row['count'];
+        // ── Recent violations — ADMIN/STAFF ONLY ──
+        if (!$isStudent) {
+            $result = @$conn->query("
+                SELECT v.id, v.case_id, v.student_id, v.violation_date, v.status,
+                       CONCAT(s.first_name, ' ', COALESCE(s.middle_name, ''), ' ', s.last_name) as student_name,
+                       s.department,
+                       vt.name as violation_type,
+                       vl.name as violation_level
+                FROM violations v
+                LEFT JOIN students s ON v.student_id = s.student_id
+                LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
+                WHERE v.is_archived = 0
+                ORDER BY v.created_at DESC
+                LIMIT 20
+            ");
+            if ($result && $result->num_rows > 0) {
+                $violations = [];
+                while ($row = $result->fetch_assoc()) {
+                    $violations[] = "Case " . ($row['case_id'] ?? $row['id']) . ": " . trim($row['student_name']) .
+                        " (ID: " . $row['student_id'] . ", Dept: " . ($row['department'] ?? 'N/A') .
+                        ") - Type: " . ($row['violation_type'] ?? 'Unknown') .
+                        ", Level: " . ($row['violation_level'] ?? 'Unknown') .
+                        ", Status: " . ($row['status'] ?? 'pending') .
+                        ", Date: " . ($row['violation_date'] ?? 'N/A');
+                }
+                $context[] = "RECENT VIOLATIONS (actual records):\n" . implode("\n", $violations);
             }
-            $context[] = "VIOLATION COUNTS BY TYPE (this month): " . implode(', ', $typeCounts);
+
+            // Violation type counts — admin only
+            $result = @$conn->query("
+                SELECT vt.name as type_name, COUNT(*) as count
+                FROM violations v
+                LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                WHERE v.is_archived = 0
+                GROUP BY vt.name
+                ORDER BY count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $typeCounts = [];
+                while ($row = $result->fetch_assoc()) {
+                    $typeCounts[] = ($row['type_name'] ?? 'Unknown') . ": " . $row['count'];
+                }
+                $context[] = "VIOLATION COUNTS BY TYPE (this month): " . implode(', ', $typeCounts);
+            }
         }
 
-        // Get recent announcements
+        // ── Announcements (safe for all) ──
         $result = @$conn->query("SELECT title, message, type, created_at FROM announcements WHERE status = 'active' ORDER BY created_at DESC LIMIT 5");
         if ($result && $result->num_rows > 0) {
             $announcements = [];
@@ -328,16 +340,130 @@ function getDatabaseContext($conn, $user_id, $user_role) {
             $context[] = "ACTIVE ANNOUNCEMENTS: " . implode('; ', $announcements);
         }
 
-        // Add user-specific context if logged in
+        // ── Extended admin/staff-only context ──
+        if (!$isStudent) {
+
+            // Students per department
+            $result = @$conn->query("
+                SELECT d.department_name, d.department_code, COUNT(s.id) as student_count
+                FROM departments d
+                LEFT JOIN students s ON s.department = d.department_code
+                GROUP BY d.id, d.department_name, d.department_code
+                ORDER BY student_count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $deptCounts = [];
+                while ($row = $result->fetch_assoc()) {
+                    $deptCounts[] = $row['department_name'] . " (" . $row['department_code'] . "): " . $row['student_count'] . " students";
+                }
+                $context[] = "STUDENTS PER DEPARTMENT:\n" . implode("\n", $deptCounts);
+            }
+
+            // Violation status breakdown
+            $result = @$conn->query("
+                SELECT status, COUNT(*) as count
+                FROM violations
+                WHERE is_archived = 0
+                GROUP BY status
+                ORDER BY count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $statusBreakdown = [];
+                while ($row = $result->fetch_assoc()) {
+                    $statusBreakdown[] = ucfirst($row['status']) . ": " . $row['count'];
+                }
+                $context[] = "VIOLATIONS BY STATUS (active): " . implode(', ', $statusBreakdown);
+            }
+
+            // Violations per department
+            $result = @$conn->query("
+                SELECT s.department, COUNT(v.id) as count
+                FROM violations v
+                LEFT JOIN students s ON v.student_id = s.student_id
+                WHERE v.is_archived = 0
+                GROUP BY s.department
+                ORDER BY count DESC
+            ");
+            if ($result && $result->num_rows > 0) {
+                $deptViolations = [];
+                while ($row = $result->fetch_assoc()) {
+                    $deptViolations[] = ($row['department'] ?? 'Unknown') . ": " . $row['count'];
+                }
+                $context[] = "VIOLATIONS PER DEPARTMENT (active): " . implode(', ', $deptViolations);
+            }
+
+            // Top 5 students with most violations
+            $result = @$conn->query("
+                SELECT v.student_id,
+                       CONCAT(s.first_name, ' ', COALESCE(s.middle_name, ''), ' ', s.last_name) as student_name,
+                       s.department, COUNT(v.id) as violation_count
+                FROM violations v
+                LEFT JOIN students s ON v.student_id = s.student_id
+                GROUP BY v.student_id, student_name, s.department
+                ORDER BY violation_count DESC
+                LIMIT 5
+            ");
+            if ($result && $result->num_rows > 0) {
+                $topOffenders = [];
+                while ($row = $result->fetch_assoc()) {
+                    $topOffenders[] = trim($row['student_name']) . " (ID: " . $row['student_id'] . ", Dept: " . ($row['department'] ?? 'N/A') . ") — " . $row['violation_count'] . " violation(s)";
+                }
+                $context[] = "TOP STUDENTS BY VIOLATION COUNT:\n" . implode("\n", $topOffenders);
+            }
+
+            // Violations this month vs last month
+            $result = @$conn->query("
+                SELECT
+                    SUM(CASE WHEN MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW()) THEN 1 ELSE 0 END) as this_month,
+                    SUM(CASE WHEN MONTH(created_at) = MONTH(NOW() - INTERVAL 1 MONTH) AND YEAR(created_at) = YEAR(NOW() - INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as last_month
+                FROM violations
+            ");
+            if ($result) {
+                $row = $result->fetch_assoc();
+                $context[] = "VIOLATIONS THIS MONTH: " . ($row['this_month'] ?? 0) . " | LAST MONTH: " . ($row['last_month'] ?? 0);
+            }
+
+            // Recent students added
+            $result = @$conn->query("
+                SELECT student_id, CONCAT(first_name, ' ', last_name) as name, department, section, created_at
+                FROM students
+                ORDER BY created_at DESC
+                LIMIT 5
+            ");
+            if ($result && $result->num_rows > 0) {
+                $recentStudents = [];
+                while ($row = $result->fetch_assoc()) {
+                    $recentStudents[] = trim($row['name']) . " (ID: " . $row['student_id'] . ", " . ($row['department'] ?? '') . " - " . ($row['section'] ?? '') . ")";
+                }
+                $context[] = "RECENTLY ADDED STUDENTS:\n" . implode("\n", $recentStudents);
+            }
+
+            // Logged-in staff info
+            if ($user_id) {
+                $stmt = $conn->prepare("SELECT full_name, role, email FROM users WHERE id = ? LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param("i", $user_id);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    if ($res && $row = $res->fetch_assoc()) {
+                        $context[] = "LOGGED-IN STAFF: " . ($row['full_name'] ?? 'Unknown') . " | Role: " . ($row['role'] ?? $user_role) . " | Email: " . ($row['email'] ?? 'N/A');
+                    }
+                    $stmt->close();
+                }
+            }
+        }
+
+        // ── User-specific context ──
         if ($user_id && $user_role) {
             $context[] = "Current user role: " . $user_role;
-            
-            if ($user_role === 'user') {
+
+            if ($isStudent) {
                 $studentId = $_SESSION['student_id_code'] ?? '';
                 if ($studentId) {
-                    // Get user's own violations
+                    // Only fetch THIS student's own violations
                     $stmt = $conn->prepare("
-                        SELECT v.case_id, v.violation_date, v.status, vt.name as violation_type, vl.name as violation_level
+                        SELECT v.case_id, v.violation_date, v.status,
+                               vt.name as violation_type, vl.name as violation_level
                         FROM violations v
                         LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
                         LEFT JOIN violation_levels vl ON v.violation_level_id = vl.id
@@ -352,24 +478,28 @@ function getDatabaseContext($conn, $user_id, $user_role) {
                         if ($result && $result->num_rows > 0) {
                             $myViolations = [];
                             while ($row = $result->fetch_assoc()) {
-                                $myViolations[] = "Case " . ($row['case_id'] ?? '') . ": " . ($row['violation_type'] ?? 'Unknown') . 
-                                    " (" . ($row['violation_level'] ?? '') . ") - Status: " . ($row['status'] ?? 'pending') . 
+                                $myViolations[] = "Case " . ($row['case_id'] ?? '') . ": " .
+                                    ($row['violation_type'] ?? 'Unknown') .
+                                    " (" . ($row['violation_level'] ?? '') . ")" .
+                                    " - Status: " . ($row['status'] ?? 'pending') .
                                     ", Date: " . ($row['violation_date'] ?? 'N/A');
                             }
-                            $context[] = "YOUR VIOLATIONS (Student ID: $studentId):\n" . implode("\n", $myViolations);
+                            $context[] = "YOUR OWN VIOLATIONS (Student ID: $studentId):\n" . implode("\n", $myViolations);
                         } else {
                             $context[] = "You (Student ID: $studentId) have no violations recorded.";
                         }
                         $stmt->close();
                     }
                 }
+                // Explicitly tell the AI NOT to reveal other students' data
+                $context[] = "PRIVACY NOTICE: The above is the ONLY student data available. Do NOT reveal any other student's records.";
             }
         }
-        
+
     } catch (Exception $e) {
         error_log("Error getting database context: " . $e->getMessage());
     }
-    
+
     return implode("\n", $context);
 }
 

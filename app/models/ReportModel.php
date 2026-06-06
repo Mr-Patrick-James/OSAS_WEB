@@ -487,12 +487,18 @@ class ReportModel extends Model {
             ];
             
             $violationLevelLabels = [
-                'permitted1' => 'Permitted 1',
-                'permitted2' => 'Permitted 2',
-                'warning1' => 'Warning 1',
-                'warning2' => 'Warning 2',
-                'warning3' => 'Warning 3',
-                'disciplinary' => 'Disciplinary'
+                'offense1'     => '1st Offense',
+                'offense2'     => '2nd Offense',
+                'offense3'     => '3rd Offense',
+                'offense4'     => '4th Offense',
+                'offense5'     => '5th Offense',
+                'disciplinary' => 'Disciplinary',
+                // Legacy fallbacks
+                'permitted1'   => '1st Offense',
+                'permitted2'   => '2nd Offense',
+                'warning1'     => '3rd Offense',
+                'warning2'     => '4th Offense',
+                'warning3'     => '5th Offense',
             ];
 
             $locationLabels = [

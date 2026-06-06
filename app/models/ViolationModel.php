@@ -753,6 +753,26 @@ class ViolationModel extends Model {
     }
 
     /**
+     * Get all slip requests for a specific student
+     */
+    public function getStudentSlipRequests($studentIdCode) {
+        $sql = "SELECT sr.id, sr.violation_id, sr.status, sr.request_date, sr.processed_date 
+                FROM slip_requests sr 
+                WHERE BINARY TRIM(sr.student_id_code) = BINARY TRIM(?) 
+                ORDER BY sr.request_date DESC LIMIT 10";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("s", $studentIdCode);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $requests = [];
+        while ($row = $result->fetch_assoc()) {
+            $requests[] = $row;
+        }
+        $stmt->close();
+        return $requests;
+    }
+
+    /**
      * Get slip request status
      */
     public function getSlipRequestStatus($violationId, $studentIdCode) {

@@ -1404,3 +1404,10 @@ body.dark #announcements-page.admin-side .announcement-modal-close:hover {
         color: #64748b;
     }
 }
+
+
+/* Required asterisk — match theme */
+.announcement-modal .required {
+  color: #ef4444;
+  font-weight: 600;
+}

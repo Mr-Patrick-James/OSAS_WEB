@@ -105,7 +105,7 @@ body.dark .nav-title { color: var(--gold); }
   gap: 7px;
   padding: 7px 14px;
   border-radius: 10px;
-  color: var(--text-2);
+  color: #888;
   text-decoration: none;
   font-weight: 500;
   font-size: .82rem;
@@ -113,7 +113,7 @@ body.dark .nav-title { color: var(--gold); }
   white-space: nowrap;
   position: relative;
 }
-.nav-link i { font-size: 1.1rem; }
+.nav-link i { font-size: 1.1rem; color: #888; }
 .nav-link:hover {
   background: var(--gold-light);
   color: var(--gold-dark);
@@ -126,6 +126,7 @@ body.dark .nav-title { color: var(--gold); }
   border-radius: 0;
   box-shadow: none;
 }
+.nav-item.active .nav-link i { color: var(--gold); }
 
 /* ── User Section ── */
 .nav-user {
@@ -267,6 +268,30 @@ input:checked + .slider .sun-icon { opacity: .3; }
 .notif-title { font-size: .82rem; font-weight: 600; color: var(--text); }
 .notif-desc  { font-size: .74rem; color: var(--text-2); line-height: 1.4; }
 .notif-time  { font-size: .68rem; color: var(--text-3); }
+
+/* Notification badge tags */
+.notif-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.notif-badge-tag.violation { background: #fef3c7; color: #d97706; }
+.notif-badge-tag.approved { background: #dcfce7; color: #16a34a; }
+.notif-badge-tag.denied { background: #fef2f2; color: #dc2626; }
+.notif-badge-tag i { font-size: 10px; }
+
+body.dark .notif-badge-tag.violation { background: rgba(217, 119, 6, 0.15); color: #fbbf24; }
+body.dark .notif-badge-tag.approved { background: rgba(22, 163, 74, 0.15); color: #4ade80; }
+body.dark .notif-badge-tag.denied { background: rgba(220, 38, 38, 0.15); color: #f87171; }
+
 .no-notifications {
   padding: 28px;
   text-align: center;
@@ -504,8 +529,10 @@ body.dark .user-avatar-img { border-color: #2a2a2a; }
 #main-content, #content main { font-size: 13px; }
 
 
-body.dark .nav-link { color: var(--text-2); }
+body.dark .nav-link { color: #888; }
+body.dark .nav-link i { color: #888; }
 body.dark .nav-link:hover { background: var(--gold-light); color: var(--gold); }
+body.dark .nav-link:hover i { color: var(--gold); }
 
 /* ── Topnav font scale-down ── */
 .nav-title       { font-size: 0.78rem !important; }

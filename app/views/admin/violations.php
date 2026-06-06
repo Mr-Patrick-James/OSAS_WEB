@@ -57,7 +57,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="Violations-stat-value" id="totalViolations">0</div>
         <div class="Violations-stat-change negative">
           <i class='bx bx-up-arrow-alt'></i>
-          <span>+18 this week</span>
+          <span id="totalViolationsWeek">+0 this week</span>
         </div>
       </div>
     </div>
@@ -75,23 +75,23 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-stat-card">
       <div class="Violations-stat-icon">
-        <i class='bx bx-time-five'></i>
-      </div>
-      <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Warning</h3>
-        <div class="Violations-stat-value" id="pendingViolations">0</div>
-        <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
-      </div>
-    </div>
-
-    <div class="Violations-stat-card">
-      <div class="Violations-stat-icon">
         <i class='bx bx-user-voice'></i>
       </div>
       <div class="Violations-stat-content">
         <h3 class="Violations-stat-title">Disciplinary</h3>
         <div class="Violations-stat-value" id="disciplinaryViolations">0</div>
         <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">0%</div>
+      </div>
+    </div>
+
+    <div class="Violations-stat-card">
+      <div class="Violations-stat-icon">
+        <i class='bx bx-calendar-week'></i>
+      </div>
+      <div class="Violations-stat-content">
+        <h3 class="Violations-stat-title">This Week</h3>
+        <div class="Violations-stat-value" id="pendingViolations">0</div>
+        <div class="Violations-stat-percentage" id="pendingViolationsPct">new this week</div>
       </div>
     </div>
   </div>
@@ -130,7 +130,7 @@ require_once __DIR__ . '/../../core/View.php';
 
           <select id="ViolationsStatusFilter" class="Violations-filter-select">
             <option value="all">All Status</option>
-            <option value="permitted">Permitted</option>
+            <option value="permitted">Resolved / Permitted</option>
             <option value="warning">Warning</option>
             <option value="disciplinary">Disciplinary</option>
             <option value="resolved">Resolved</option>

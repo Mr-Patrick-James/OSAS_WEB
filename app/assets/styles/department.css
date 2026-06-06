@@ -424,12 +424,12 @@ body.dark #departmentModal .close-btn:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 16px;
 }
 
 .header-left {
-  flex: 1;
+  flex-shrink: 0;
 }
 
 .table-title {
@@ -448,8 +448,9 @@ body.dark #departmentModal .close-btn:hover {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .search-box {

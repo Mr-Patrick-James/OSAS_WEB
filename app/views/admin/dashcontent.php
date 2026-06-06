@@ -197,8 +197,8 @@ try {
       <div class="violators">
         <div class="head">
           <h3>Top Violators</h3>
-          <i class='bx bx-refresh'></i>
-          <i class='bx bx-filter'></i>
+          <i class='bx bx-refresh' id="refreshTopViolators" title="Refresh" style="cursor:pointer;"></i>
+          <i class='bx bx-filter' id="filterTopViolators" title="View All" style="cursor:pointer;"></i>
         </div>
         <ul class="violator-list" id="top-violators-list">
             <!-- Populated by JS -->

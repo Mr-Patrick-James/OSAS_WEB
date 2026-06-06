@@ -504,9 +504,8 @@ function initDepartmentModule() {
     
     let startY = 67;
 
-    const tableColumn = ["ID", "Code", "Department Name", "HOD", "Students", "Status"];
+    const tableColumn = ["Code", "Department Name", "HOD", "Students", "Status"];
     const tableRows = departments.map(d => [
-      d.id,
       d.code,
       d.name,
       d.hod,
@@ -573,7 +572,6 @@ function initDepartmentModule() {
             <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Total Records: ${departments.length}</td></tr>
             <tr><td colspan="6" style="height: 20px;"></td></tr>
             <tr class="data-table">
-              <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">ID</th>
               <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Code</th>
               <th width="300" style="width: 300px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department Name</th>
               <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Head of Department</th>
@@ -585,7 +583,6 @@ function initDepartmentModule() {
       departments.forEach(d => {
         html += `
           <tr>
-            <td>${d.id || ''}</td>
             <td>${d.code || ''}</td>
             <td>${d.name || ''}</td>
             <td>${d.hod || 'N/A'}</td>
@@ -675,7 +672,7 @@ function initDepartmentModule() {
       
       const tableHeader = new TableRow({
         children: [
-          "ID", "Code", "Department Name", "Head of Department", "Students", "Status"
+          "Code", "Department Name", "Head of Department", "Students", "Status"
         ].map(text => new TableCell({
           children: [new Paragraph({ 
             children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
@@ -695,7 +692,6 @@ function initDepartmentModule() {
         
         return new TableRow({
           children: [
-            String(d.id || ''),
             d.code || '',
             d.name || '',
             d.hod || 'N/A',

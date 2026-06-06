@@ -131,20 +131,70 @@ function initializeNotifications() {
         violations = data.data || data.violations || [];
       }
 
+      // Also fetch slip request statuses
+      let slipRequests = [];
+      try {
+        const apiBase = getAPIBase();
+        const slipRes = await fetch(apiBase + 'violations.php?action=my_slip_requests');
+        const slipData = await slipRes.json();
+        if (slipData.status === 'success') {
+          slipRequests = slipData.data || [];
+        }
+      } catch (e) {
+        console.warn('Could not fetch slip requests:', e);
+      }
+
       const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
       const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
       
+      // Build combined notification list
+      let allNotifs = [];
+
+      // Add violations
+      violations.forEach(v => {
+        let dateStr = v.created_at || v.violation_date;
+        if (v.violation_date && v.violation_time && !v.created_at) {
+          dateStr = `${v.violation_date} ${v.violation_time}`;
+        }
+        allNotifs.push({
+          id: 'v-' + v.id,
+          type: 'violation',
+          title: 'Violation Recorded',
+          desc: (v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Violation') + ' reported on ' + new Date(dateStr.replace(' ', 'T')).toLocaleDateString(),
+          date: dateStr,
+          icon: 'bxs-error-circle',
+          isRead: readNotifs.includes(String(v.id)) || v.is_read == 1,
+          rawId: v.id
+        });
+      });
+
+      // Add slip requests (only approved/denied — not pending since they already know they requested)
+      slipRequests.filter(sr => sr.status === 'approved' || sr.status === 'denied').forEach(sr => {
+        const statusText = sr.status === 'approved' ? 'Entrance Slip Approved ✓' : 'Entrance Slip Denied ✗';
+        const dateStr = sr.processed_date || sr.request_date;
+        allNotifs.push({
+          id: 'sr-' + sr.id,
+          type: 'slip_' + sr.status,
+          title: statusText,
+          desc: sr.status === 'approved' ? 'Your entrance slip request has been approved' : 'Your entrance slip request was denied',
+          date: dateStr,
+          icon: sr.status === 'approved' ? 'bxs-check-circle' : 'bxs-x-circle',
+          isRead: readNotifs.includes('sr-' + sr.id),
+          rawId: sr.id
+        });
+      });
+
       // Sort by date descending
-      violations.sort((a, b) => {
-        const dateA = new Date((a.created_at || a.violation_date).replace(' ', 'T'));
-        const dateB = new Date((b.created_at || b.violation_date).replace(' ', 'T'));
+      allNotifs.sort((a, b) => {
+        const dateA = new Date((a.date || '').replace(' ', 'T'));
+        const dateB = new Date((b.date || '').replace(' ', 'T'));
         return dateB - dateA;
       });
 
-      // Limit to most recent 5 violations
-      const recentViolations = violations.slice(0, 5);
+      // Limit to most recent 8
+      const recentNotifs = allNotifs.slice(0, 8);
 
-      if (recentViolations.length === 0) {
+      if (recentNotifs.length === 0) {
         notifList.innerHTML = `
           <div class="no-notifications">
             <i class='bx bx-bell-off'></i>
@@ -154,34 +204,33 @@ function initializeNotifications() {
         return;
       }
 
-      // Count only the LATEST violation as new if it hasn't been seen
-      const latestViolation = recentViolations[0];
-      const unseenCount = (!seenNotifs.includes(String(latestViolation.id)) && latestViolation.is_read != 1) ? 1 : 0;
-      if (notifBadge) notifBadge.textContent = unseenCount;
+      // Count unseen
+      const unseenCount = recentNotifs.filter(n => !n.isRead && !seenNotifs.includes(n.id)).length;
+      if (notifBadge) notifBadge.textContent = unseenCount > 0 ? unseenCount : '0';
 
-      notifList.innerHTML = recentViolations.map(v => {
-        const isUnread = !readNotifs.includes(String(v.id)) && v.is_read != 1;
-        const isLatest = v.id === latestViolation.id;
-        const type = v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Violation';
-        
-        // Ensure date is parsed correctly by handling MySQL format (YYYY-MM-DD HH:MM:SS)
-        let dateStr = v.created_at || v.violation_date;
-        if (v.violation_date && v.violation_time && !v.created_at) {
-          dateStr = `${v.violation_date} ${v.violation_time}`;
-        }
-        
-        // Replace space with T for ISO format to ensure consistent cross-browser parsing
-        const date = new Date(dateStr.replace(' ', 'T'));
+      notifList.innerHTML = recentNotifs.map(n => {
+        const date = new Date((n.date || '').replace(' ', 'T'));
         const timeAgo = formatTimeAgo(date);
+        const unreadClass = !n.isRead ? 'unread' : '';
+        const typeClass = n.type === 'violation' ? 'notif-violation' : (n.type === 'slip_approved' ? 'notif-slip-approved' : 'notif-slip-denied');
         
+        let badgeHtml = '';
+        if (n.type === 'violation') {
+          badgeHtml = '<span class="notif-badge-tag violation"><i class="bx bx-error-alt"></i> Violation</span>';
+        } else if (n.type === 'slip_approved') {
+          badgeHtml = '<span class="notif-badge-tag approved"><i class="bx bx-check-circle"></i> Approved</span>';
+        } else if (n.type === 'slip_denied') {
+          badgeHtml = '<span class="notif-badge-tag denied"><i class="bx bx-x-circle"></i> Denied</span>';
+        }
+
         return `
-          <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${v.id}">
+          <div class="notification-item ${unreadClass} ${typeClass}" data-id="${n.id}" data-raw-id="${n.rawId}" data-type="${n.type}">
             <div class="notif-icon">
-              <i class='bx bxs-error-circle'></i>
+              <i class='bx ${n.icon}'></i>
             </div>
             <div class="notif-info">
-              <span class="notif-title">${isLatest ? 'New Violation Recorded' : 'Previous Violation'}</span>
-              <span class="notif-desc">${type} reported on ${date.toLocaleDateString()}</span>
+              <span class="notif-title">${n.title} ${badgeHtml}</span>
+              <span class="notif-desc">${n.desc}</span>
               <span class="notif-time">${timeAgo}</span>
             </div>
           </div>
@@ -192,24 +241,24 @@ function initializeNotifications() {
       notifList.querySelectorAll('.notification-item').forEach(item => {
         item.addEventListener('click', function() {
           const id = this.dataset.id;
+          const rawId = this.dataset.rawId;
+          const type = this.dataset.type;
           markNotificationAsRead(id);
           markNotificationAsSeen(id);
           
           // Close dropdown
           notifDropdown.classList.remove('show');
           
-          // Open violation details modal
-          if (typeof window.viewViolationDetails === 'function') {
-            window.viewViolationDetails(id);
-          } else {
-            console.error('viewViolationDetails function not found');
+          // Open violation details for violation type
+          if (type === 'violation' && typeof window.viewViolationDetails === 'function') {
+            window.viewViolationDetails(rawId);
           }
         });
       });
 
-      // Mark the latest as "seen" once the dropdown is opened
+      // Mark all as seen once dropdown is opened
       if (notifDropdown.classList.contains('show')) {
-        markNotificationAsSeen(latestViolation.id);
+        recentNotifs.forEach(n => markNotificationAsSeen(n.id));
       }
 
     } catch (error) {
@@ -225,12 +274,15 @@ function initializeNotifications() {
       localStorage.setItem('read_notifications', JSON.stringify(readNotifs));
     }
     
-    // Persist to database
-    try {
-      const apiBase = getAPIBase();
-      await fetch(`${apiBase}violations.php?action=mark_as_read&id=${id}`);
-    } catch (e) {
-      console.error('Failed to persist read status:', e);
+    // Persist violation read status to database (only for violation type)
+    if (String(id).startsWith('v-')) {
+      try {
+        const rawId = id.replace('v-', '');
+        const apiBase = getAPIBase();
+        await fetch(`${apiBase}violations.php?action=mark_as_read&id=${rawId}`);
+      } catch (e) {
+        console.error('Failed to persist read status:', e);
+      }
     }
 
     const item = notifList.querySelector(`.notification-item[data-id="${id}"]`);
@@ -279,17 +331,23 @@ function initializeNotifications() {
 
   function updateBadgeCount() {
     const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+    const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
     const items = notifList.querySelectorAll('.notification-item');
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      if (notifBadge) notifBadge.textContent = '0';
+      return;
+    }
     
-    const latestItem = items[0];
-    const latestId = latestItem.dataset.id;
-    const isUnread = latestItem.classList.contains('unread');
-    const isSeen = seenNotifs.includes(String(latestId));
+    let unseenCount = 0;
+    items.forEach(item => {
+      const id = item.dataset.id;
+      if (item.classList.contains('unread') && !seenNotifs.includes(String(id))) {
+        unseenCount++;
+      }
+    });
     
     if (notifBadge) {
-      // Badge should show if latest is both unread AND unseen
-      notifBadge.textContent = (isUnread && !isSeen) ? '1' : '0';
+      notifBadge.textContent = unseenCount > 0 ? unseenCount : '0';
     }
   }
 
@@ -310,6 +368,30 @@ function initializeNotifications() {
   
   // Initial check for notifications
   setTimeout(loadNotifications, 1000);
+
+  // Expose for external refresh (realtime alerts can call these)
+  window.refreshNotificationDropdown = loadNotifications;
+  window.refreshNotificationBadge = function() {
+    // Re-fetch and update badge silently without rendering the list
+    const apiBase = getAPIBase();
+    Promise.all([
+      fetch(apiBase + 'violations.php', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] })),
+      fetch(apiBase + 'violations.php?action=my_slip_requests', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] }))
+    ]).then(([vData, srData]) => {
+      const violations = vData.data || vData.violations || [];
+      const slipRequests = (srData.data || []).filter(sr => sr.status === 'approved' || sr.status === 'denied');
+      const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+      const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+      let unread = 0;
+      violations.forEach(v => {
+        if (!readNotifs.includes('v-' + v.id) && !seenNotifs.includes('v-' + v.id) && v.is_read != 1) unread++;
+      });
+      slipRequests.forEach(sr => {
+        if (!readNotifs.includes('sr-' + sr.id) && !seenNotifs.includes('sr-' + sr.id)) unread++;
+      });
+      if (notifBadge) notifBadge.textContent = unread > 0 ? (unread > 9 ? '9+' : unread) : '0';
+    }).catch(() => {});
+  };
 }
 
 // ===============================

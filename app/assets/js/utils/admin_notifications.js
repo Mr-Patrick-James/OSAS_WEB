@@ -1,6 +1,6 @@
 /**
  * Admin Notifications System
- * Handles disciplinary action notifications in the top navigation bar
+ * Handles disciplinary actions, slip requests, and recent violations in the top navigation bar
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -48,16 +48,23 @@ function initAdminNotifications() {
 
 async function updateNotificationCount() {
     try {
-        const response = await fetch('../api/violations.php?filter=disciplinary');
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            const count = data.count || 0;
-            const notifBadge = document.getElementById('notifBadge');
-            if (notifBadge) {
-                notifBadge.textContent = count;
-                notifBadge.style.display = count > 0 ? 'block' : 'none';
-            }
+        const [disciplinaryRes, slipRes] = await Promise.all([
+            fetch('../api/violations.php?filter=disciplinary').then(r => r.json()).catch(() => ({ status: 'error' })),
+            fetch('../api/violations.php?action=get_pending_slip_requests').then(r => r.json()).catch(() => ({ status: 'error' }))
+        ]);
+
+        let count = 0;
+        if (disciplinaryRes.status === 'success') {
+            count += disciplinaryRes.count || 0;
+        }
+        if (slipRes.status === 'success' && Array.isArray(slipRes.data)) {
+            count += slipRes.data.filter(r => r.status === 'pending').length;
+        }
+
+        const notifBadge = document.getElementById('notifBadge');
+        if (notifBadge) {
+            notifBadge.textContent = count;
+            notifBadge.style.display = count > 0 ? 'block' : 'none';
         }
     } catch (error) {
         console.error('Error fetching notification count:', error);
@@ -71,13 +78,51 @@ async function fetchNotifications() {
     notifList.innerHTML = '<div class="notif-loading">Loading notifications...</div>';
 
     try {
-        const response = await fetch('../api/violations.php?filter=disciplinary');
-        const data = await response.json();
-        
-        if (data.status === 'success' && data.data && data.data.length > 0) {
-            renderNotifications(data.data);
+        const [disciplinaryRes, slipRes] = await Promise.all([
+            fetch('../api/violations.php?filter=disciplinary').then(r => r.json()).catch(() => ({ status: 'error' })),
+            fetch('../api/violations.php?action=get_pending_slip_requests').then(r => r.json()).catch(() => ({ status: 'error' }))
+        ]);
+
+        const notifications = [];
+
+        // Add pending slip requests
+        if (slipRes.status === 'success' && Array.isArray(slipRes.data)) {
+            slipRes.data.filter(r => r.status === 'pending').forEach(req => {
+                const name = [req.first_name, req.last_name].filter(Boolean).join(' ') || 'Unknown Student';
+                notifications.push({
+                    type: 'slip_request',
+                    name: name,
+                    desc: 'Requested an entrance slip',
+                    date: req.request_date || req.created_at || '',
+                    studentId: req.student_id_code || req.student_id || '',
+                    avatar: req.avatar || '',
+                    id: req.id
+                });
+            });
+        }
+
+        // Add disciplinary actions
+        if (disciplinaryRes.status === 'success' && Array.isArray(disciplinaryRes.data)) {
+            disciplinaryRes.data.forEach(violation => {
+                const studentName = (violation.studentName
+                    || [violation.first_name, violation.middle_name, violation.last_name].filter(Boolean).join(' ')
+                    || 'Unknown Student').trim();
+                notifications.push({
+                    type: 'disciplinary',
+                    name: studentName,
+                    desc: 'Has pending disciplinary action',
+                    date: violation.dateReported || violation.violation_date || '',
+                    studentId: violation.studentId || violation.student_id || '',
+                    avatar: violation.studentImage || violation.avatar || '',
+                    id: violation.id
+                });
+            });
+        }
+
+        if (notifications.length === 0) {
+            notifList.innerHTML = '<div class="notif-empty">No notifications at this time.</div>';
         } else {
-            notifList.innerHTML = '<div class="notif-empty">No disciplinary actions found.</div>';
+            renderNotifications(notifications);
         }
     } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -85,72 +130,104 @@ async function fetchNotifications() {
     }
 }
 
-function renderNotifications(violations) {
+function getNotifInitials(name) {
+    const parts = (name || 'S').trim().split(/\s+/);
+    return parts.length > 1
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : (parts[0][0] || 'S').toUpperCase();
+}
+
+function renderNotifications(notifications) {
     const notifList = document.getElementById('notifList');
     if (!notifList) return;
 
     notifList.innerHTML = '';
 
-    violations.forEach(violation => {
-        // API returns camelCase fields (studentName, studentImage, dateReported, studentId)
-        // Fallback to snake_case in case the backend shape changes.
-        const studentName = (violation.studentName
-            || [violation.first_name, violation.middle_name, violation.last_name].filter(Boolean).join(' ')
-            || 'Unknown Student').trim();
+    notifications.forEach(notif => {
+        const initials = getNotifInitials(notif.name);
+        const avatarHtml = notif.avatar && notif.avatar.trim()
+            ? `<img src="${resolveNotifAvatar(notif.avatar)}" alt="${notif.name}" class="notif-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="notif-avatar-initials" style="display:none">${initials}</span>`
+            : `<span class="notif-avatar-initials">${initials}</span>`;
 
-        const rawAvatar = violation.studentImage || violation.avatar || '';
-        let avatar;
-        if (!rawAvatar) {
-            avatar = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(studentName) + '&background=ffd700&color=333';
-        } else if (/^https?:\/\//i.test(rawAvatar) || rawAvatar.startsWith('/') || rawAvatar.startsWith('../')) {
-            avatar = rawAvatar;
-        } else {
-            avatar = `../app/assets/img/students/${rawAvatar}`;
+        let actionBtn = '';
+        let badgeHtml = '';
+        if (notif.type === 'slip_request') {
+            actionBtn = `<button class="notif-manage-btn slip" onclick="manageSlipRequest('${notif.id}')">Review</button>`;
+            badgeHtml = '<span class="notif-badge-tag slip"><i class="bx bx-file"></i> Slip</span>';
+        } else if (notif.type === 'disciplinary') {
+            actionBtn = `<button class="notif-manage-btn" onclick="manageViolation('${notif.studentId}')">Manage</button>`;
+            badgeHtml = '<span class="notif-badge-tag disciplinary"><i class="bx bx-shield-x"></i> Disciplinary</span>';
         }
 
-        const dateRaw = violation.dateReported || violation.violation_date || '';
-        const studentId = violation.studentId || violation.student_id || '';
-
         const item = document.createElement('div');
-        item.className = 'notif-item';
+        item.className = `notif-item notif-${notif.type}`;
         item.innerHTML = `
-            <img src="${avatar}" alt="${studentName}" class="notif-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=ffd700&color=333'">
+            <div class="notif-avatar-wrap">${avatarHtml}</div>
             <div class="notif-info">
-                <span class="notif-name">${studentName}</span>
-                <span class="notif-desc">Has pending disciplinary action</span>
-                <span class="notif-time">${formatDate(dateRaw)}</span>
+                <span class="notif-name">${notif.name}</span>
+                <span class="notif-desc">${notif.desc} ${badgeHtml}</span>
+                <span class="notif-time">${formatNotifDate(notif.date)}</span>
             </div>
-            <button class="notif-manage-btn" onclick="manageViolation('${studentId}')">Manage</button>
+            ${actionBtn}
         `;
         notifList.appendChild(item);
     });
+
+    // Add "View All" link
+    const viewAll = document.createElement('a');
+    viewAll.className = 'notif-view-all';
+    viewAll.href = '#';
+    viewAll.textContent = 'View All Violations →';
+    viewAll.onclick = function(e) {
+        e.preventDefault();
+        if (typeof loadContent === 'function') {
+            loadContent('admin_page/Violations');
+        }
+        document.getElementById('notifModal').classList.remove('show');
+    };
+    notifList.appendChild(viewAll);
 }
 
-function formatDate(dateStr) {
+function resolveNotifAvatar(path) {
+    if (!path || path.trim() === '') return '';
+    if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path;
+    if (path.startsWith('/') || path.startsWith('../')) return path;
+    return `../app/assets/img/students/${path}`;
+}
+
+function formatNotifDate(dateStr) {
     if (!dateStr) return '';
     const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function manageViolation(studentId) {
-    // Redirect to violations page and potentially filter by student
     if (typeof loadContent === 'function') {
         loadContent('admin_page/Violations');
-        
-        // Give it a small delay to allow the page to load, then search
         setTimeout(() => {
             const searchInput = document.getElementById('searchViolation');
             if (searchInput) {
                 searchInput.value = studentId;
-                // Trigger input event to fire the search logic in violation.js
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }, 500);
     } else {
         window.location.href = 'dashboard.php?page=Violations&search=' + studentId;
     }
-    
-    // Close modal
-    const notifModal = document.getElementById('notifModal');
-    if (notifModal) notifModal.classList.remove('show');
+    document.getElementById('notifModal').classList.remove('show');
+}
+
+function manageSlipRequest(requestId) {
+    if (typeof loadContent === 'function') {
+        loadContent('admin_page/Violations');
+        // Switch to Slip Requests tab after loading
+        setTimeout(() => {
+            const slipTab = document.querySelector('[data-view="requests"]');
+            if (slipTab) slipTab.click();
+        }, 600);
+    } else {
+        window.location.href = 'dashboard.php?page=Violations&view=requests';
+    }
+    document.getElementById('notifModal').classList.remove('show');
 }

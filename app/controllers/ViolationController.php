@@ -91,6 +91,11 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'my_slip_requests') {
+            $this->my_slip_requests();
+            return;
+        }
+
         if ($action === 'get_pending_slip_requests') {
             $this->get_pending_slip_requests();
             return;
@@ -362,25 +367,28 @@ class ViolationController extends Controller
                 $studentFirstName = $student[0]['first_name'] ?? 'Student';
                 $levelLower = strtolower($levelName);
                 
-                if (strpos($levelLower, 'permitted') !== false) {
-                    // First time — gentle reminder
-                    $pushTitle = '📋 Dress Code Reminder';
-                    $pushBody = "Hi {$studentFirstName}, you've been noted for \"{$typeName}\". This is just a reminder — please follow the proper dress code next time.";
-                } elseif (strpos($levelLower, 'warning 1') !== false || strpos($levelLower, '1st') !== false) {
-                    $pushTitle = '⚠️ Warning 1 — Dress Code';
-                    $pushBody = "Hi {$studentFirstName}, this is your 1st warning for \"{$typeName}\". Please comply with the dress code policy to avoid further action.";
-                } elseif (strpos($levelLower, 'warning 2') !== false || strpos($levelLower, '2nd') !== false) {
-                    $pushTitle = '⚠️ Warning 2 — Dress Code';
-                    $pushBody = "Hi {$studentFirstName}, this is your 2nd warning for \"{$typeName}\". One more and you'll face disciplinary action. Please follow the policy.";
-                } elseif (strpos($levelLower, 'warning 3') !== false || strpos($levelLower, '3rd') !== false) {
-                    $pushTitle = '� Warning 3 — Disciplinary Action Required';
-                    $pushBody = "Hi {$studentFirstName}, you've reached your 3rd warning for \"{$typeName}\". Disciplinary action is now in effect. Please report to the Office of Student Affairs.";
+                if (strpos($levelLower, '1st offense') !== false || strpos($levelLower, 'permitted') !== false) {
+                    // First offense — gentle reminder
+                    $pushTitle = 'Dress Code Reminder';
+                    $pushBody = "Hi {$studentFirstName}, you've been noted for \"{$typeName}\" (1st Offense). This is just a reminder — please follow the proper dress code next time.";
+                } elseif (strpos($levelLower, '2nd offense') !== false) {
+                    $pushTitle = '2nd Offense — Dress Code';
+                    $pushBody = "Hi {$studentFirstName}, this is your 2nd offense for \"{$typeName}\". Please comply with the dress code policy to avoid further action.";
+                } elseif (strpos($levelLower, '3rd offense') !== false || strpos($levelLower, 'warning 1') !== false) {
+                    $pushTitle = '3rd Offense — Dress Code';
+                    $pushBody = "Hi {$studentFirstName}, this is your 3rd offense for \"{$typeName}\". Please comply immediately to avoid escalation.";
+                } elseif (strpos($levelLower, '4th offense') !== false || strpos($levelLower, 'warning 2') !== false) {
+                    $pushTitle = '4th Offense — Final Warning';
+                    $pushBody = "Hi {$studentFirstName}, this is your 4th offense for \"{$typeName}\". One more and you'll face disciplinary action. Please follow the policy.";
+                } elseif (strpos($levelLower, '5th offense') !== false || strpos($levelLower, 'warning 3') !== false) {
+                    $pushTitle = '5th Offense — Disciplinary Action Required';
+                    $pushBody = "Hi {$studentFirstName}, you've reached your 5th offense for \"{$typeName}\". Disciplinary action is now in effect. Please report to the Office of Student Affairs.";
                 } elseif (strpos($levelLower, 'disciplinary') !== false) {
-                    $pushTitle = '🔴 Disciplinary Notice';
+                    $pushTitle = 'Disciplinary Notice';
                     $pushBody = "Hi {$studentFirstName}, a disciplinary action has been recorded for repeated \"{$typeName}\" violations. Please report to the Office of Student Affairs immediately.";
                 } else {
                     // Fallback for any other level names
-                    $pushTitle = '📋 Violation Notice';
+                    $pushTitle = 'Violation Notice';
                     $pushBody = "Hi {$studentFirstName}, a \"{$typeName}\" violation ({$levelName}) has been recorded. Please check your E-OSAS portal for details.";
                 }
                 
@@ -396,7 +404,7 @@ class ViolationController extends Controller
                 $recordedBy = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Staff';
                 $studentFullName = trim(($student[0]['first_name'] ?? '') . ' ' . ($student[0]['last_name'] ?? ''));
                 
-                $adminTitle = '📝 New Violation Recorded';
+                $adminTitle = 'New Violation Recorded';
                 $adminBody = "{$recordedBy} recorded a \"{$typeName}\" ({$levelName}) violation for {$studentFullName} ({$studentId}).";
                 
                 (new PushNotificationService())->notifyAdmins(
@@ -663,7 +671,7 @@ class ViolationController extends Controller
                     require_once __DIR__ . '/../services/PushNotificationService.php';
                     $studentName = $_SESSION['full_name'] ?? 'A student';
                     (new PushNotificationService())->notifyAdmins(
-                        '📄 Entrance Slip Request',
+                        'Entrance Slip Request',
                         "{$studentName} ({$studentIdCode}) is requesting an entrance slip. Please review in the Violations module.",
                         ['type' => 'slip_request', 'page' => 'violations', 'tag' => 'slip-request-' . $violationId]
                     );
@@ -692,6 +700,24 @@ class ViolationController extends Controller
 
         $status = $this->model->getSlipRequestStatus($violationId, $studentIdCode);
         $this->json(['status' => 'success', 'data' => ['request_status' => $status]]);
+    }
+
+    /**
+     * Get student's own slip requests with status
+     */
+    private function my_slip_requests() {
+        $studentIdCode = $_SESSION['student_id_code'] ?? '';
+        if (empty($studentIdCode)) {
+            $this->error('Not authenticated as student');
+            return;
+        }
+
+        try {
+            $requests = $this->model->getStudentSlipRequests($studentIdCode);
+            $this->json(['status' => 'success', 'data' => $requests]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -730,7 +756,7 @@ class ViolationController extends Controller
                         $firstName = $request[0]['first_name'] ?? 'Student';
                         (new PushNotificationService())->notifyStudent(
                             $studentId,
-                            '✅ Entrance Slip Approved',
+                            'Entrance Slip Approved',
                             "Hi {$firstName}, your entrance slip request has been approved! You can now download it from your violations page.",
                             ['type' => 'slip_approved', 'page' => 'user-page/my_violations', 'tag' => 'slip-approved-' . $requestId]
                         );
@@ -770,7 +796,7 @@ class ViolationController extends Controller
                         $firstName = $request[0]['first_name'] ?? 'Student';
                         (new PushNotificationService())->notifyStudent(
                             $studentId,
-                            '❌ Entrance Slip Denied',
+                            'Entrance Slip Denied',
                             "Hi {$firstName}, your entrance slip request was denied. Please contact the Office of Student Affairs for more information.",
                             ['type' => 'slip_denied', 'page' => 'user-page/my_violations', 'tag' => 'slip-denied-' . $requestId]
                         );

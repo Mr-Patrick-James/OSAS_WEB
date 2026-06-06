@@ -129,13 +129,21 @@ function initReportsModule() {
                     if (!type) return;
 
                     let level = 0;
-                    if (title.includes('permitted 1')) level = 1;
-                    else if (title.includes('permitted 2')) level = 2;
-                    else if (title.includes('warning 1')) level = 3;
-                    else if (title.includes('warning 2')) level = 4;
-                    else if (title.includes('warning 3') || title.includes('disciplinary')) level = 5;
-                    else if (title.includes('permitted')) level = 1;
-                    else if (title.includes('warning')) level = 3;
+                    // New offense naming
+                    if (title.includes('5th offense'))      level = 5;
+                    else if (title.includes('4th offense')) level = 4;
+                    else if (title.includes('3rd offense')) level = 3;
+                    else if (title.includes('2nd offense')) level = 2;
+                    else if (title.includes('1st offense')) level = 1;
+                    // Legacy naming fallback
+                    else if (title.includes('disciplinary')) level = 5;
+                    else if (title.includes('warning 3'))    level = 5;
+                    else if (title.includes('warning 2'))    level = 4;
+                    else if (title.includes('warning 1'))    level = 3;
+                    else if (title.includes('permitted 2'))  level = 2;
+                    else if (title.includes('permitted 1'))  level = 1;
+                    else if (title.includes('warning'))      level = 3;
+                    else if (title.includes('permitted'))    level = 1;
                     
                     if (level > typeLevels[type]) typeLevels[type] = level;
                 });
@@ -146,16 +154,18 @@ function initReportsModule() {
             }
 
             const typeLabels = { uniform: 'Uniform', footwear: 'Footwear', id: 'No ID' };
+            const offenseLabels = ['', '1st', '2nd', '3rd', '4th', '5th'];
             let parts = [];
             
             for (const [type, level] of Object.entries(typeLevels)) {
                 if (level === 0) continue;
-                let badgeClass, statusLabel;
-                if (level >= 5) { badgeClass = 'disciplinary'; statusLabel = 'DISCIPLINARY'; }
-                else if (level >= 3) { badgeClass = 'warning'; statusLabel = 'WARNING'; }
-                else { badgeClass = 'permitted'; statusLabel = 'PERMITTED'; }
-                
-                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${typeLabels[type]}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${statusLabel}</strong>`);
+                let badgeClass;
+                // 1st & 2nd = green (permitted), 3rd & 4th = orange (warning), 5th/Disciplinary = red
+                if (level <= 2)      { badgeClass = 'permitted'; }
+                else if (level <= 4) { badgeClass = 'warning'; }
+                else                 { badgeClass = 'disciplinary'; }
+                const offenseLabel = level >= 5 ? 'DISCIPLINARY' : (offenseLabels[level] || level) + ' OFFENSE';
+                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${typeLabels[type]}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${offenseLabel}</strong>`);
             }
             
             if (parts.length === 0) {
@@ -561,7 +571,6 @@ function initReportsModule() {
                                 <span class="yearlevel-badge" style="font-size:9px;padding:2px 7px;min-width:auto;">${report.yearlevel || 'N/A'}</span>
                                 <span style="font-size:9px;padding:2px 7px;background:rgba(100,116,139,.1);color:#64748b;border-radius:4px;font-weight:600;"><i class='bx bx-calendar' style="vertical-align:middle;font-size:10px;"></i> ${periodLabel}</span>
                                 ${statusBreakdown}
-                                <span class="Reports-status-badge ${statusClass}" style="font-size:9px;">Total: ${report.totalViolations}</span>
                             </div>
                         </div>`;
                     }).join('');

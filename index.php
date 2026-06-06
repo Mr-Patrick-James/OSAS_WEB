@@ -986,7 +986,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         <span class="marquee-item">Student Records <span class="marquee-divider">✦</span></span>
         <span class="marquee-item">Violation Tracking <span class="marquee-divider">✦</span></span>
         <span class="marquee-item">Announcements <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Reports & Analytics <span class="marquee-divider">✦</span></span>
+        <span class="marquee-item">Reports & Statistics <span class="marquee-divider">✦</span></span>
         <span class="marquee-item">Department Management <span class="marquee-divider">✦</span></span>
         <span class="marquee-item">AI Assistant <span class="marquee-divider">✦</span></span>
         <span class="marquee-item">Role-Based Access <span class="marquee-divider">✦</span></span>
@@ -1067,7 +1067,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             </p>
         </div>
 
-        <!-- Wide Card: Reports & Analytics -->
+        <!-- Card: Reports & Analytics -->
         <div class="bento-card wide fade-up">
             <div class="bento-icon">
                 <i class="fas fa-chart-bar"></i>
@@ -1077,15 +1077,6 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
                 Generate detailed reports on violations, student behavior trends, 
                 and departmental statistics with export capabilities.
             </p>
-            <div class="mini-chart">
-                <div class="mini-bar" style="height: 40%;"></div>
-                <div class="mini-bar" style="height: 65%;"></div>
-                <div class="mini-bar" style="height: 45%;"></div>
-                <div class="mini-bar" style="height: 85%;"></div>
-                <div class="mini-bar" style="height: 60%;"></div>
-                <div class="mini-bar" style="height: 75%;"></div>
-                <div class="mini-bar" style="height: 50%;"></div>
-            </div>
         </div>
 
         <!-- Small Card: AI Chatbot -->
@@ -1109,6 +1100,30 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             <p class="bento-desc">
                 Secure, permission-based access control for admins, 
                 staff, and students.
+            </p>
+        </div>
+
+        <!-- Small Card: Offline/Online Mode -->
+        <div class="bento-card wide fade-up">
+            <div class="bento-icon">
+                <i class="fas fa-wifi"></i>
+            </div>
+            <h3 class="bento-title">Offline / Online Mode</h3>
+            <p class="bento-desc">
+                Works even without internet. Data syncs automatically 
+                when connectivity is restored.
+            </p>
+        </div>
+
+        <!-- Small Card: Push Notifications -->
+        <div class="bento-card wide fade-up">
+            <div class="bento-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h3 class="bento-title">Push Notifications</h3>
+            <p class="bento-desc">
+                Real-time alerts for violations, announcements, and 
+                important updates delivered instantly.
             </p>
         </div>
     </div>

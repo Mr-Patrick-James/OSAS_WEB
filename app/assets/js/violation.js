@@ -43,7 +43,7 @@ function initViolationsModule() {
             const initials = parts.length > 1
                 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
                 : (parts[0][0] || 'S').toUpperCase();
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" rx="${size/2}" fill="%23ffd700"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,sans-serif" font-size="${size * 0.4}" font-weight="bold" fill="%23333">${initials}</text></svg>`;
+            const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'%3E%3Crect width='${size}' height='${size}' rx='${size/2}' fill='%23ffd700'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial,sans-serif' font-size='${size * 0.4}' font-weight='bold' fill='%23333'%3E${initials}%3C/text%3E%3C/svg%3E`;
             return `data:image/svg+xml,${svg}`;
         }
         // Expose globally for inline onerror handlers
@@ -739,8 +739,13 @@ function initViolationsModule() {
                 // Determine style class based on name/level
                 let styleClass = 'level-warning';
                 const nameLower = level.name.toLowerCase();
-                if (nameLower.includes('permitted')) styleClass = 'level-permitted';
-                else if (nameLower.includes('disciplinary')) styleClass = 'level-disciplinary';
+                // 1st & 2nd Offense = green, 3rd & 4th = orange, 5th/disciplinary = red
+                if (nameLower.includes('1st offense') || nameLower.includes('2nd offense') || nameLower.includes('permitted')) {
+                    styleClass = 'level-permitted';
+                } else if (nameLower.includes('5th offense') || nameLower.includes('disciplinary') || nameLower.includes('warning 3')) {
+                    styleClass = 'level-disciplinary';
+                }
+                // 3rd & 4th offense stay as level-warning (default)
 
                 div.className = `violation-level-option ${styleClass}`;
                 
@@ -765,7 +770,7 @@ function initViolationsModule() {
                 }
             };
 
-            // Default to first level (Warning 1)
+            // Default to first level (1st Offense)
             const firstRadio = container.querySelector('input[type="radio"]');
             if (firstRadio) {
                 firstRadio.checked = true;
@@ -847,8 +852,11 @@ function initViolationsModule() {
                     // Determine class based on level name
                     let statusClass = 'warning';
                     const nameLower = levelName.toLowerCase();
-                    if (nameLower.includes('permitted')) statusClass = 'permitted';
-                    else if (nameLower.includes('disciplinary')) statusClass = 'disciplinary';
+                    if (nameLower.includes('1st offense') || nameLower.includes('2nd offense') || nameLower.includes('permitted')) {
+                        statusClass = 'permitted';
+                    } else if (nameLower.includes('disciplinary') || nameLower.includes('5th offense') || nameLower.includes('warning 3')) {
+                        statusClass = 'disciplinary';
+                    }
                     
                     badge.className = `violation-type-badge-overlay ${statusClass}`;
                     badge.textContent = levelName;
@@ -945,7 +953,8 @@ function initViolationsModule() {
             // Special Case: If Warning 3 is reached, stop there (disable Disciplinary Action level).
             
             const isWarning3Reached = lastViolationLevelName.toLowerCase().includes('warning 3') || 
-                                     lastViolationLevelName.toLowerCase().includes('3rd');
+                                     lastViolationLevelName.toLowerCase().includes('3rd') ||
+                                     lastViolationLevelName.toLowerCase().includes('5th offense');
 
             levelInputs.forEach((input, index) => {
                 let limit = maxLevelIndex + 1;
@@ -976,7 +985,7 @@ function initViolationsModule() {
                 if (isWarning3Reached) {
                     showNotification(`
                         <strong>Maximum Violation Level Reached</strong><br>
-                        Student has reached Warning 3. Status is now Disciplinary.
+                        Student has reached 5th Offense. Status is now Disciplinary.
                     `, 'warning', 6000);
                     return;
                 }
@@ -1437,16 +1446,15 @@ function initViolationsModule() {
         }
 
         function getViolationLevelClass(level) {
-            // Ensure level is a string and not empty
             if (level === null || level === undefined) return 'default';
-            
-            // Convert to string if it's not (e.g. number)
-            const levelStr = String(level);
-            
-            const lowerLevel = levelStr.toLowerCase();
-            if (lowerLevel.startsWith('permitted')) return 'permitted';
-            if (lowerLevel.startsWith('warning')) return 'warning';
-            if (lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
+            const lowerLevel = String(level).toLowerCase();
+            // 1st & 2nd Offense = green (permitted), 3rd & 4th = orange (warning), 5th/Disciplinary = red
+            if (lowerLevel.includes('1st offense') || lowerLevel.includes('2nd offense') ||
+                lowerLevel.startsWith('permitted')) return 'permitted';
+            if (lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
+                lowerLevel.startsWith('warning 1') || lowerLevel.startsWith('warning 2')) return 'warning';
+            if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
+                lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
             return 'default';
         }
 
@@ -1997,12 +2005,12 @@ function initViolationsModule() {
             // Apply Warning 3 -> Disciplinary logic for counts
             const disciplinaryViolations = studentViolations.filter(v => {
                 const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd');
+                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense');
             }).length;
             
             const pendingViolations = studentViolations.filter(v => {
                 const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) return false;
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) return false;
                 return ['warning', 'permitted'].includes(v.status);
             }).length;
 
@@ -2068,7 +2076,7 @@ function initViolationsModule() {
                 timeline.innerHTML = sortedViolations.map(violation => {
                     let displayStatus = violation.status;
                     const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
                         displayStatus = 'disciplinary';
                     }
                     
@@ -2314,7 +2322,7 @@ function initViolationsModule() {
                     return { displayStatus, displayStatusLabel: displayStatusLabel || 'Pending Sync' };
                 }
                 const ll = (v.violationLevelLabel || '').toLowerCase();
-                if ((ll.includes('warning 3') || ll.includes('3rd')) && displayStatus !== 'resolved') {
+                if ((ll.includes('warning 3') || ll.includes('3rd') || ll.includes('5th offense')) && displayStatus !== 'resolved') {
                     displayStatus = 'disciplinary';
                     displayStatusLabel = 'Disciplinary';
                 }
@@ -2370,7 +2378,7 @@ function initViolationsModule() {
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
                             </button>
-                            ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') ?
+                            ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') && !v.violationLevelLabel.toLowerCase().includes('5th offense') ?
                                 `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen">
                                     <i class='bx bx-rotate-left'></i>
                                 </button>` :
@@ -2440,7 +2448,7 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') ?
+                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') && !v.violationLevelLabel.toLowerCase().includes('5th offense') ?
                                         `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
                                         (displayStatus === 'disciplinary' ?
                                         `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
@@ -2480,7 +2488,7 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') ?
+                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') && !v.violationLevelLabel.toLowerCase().includes('5th offense') ?
                                         `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
                                         (displayStatus === 'disciplinary' ?
                                         `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
@@ -2508,18 +2516,23 @@ function initViolationsModule() {
 
         function updateStats() {
             const total = violations.length;
+            // Permitted = 1st & 2nd offense status
             const resolved = violations.filter(v => v.status === 'permitted').length;
-            
-            // Apply Warning 3 -> Disciplinary logic for counts
+
+            // Disciplinary = 5th offense or disciplinary status
             const disciplinary = violations.filter(v => {
                 const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd');
+                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense');
             }).length;
-            
+
+            // This Week = violations recorded in the last 7 days
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
             const pending = violations.filter(v => {
-                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) return false;
-                return v.status === 'warning' || v.status === 'permitted';
+                const dateStr = v.dateReported || v.violation_date || v.created_at || '';
+                if (!dateStr) return false;
+                const d = new Date(dateStr.replace(/\//g, '-'));
+                return d >= oneWeekAgo;
             }).length;
             
             const totalEl = document.getElementById('totalViolations');
@@ -2549,11 +2562,20 @@ function initViolationsModule() {
             if (disciplinaryEl) _acu(disciplinaryEl, disciplinary);
 
             const resolvedPct = total > 0 ? Math.round((resolved / total) * 100) : 0;
-            const pendingPct = total > 0 ? Math.round((pending / total) * 100) : 0;
             const disciplinaryPct = total > 0 ? Math.round((disciplinary / total) * 100) : 0;
-            if (resolvedPctEl) resolvedPctEl.textContent = `${resolvedPct}%`;
-            if (pendingPctEl) pendingPctEl.textContent = `${pendingPct}%`;
-            if (disciplinaryPctEl) disciplinaryPctEl.textContent = `${disciplinaryPct}%`;
+            if (resolvedPctEl) resolvedPctEl.textContent = `${resolvedPct}% of total`;
+            if (disciplinaryPctEl) disciplinaryPctEl.textContent = `${disciplinaryPct}% of total`;
+
+            // Show actual date range for This Week card
+            const now = new Date();
+            const weekStart = new Date();
+            weekStart.setDate(now.getDate() - 7);
+            const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (pendingPctEl) pendingPctEl.textContent = `${fmt(weekStart)} – ${fmt(now)}`;
+
+            // Update "+X this week" on Total Violations card
+            const weekEl = document.getElementById('totalViolationsWeek');
+            if (weekEl) weekEl.textContent = `+${pending} this week`;
         }
 
         function updateCounts(filteredViolations) {
@@ -2880,7 +2902,7 @@ function initViolationsModule() {
             let displayStatusLabel = violation.statusLabel;
 
             const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-            if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+            if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
                 displayStatus = 'disciplinary';
                 displayStatusLabel = 'Disciplinary';
             }
@@ -2973,7 +2995,7 @@ function initViolationsModule() {
                 let itemStatusLabel = v.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'Unknown');
                 
                 const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
                     itemStatus = 'disciplinary';
                     itemStatusLabel = 'Disciplinary';
                 }
@@ -3038,7 +3060,7 @@ function initViolationsModule() {
                                     ${(() => {
                                         let s = v.status;
                                         const ll = (v.violationLevelLabel || '').toLowerCase();
-                                        if (ll.includes('warning 3') || ll.includes('3rd')) s = 'disciplinary';
+                                        if (ll.includes('warning 3') || ll.includes('3rd') || ll.includes('5th offense')) s = 'disciplinary';
                                         if (s === 'resolved') return '<span style="color:green;font-weight:bold;">(Resolved)</span>';
                                         if (s === 'disciplinary') return '<span style="color:#e74c3c;font-weight:bold;">(Disciplinary)</span>';
                                         return '';
@@ -3095,7 +3117,7 @@ function initViolationsModule() {
                 const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
                 
                 // Treat Warning 3 as disciplinary for button visibility
-                if (violation.status !== 'resolved' && (levelLabel.includes('warning 3') || levelLabel.includes('3rd'))) {
+                if (violation.status !== 'resolved' && (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense'))) {
                     currentStatus = 'disciplinary';
                 }
 
@@ -3112,36 +3134,54 @@ function initViolationsModule() {
             }
 
             if (detailSlipStatus) {
-                detailSlipStatus.textContent = 'Slip Request: Loading...';
+                // Hide slip request status for pending/offline violations
+                if (String(violationId).startsWith('TEMP-') || !navigator.onLine) {
+                    detailSlipStatus.textContent = '';
+                    detailSlipStatus.style.display = 'none';
+                } else {
+                    detailSlipStatus.style.display = '';
+                    detailSlipStatus.textContent = 'Slip Request: Loading...';
+                }
             }
             if (detailApproveSlipBtn) detailApproveSlipBtn.style.display = 'none';
             if (detailDenySlipBtn) detailDenySlipBtn.style.display = 'none';
 
-            fetch(`${API_BASE}violations.php?action=slip_status&violation_id=${encodeURIComponent(violationId)}`)
-                .then(r => r.json())
-                .then(result => {
-                    if (!detailSlipStatus) return;
-                    if (result.status !== 'success') {
-                        detailSlipStatus.textContent = 'Slip Request: Unknown';
-                        return;
-                    }
+            // Only fetch slip status for real (synced) violations
+            if (!String(violationId).startsWith('TEMP-') && navigator.onLine) {
+                fetch(`${API_BASE}violations.php?action=slip_status&violation_id=${encodeURIComponent(violationId)}`)
+                    .then(r => r.json())
+                    .then(result => {
+                        if (!detailSlipStatus) return;
+                        if (result.status !== 'success') {
+                            detailSlipStatus.textContent = '';
+                            detailSlipStatus.style.display = 'none';
+                            return;
+                        }
 
-                    const status = result.data?.status || 'none';
-                    if (status === 'pending') {
-                        detailSlipStatus.textContent = 'Slip Request: Pending (student requested)';
-                        if (detailApproveSlipBtn) detailApproveSlipBtn.style.display = 'inline-flex';
-                        if (detailDenySlipBtn) detailDenySlipBtn.style.display = 'inline-flex';
-                    } else if (status === 'approved') {
-                        detailSlipStatus.textContent = 'Slip Request: Approved';
-                    } else if (status === 'denied') {
-                        detailSlipStatus.textContent = 'Slip Request: Denied';
-                    } else {
-                        detailSlipStatus.textContent = 'Slip Request: None';
-                    }
-                })
-                .catch(() => {
-                    if (detailSlipStatus) detailSlipStatus.textContent = 'Slip Request: Unknown';
-                });
+                        const status = result.data?.status || 'none';
+                        if (status === 'pending') {
+                            detailSlipStatus.style.display = '';
+                            detailSlipStatus.textContent = 'Slip Request: Pending (student requested)';
+                            if (detailApproveSlipBtn) detailApproveSlipBtn.style.display = 'inline-flex';
+                            if (detailDenySlipBtn) detailDenySlipBtn.style.display = 'inline-flex';
+                        } else if (status === 'approved') {
+                            detailSlipStatus.style.display = '';
+                            detailSlipStatus.textContent = 'Slip Request: Approved';
+                        } else if (status === 'denied') {
+                            detailSlipStatus.style.display = '';
+                            detailSlipStatus.textContent = 'Slip Request: Denied';
+                        } else {
+                            detailSlipStatus.textContent = '';
+                            detailSlipStatus.style.display = 'none';
+                        }
+                    })
+                    .catch(() => {
+                        if (detailSlipStatus) {
+                            detailSlipStatus.textContent = '';
+                            detailSlipStatus.style.display = 'none';
+                        }
+                    });
+            }
         }
 
         function closeRecordModal() {
@@ -3221,7 +3261,7 @@ function initViolationsModule() {
                     // Check status - logic must match renderViolations
                     let currentStatus = violation.status;
                     const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
                         currentStatus = 'disciplinary';
                     }
 
@@ -3510,7 +3550,7 @@ function initViolationsModule() {
                 // Check if disciplinary
                 let currentStatus = violation.status;
                 const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd')) {
+                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
                     currentStatus = 'disciplinary';
                 }
 
@@ -3560,40 +3600,64 @@ function initViolationsModule() {
 
                 const violation = violations.find(v => v.id == violationId);
                 if (violation) {
-                    // Print violation details
+                    // Print violation details with proper header
+                    const headerImgPath = API_BASE.replace('/api/', '/app/assets/headers/header.png');
                     const printContent = `
                         <html>
                             <head>
                                 <title>Violation Report - ${violation.caseId}</title>
                                 <style>
-                                    body { font-family: 'Segoe UI', sans-serif; margin: 40px; }
-                                    h1 { color: #333; margin-bottom: 20px; }
-                                    .report-section { margin-bottom: 30px; }
-                                    .report-label { font-weight: 600; color: #666; }
-                                    .report-value { margin-left: 10px; }
-                                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                                    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                                    th { background-color: #f8f9fa; font-weight: 600; }
+                                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                                    body { font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif; margin: 0; padding: 30px 40px; color: #1e293b; font-size: 13px; }
+                                    .report-header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; }
+                                    .report-header img { max-width: 100%; height: auto; max-height: 100px; margin-bottom: 8px; }
+                                    .report-header h1 { font-size: 18px; font-weight: 700; color: #1e293b; margin: 8px 0 4px; letter-spacing: -0.02em; }
+                                    .report-header p { font-size: 11px; color: #64748b; }
+                                    .report-meta { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11px; color: #64748b; }
+                                    .report-body { margin-bottom: 24px; }
+                                    .report-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+                                    .report-table tr { border-bottom: 1px solid #e2e8f0; }
+                                    .report-table td { padding: 10px 12px; vertical-align: top; }
+                                    .report-table td:first-child { font-weight: 600; color: #475569; width: 160px; white-space: nowrap; }
+                                    .report-table td:last-child { color: #1e293b; }
+                                    .report-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
+                                    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+                                    .badge-warning { background: #fef3c7; color: #d97706; }
+                                    .badge-danger { background: #fee2e2; color: #dc2626; }
+                                    .badge-success { background: #dcfce7; color: #16a34a; }
+                                    .badge-info { background: #e0f2fe; color: #0284c7; }
+                                    @media print { body { padding: 20px 30px; } }
                                 </style>
                             </head>
                             <body>
-                                <h1>Violation Report</h1>
-                                <div class="report-section">
-                                    <div><span class="report-label">Case ID:</span> <span class="report-value">${violation.caseId}</span></div>
-                                    <div><span class="report-label">Student ID:</span> <span class="report-value">${violation.studentId}</span></div>
-                                    <div><span class="report-label">Student Name:</span> <span class="report-value">${violation.studentName}</span></div>
-                                    <div><span class="report-label">Section:</span> <span class="report-value">${violation.section}</span></div>
-                                    <div><span class="report-label">Year Level:</span> <span class="report-value">${violation.studentYearlevel || 'N/A'}</span></div>
-                                    <div><span class="report-label">Violation Type:</span> <span class="report-value">${violation.violationTypeLabel}</span></div>
-                                    <div><span class="report-label">Level:</span> <span class="report-value">${violation.violationLevelLabel}</span></div>
-                                    <div><span class="report-label">Date & Time:</span> <span class="report-value">${violation.dateTime}</span></div>
-                                    <div><span class="report-label">Location:</span> <span class="report-value">${violation.locationLabel}</span></div>
-                                    <div><span class="report-label">Reported By:</span> <span class="report-value">${violation.reportedBy}</span></div>
-                                    <div><span class="report-label">Status:</span> <span class="report-value">${violation.statusLabel}</span></div>
-                                    <div><span class="report-label">Notes:</span> <span class="report-value">${violation.notes || 'N/A'}</span></div>
+                                <div class="report-header">
+                                    <img src="${headerImgPath}" alt="Header" onerror="this.style.display='none'">
+                                    <h1>Violation Report</h1>
+                                    <p>Office of Student Affairs and Services</p>
                                 </div>
-                                <div style="margin-top: 40px; color: #666; font-size: 12px;">
-                                    Generated on: ${new Date().toLocaleString()}
+                                <div class="report-meta">
+                                    <span>Case ID: <strong>${violation.caseId}</strong></span>
+                                    <span>Generated: ${new Date().toLocaleString()}</span>
+                                </div>
+                                <div class="report-body">
+                                    <table class="report-table">
+                                        <tr><td>Student ID</td><td>${violation.studentId}</td></tr>
+                                        <tr><td>Student Name</td><td>${violation.studentName}</td></tr>
+                                        <tr><td>Department</td><td>${violation.department || 'N/A'}</td></tr>
+                                        <tr><td>Section</td><td>${violation.section}</td></tr>
+                                        <tr><td>Year Level</td><td>${violation.studentYearlevel || 'N/A'}</td></tr>
+                                        <tr><td>Violation Type</td><td>${violation.violationTypeLabel}</td></tr>
+                                        <tr><td>Level</td><td>${violation.violationLevelLabel}</td></tr>
+                                        <tr><td>Date & Time</td><td>${violation.dateTime}</td></tr>
+                                        <tr><td>Location</td><td>${violation.locationLabel}</td></tr>
+                                        <tr><td>Reported By</td><td>${violation.reportedBy}</td></tr>
+                                        <tr><td>Status</td><td><span class="badge ${violation.status === 'resolved' ? 'badge-success' : violation.status === 'disciplinary' ? 'badge-danger' : 'badge-warning'}">${violation.statusLabel}</span></td></tr>
+                                        <tr><td>Notes</td><td>${violation.notes || 'N/A'}</td></tr>
+                                    </table>
+                                </div>
+                                <div class="report-footer">
+                                    <span>E-OSAS System — Violation Report</span>
+                                    <span>Printed by: ${getCurrentAdminName()}</span>
                                 </div>
                             </body>
                         </html>
@@ -3857,7 +3921,7 @@ function initViolationsModule() {
             let newXml = xml.substring(0, endAnchorCell);
             let offset = endAnchorCell;
 
-            // We expect 5 columns after the violation name: Permitted 1, Permitted 2, 1st, 2nd, 3rd
+            // We expect 5 columns after the violation name: 1st Offense, 2nd Offense, 3rd Offense, 4th Offense, 5th Offense
             for (let i = 0; i < 5; i++) {
                 // Find start of next cell
                 const startTc = xml.indexOf('<w:tc', offset);
@@ -4340,10 +4404,13 @@ function initViolationsModule() {
                                 if (level) levelName = level.name.toLowerCase();
                             }
 
-                            if (levelName.includes('permitted')) {
+                            // 1st & 2nd Offense = permitted, 3rd & 4th = warning, 5th/disciplinary = disciplinary
+                            if (levelName.includes('1st offense') || levelName.includes('2nd offense') || levelName.includes('permitted')) {
                                 status = 'permitted';
-                            } else if (levelName.includes('disciplinary') || levelName.includes('3rd') || levelName.includes('warning 3')) {
+                            } else if (levelName.includes('5th offense') || levelName.includes('disciplinary') || levelName.includes('warning 3')) {
                                 status = 'disciplinary';
+                            } else {
+                                status = 'warning'; // 3rd & 4th offense
                             }
                         }
 
@@ -4389,10 +4456,13 @@ function initViolationsModule() {
 
                             console.log('Determining status from level name:', levelName);
 
-                            if (levelName.includes('permitted')) {
+                            // 1st & 2nd Offense = permitted, 3rd & 4th = warning, 5th/disciplinary = disciplinary
+                            if (levelName.includes('1st offense') || levelName.includes('2nd offense') || levelName.includes('permitted')) {
                                 status = 'permitted';
-                            } else if (levelName.includes('disciplinary') || levelName.includes('3rd') || levelName.includes('warning 3')) {
+                            } else if (levelName.includes('5th offense') || levelName.includes('disciplinary') || levelName.includes('warning 3')) {
                                 status = 'disciplinary';
+                            } else {
+                                status = 'warning'; // 3rd & 4th offense
                             }
                         }
 

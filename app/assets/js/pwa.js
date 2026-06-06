@@ -218,6 +218,86 @@ window.addEventListener('appinstalled', () => {
     }, 500);
 });
 
+// ── iOS Install Prompt ────────────────────────────────────────────────────────
+function isIOS() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent) || 
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isInStandaloneMode() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.navigator.standalone === true;
+}
+
+function showIOSInstallPrompt() {
+    // Don't show if already installed, dismissed recently, or not iOS Safari
+    if (isInStandaloneMode()) return;
+    if (!isIOS()) return;
+    if (localStorage.getItem('eosas_ios_install_dismissed')) {
+        const dismissed = parseInt(localStorage.getItem('eosas_ios_install_dismissed'));
+        if (Date.now() - dismissed < 7 * 24 * 60 * 60 * 1000) return; // 7 days
+    }
+
+    const banner = document.createElement('div');
+    banner.id = 'ios-install-banner';
+    banner.innerHTML = `
+        <div style="
+            position:fixed; bottom:0; left:0; right:0; z-index:999998;
+            background:#1a1a1a; border-top:2px solid #D4AF37;
+            padding:16px 20px; display:flex; align-items:center; gap:14px;
+            box-shadow:0 -4px 20px rgba(0,0,0,0.3);
+            animation: iosSlideUp 0.4s ease-out;
+        ">
+            <div style="
+                width:44px; height:44px; border-radius:12px;
+                background:linear-gradient(135deg, #D4AF37, #A07820);
+                display:flex; align-items:center; justify-content:center;
+                flex-shrink:0;
+            ">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                    <polyline points="16 6 12 2 8 6"/>
+                    <line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:13px; font-weight:700; color:#fff; margin-bottom:3px;">Install E-OSAS</div>
+                <div style="font-size:11px; color:#aaa; line-height:1.4;">
+                    Tap <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2.5" style="vertical-align:middle; margin:0 2px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> 
+                    then <strong style="color:#D4AF37;">"Add to Home Screen"</strong>
+                </div>
+            </div>
+            <button id="ios-install-dismiss" style="
+                background:rgba(255,255,255,0.08); border:none; color:#888;
+                width:28px; height:28px; border-radius:8px;
+                display:flex; align-items:center; justify-content:center;
+                cursor:pointer; font-size:16px; flex-shrink:0;
+            ">✕</button>
+        </div>
+    `;
+
+    document.body.appendChild(banner);
+
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `@keyframes iosSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`;
+    document.head.appendChild(style);
+
+    // Dismiss handler
+    document.getElementById('ios-install-dismiss').addEventListener('click', () => {
+        banner.remove();
+        style.remove();
+        localStorage.setItem('eosas_ios_install_dismissed', String(Date.now()));
+    });
+}
+
+// Show iOS prompt after a short delay
+window.addEventListener('DOMContentLoaded', () => {
+    if (isIOS() && !isInStandaloneMode()) {
+        setTimeout(showIOSInstallPrompt, 3000);
+    }
+});
+
 // ── Online / Offline Status ───────────────────────────────────────────────────
 let _offlineTimer = null;
 
