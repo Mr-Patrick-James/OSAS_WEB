@@ -164,7 +164,9 @@ class ReportModel extends Model {
         if (!empty($filters['violationTypes'])) {
             $violationConditions = [];
             foreach ($filters['violationTypes'] as $type) {
-                if ($type === 'uniform') {
+                if (is_numeric($type)) {
+                    $violationConditions[] = "v.violation_type_id = " . (int)$type;
+                } elseif ($type === 'uniform') {
                     $violationConditions[] = "vt.name LIKE '%Uniform%'";
                 } elseif ($type === 'footwear') {
                     $violationConditions[] = "(vt.name LIKE '%Footwear%' OR vt.name LIKE '%Shoe%')";
@@ -447,6 +449,13 @@ class ReportModel extends Model {
             }
             
             $stmt->close();
+
+            $typeCountsMap = $this->getStudentTypeCountsMap($filters);
+            foreach ($reports as &$report) {
+                $report['typeCounts'] = $typeCountsMap[$report['studentId']] ?? [];
+            }
+            unset($report);
+
             return $reports;
             
         } catch (Exception $e) {
@@ -710,26 +719,207 @@ class ReportModel extends Model {
     }
     
     /**
+     * Get all violation types for dynamic reports UI
+     */
+    public function getViolationTypesList() {
+        $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violation_types'");
+        if ($tableCheck === false || $tableCheck->num_rows === 0) {
+            return [];
+        }
+        return $this->query("SELECT id, name FROM violation_types ORDER BY name ASC") ?: [];
+    }
+
+    /**
+     * Apply shared violation query filters
+     */
+    private function applyViolationFilters($filters, &$query, &$params, &$types) {
+        $department = $filters['department'] ?? 'all';
+        $section = $filters['section'] ?? 'all';
+        $startDate = $filters['startDate'] ?? null;
+        $endDate = $filters['endDate'] ?? null;
+        $violationType = $filters['violationType'] ?? 'all';
+
+        if ($department !== 'all' && !empty($department)) {
+            if (strpos($department, ',') !== false) {
+                $depts = array_map('trim', explode(',', $department));
+                $placeholders = implode(',', array_fill(0, count($depts), '?'));
+                $query .= " AND s.department IN ($placeholders)";
+                foreach ($depts as $dept) {
+                    $params[] = $dept;
+                    $types .= "s";
+                }
+            } else {
+                $query .= " AND s.department = ?";
+                $params[] = $department;
+                $types .= "s";
+            }
+        }
+
+        if ($section !== 'all' && !empty($section)) {
+            $query .= " AND (sec.section_code = ? OR CAST(s.section_id AS CHAR) = ?)";
+            $params[] = $section;
+            $params[] = $section;
+            $types .= "ss";
+        }
+
+        if ($violationType !== 'all' && !empty($violationType)) {
+            $query .= " AND v.violation_type_id = ?";
+            $params[] = (int)$violationType;
+            $types .= "i";
+        }
+
+        if ($startDate && $endDate) {
+            $query .= " AND v.violation_date BETWEEN ? AND ?";
+            $params[] = $startDate;
+            $params[] = $endDate;
+            $types .= "ss";
+        } elseif ($startDate) {
+            $query .= " AND v.violation_date >= ?";
+            $params[] = $startDate;
+            $types .= "s";
+        } elseif ($endDate) {
+            $query .= " AND v.violation_date <= ?";
+            $params[] = $endDate;
+            $types .= "s";
+        }
+    }
+
+    /**
+     * Per-student violation counts keyed by type id
+     */
+    public function getStudentTypeCountsMap($filters = []) {
+        $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
+        if ($tableCheck === false || $tableCheck->num_rows === 0) {
+            return [];
+        }
+
+        $query = "SELECT v.student_id, v.violation_type_id, COUNT(*) AS cnt
+                  FROM violations v
+                  INNER JOIN students s ON BINARY v.student_id = BINARY s.student_id
+                  LEFT JOIN sections sec ON s.section_id = sec.id
+                  WHERE (v.is_archived = 0 OR v.is_archived IS NULL)
+                    AND s.status != 'archived'";
+
+        $params = [];
+        $types = "";
+        $this->applyViolationFilters($filters, $query, $params, $types);
+        $query .= " GROUP BY v.student_id, v.violation_type_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            if (!$stmt) {
+                return [];
+            }
+            if (!empty($params) && !empty($types)) {
+                $stmt->bind_param($types, ...$params);
+            }
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $map = [];
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $studentId = $row['student_id'];
+                    $typeId = (int)$row['violation_type_id'];
+                    if (!isset($map[$studentId])) {
+                        $map[$studentId] = [];
+                    }
+                    $map[$studentId][$typeId] = (int)$row['cnt'];
+                }
+            }
+            $stmt->close();
+            return $map;
+        } catch (Exception $e) {
+            error_log("ReportModel::getStudentTypeCountsMap error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Global violation counts grouped by type id
+     */
+    public function getAggregatedTypeCounts($filters = []) {
+        $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
+        if ($tableCheck === false || $tableCheck->num_rows === 0) {
+            return [];
+        }
+
+        $query = "SELECT v.violation_type_id, COUNT(*) AS cnt
+                  FROM violations v
+                  INNER JOIN students s ON BINARY v.student_id = BINARY s.student_id
+                  LEFT JOIN sections sec ON s.section_id = sec.id
+                  WHERE (v.is_archived = 0 OR v.is_archived IS NULL)
+                    AND s.status != 'archived'";
+
+        $params = [];
+        $types = "";
+        $this->applyViolationFilters($filters, $query, $params, $types);
+        $query .= " GROUP BY v.violation_type_id";
+
+        try {
+            $stmt = $this->conn->prepare($query);
+            if (!$stmt) {
+                return [];
+            }
+            if (!empty($params) && !empty($types)) {
+                $stmt->bind_param($types, ...$params);
+            }
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $counts = [];
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $counts[(int)$row['violation_type_id']] = (int)$row['cnt'];
+                }
+            }
+            $stmt->close();
+            return $counts;
+        } catch (Exception $e) {
+            error_log("ReportModel::getAggregatedTypeCounts error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Get statistics for reports
      */
     public function getReportStats($filters = []) {
         $reports = $this->getStudentReports($filters);
-        
+        $types = $this->getViolationTypesList();
+        $countsMap = $this->getAggregatedTypeCounts($filters);
+
+        $totalViolations = array_sum($countsMap);
+        $typeStats = [];
+        foreach ($types as $type) {
+            $id = (int)$type['id'];
+            $count = (int)($countsMap[$id] ?? 0);
+            $typeStats[] = [
+                'id' => $id,
+                'name' => $type['name'],
+                'count' => $count,
+                'percentage' => $totalViolations > 0 ? (int)round(($count / $totalViolations) * 100) : 0
+            ];
+        }
+
         $stats = [
-            'totalViolations' => 0,
+            'totalViolations' => $totalViolations,
             'uniformViolations' => 0,
             'footwearViolations' => 0,
             'noIdViolations' => 0,
-            'totalStudents' => count($reports)
+            'totalStudents' => count($reports),
+            'typeStats' => $typeStats
         ];
-        
-        foreach ($reports as $report) {
-            $stats['totalViolations'] += $report['totalViolations'];
-            $stats['uniformViolations'] += $report['uniformCount'];
-            $stats['footwearViolations'] += $report['footwearCount'];
-            $stats['noIdViolations'] += $report['noIdCount'];
+
+        foreach ($typeStats as $typeStat) {
+            $nameLower = strtolower($typeStat['name']);
+            if (strpos($nameLower, 'uniform') !== false) {
+                $stats['uniformViolations'] += $typeStat['count'];
+            } elseif (strpos($nameLower, 'footwear') !== false || strpos($nameLower, 'shoe') !== false) {
+                $stats['footwearViolations'] += $typeStat['count'];
+            } elseif (strpos($nameLower, 'id') !== false) {
+                $stats['noIdViolations'] += $typeStat['count'];
+            }
         }
-        
+
         return $stats;
     }
 }

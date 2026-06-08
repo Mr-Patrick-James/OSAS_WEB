@@ -54,6 +54,33 @@ body.dark {
   border-radius: 50%;
 }
 
+/* Management Modal Toggle Button */
+.vt-toggle-view-btn {
+  background: #f8f9fa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.vt-toggle-view-btn:hover {
+  background: var(--gold);
+  color: var(--dark);
+  border-color: var(--gold);
+  transform: rotate(90deg);
+}
+
+.vt-toggle-view-btn i {
+  font-size: 16px;
+}
+
 /* ========================================= */
 /*         BASE STYLES FOR PAGE             */
 /* ========================================= */
@@ -314,9 +341,31 @@ body.dark {
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
 }
 
-/* ========================================= */
-/*              STATS CARDS                 */
-/* ========================================= */
+.vt-manage-item.archived {
+  opacity: 0.7;
+  background-color: #f3f4f6;
+  border-left: 3px solid #9ca3af;
+}
+
+.vt-manage-item.archived .vt-manage-item-name {
+  color: #6b7280;
+  text-decoration: line-through;
+}
+
+.vt-manage-item-restore {
+  background: none;
+  border: none;
+  color: #10b981;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.vt-manage-item-restore:hover {
+  background-color: #dcfce7;
+  color: #059669;
+}
 
 .Violations-stats-overview {
   display: grid;
@@ -1724,37 +1773,70 @@ body.dark {
 }
 
 /* Level-specific colors */
-.level-permitted .level-title { color: #28a745; }
-.level-warning .level-title { color: #fd7e14; }
-.level-disciplinary .level-title { color: #dc3545; }
+.level-permitted { --level-color: #10b981; }
+.level-warning { --level-color: #f59e0b; }
+.level-disciplinary { --level-color: #ef4444; }
+.level-resolved { --level-color: #3b82f6; }
+
+.level-title {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--level-color);
+  transition: all 0.3s ease;
+}
 
 .violation-level-option:hover {
-  border-color: currentColor;
+  border-color: var(--level-color);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.violation-level-option.level-permitted:hover { border-color: #28a745; }
-.violation-level-option.level-warning:hover { border-color: #fd7e14; }
-.violation-level-option.level-disciplinary:hover { border-color: #dc3545; }
-
 .violation-level-option.active {
-  border-color: currentColor;
-  background: rgba(currentColor, 0.05);
+  border-color: var(--level-color);
+  background: color-mix(in srgb, var(--level-color), transparent 95%);
 }
 
 .violation-level-option.active::before {
-  background: currentColor;
+  background: var(--level-color);
 }
 
-.violation-level-option.active.level-permitted { border-color: #28a745; background: rgba(40, 167, 69, 0.05); }
-.violation-level-option.active.level-permitted::before { background: #28a745; }
+/* Manage Levels Color Dots */
+.vt-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
 
-.violation-level-option.active.level-warning { border-color: #fd7e14; background: rgba(253, 126, 20, 0.05); }
-.violation-level-option.active.level-warning::before { background: #fd7e14; }
+.vt-color-dot:hover {
+  transform: scale(1.2);
+}
 
-.violation-level-option.active.level-disciplinary { border-color: #dc3545; background: rgba(220, 53, 69, 0.05); }
-.violation-level-option.active.level-disciplinary::before { background: #dc3545; }
+.vt-color-dot.active {
+  border-color: #333;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  transform: scale(1.1);
+}
+
+.vt-save-all-btn {
+  background: var(--gold);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.vt-save-all-btn:hover {
+  background: #e5c147;
+  transform: translateY(-1px);
+}
 
 /* Recorded & Disabled Level Styles */
 .violation-level-option.recorded {
@@ -5177,6 +5259,101 @@ body.dark #ViolationDetailsModal .timeline-content {
 }
 
 
+/* Dark mode for management modal */
+body.dark .vt-manage-body {
+  background: #1a1a1a;
+}
+
+body.dark .vt-manage-column-header,
+body.dark .vt-manage-add-form,
+body.dark .vt-manage-actions {
+  background: #1a1a1a !important;
+}
+
+body.dark .vt-manage-column {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+body.dark #ViolationTypesManageModal .Violations-modal-container {
+  background: #1a1a1a !important;
+}
+
+body.dark #ViolationTypesManageModal .Violations-modal-header {
+  background: #222222 !important;
+  border-bottom-color: #333 !important;
+}
+
+body.dark #ViolationTypesManageModal .Violations-modal-header h2 {
+  color: #fff !important;
+}
+
+body.dark #ViolationTypesManageModal .vt-manage-column-header h3 {
+  color: #e5e7eb !important;
+}
+
+body.dark .vt-manage-item {
+  background: #222222;
+  border-color: #333333;
+}
+
+body.dark .vt-manage-item:hover,
+body.dark .vt-manage-item:focus-within {
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+body.dark .vt-manage-item.active {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--gold);
+}
+
+body.dark .vt-manage-item-name,
+body.dark .vt-level-name-input,
+body.dark .vt-status-name-input {
+  color: #ffffff;
+}
+
+body.dark .vt-level-status-input,
+body.dark .vt-manage-add-form input,
+body.dark .vt-manage-add-form select {
+  background: #2a2a2a !important;
+  border-color: #3f3f3f !important;
+  color: #ffffff !important;
+}
+
+body.dark .vt-level-status-input option {
+  background: #2a2a2a;
+  color: #ffffff;
+}
+
+body.dark .vt-manage-empty {
+  color: #6b7280;
+}
+
+body.dark .vt-manage-count {
+  background: #2a2a2a;
+  color: #9ca3af;
+}
+
+body.dark .vt-toggle-view-btn {
+  background: #2a2a2a;
+  border-color: #3f3f3f;
+  color: #9ca3af;
+}
+
+body.dark .vt-color-presets {
+  background: #2a2a2a !important;
+}
+
+body.dark .vt-manage-item-delete,
+body.dark .vt-manage-item-restore {
+  color: #9ca3af;
+}
+
+body.dark .vt-manage-item-delete:hover {
+  color: #ef4444;
+}
+
 /* ============================================================
    MOBILE: Disable modal animations for instant popup (performance)
    ============================================================ */
@@ -5192,9 +5369,198 @@ body.dark #ViolationDetailsModal .timeline-content {
   .Violations-details-panel,
   #ViolationRecordModal .Violations-modal-container,
   #ViolationDetailsModal .Violations-modal-container,
-  #ExportViolationsModal .Violations-modal-container {
+  #ExportViolationsModal .Violations-modal-container,
+  #ViolationTypesManageModal .Violations-modal-container {
     transition: none !important;
     animation: none !important;
     animation-duration: 0s !important;
+  }
+}
+
+/* Violation Types & Levels Management Modal */
+.vt-manage-modal {
+  max-width: 860px;
+  width: 95%;
+}
+
+.vt-manage-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 20px 12px;
+  min-height: 320px;
+}
+
+.vt-manage-column {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--light, #fafafa);
+  overflow: hidden;
+}
+
+.vt-manage-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background: #fff;
+}
+
+.vt-manage-column-header h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--dark, #1a1a1a);
+}
+
+.vt-manage-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.vt-manage-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 280px;
+  padding: 8px;
+}
+
+.vt-manage-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  padding: 24px 12px;
+  margin: 0;
+}
+
+.vt-manage-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border, #e5e7eb);
+  background: #fff;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vt-manage-item:hover,
+.vt-manage-item:focus-within {
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.vt-manage-item.active {
+  border-color: var(--gold, #d4af37);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.vt-level-name-input:focus,
+.vt-status-name-input:focus {
+  outline: none;
+}
+
+.vt-manage-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vt-manage-item-name {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dark, #1a1a1a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vt-manage-item-desc {
+  display: block;
+  font-size: 0.72rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vt-manage-item-order {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.vt-manage-item-delete {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.vt-manage-item-delete:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.vt-manage-add-form {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border, #e5e7eb);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vt-manage-add-form input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  box-sizing: border-box;
+}
+
+.vt-manage-add-form input:focus {
+  outline: none;
+  border-color: var(--gold, #d4af37);
+}
+
+.vt-manage-add-btn {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.vt-manage-actions {
+  padding: 12px 20px 20px;
+}
+
+@media (max-width: 640px) {
+  .vt-manage-body {
+    grid-template-columns: 1fr;
   }
 }

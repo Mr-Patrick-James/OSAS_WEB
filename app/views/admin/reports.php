@@ -50,51 +50,19 @@ require_once __DIR__ . '/../../core/View.php';
 
   <!-- STATS CARDS -->
   <div class="Reports-stats-overview">
-    <div class="Reports-stat-card">
+    <div class="Reports-stat-card Reports-stat-card--total">
       <div class="Reports-stat-icon">
         <i class='bx bx-bar-chart-alt'></i>
       </div>
       <div class="Reports-stat-content">
         <h3 class="Reports-stat-title">Total Violations</h3>
         <div class="Reports-stat-value" id="totalViolationsCount">0</div>
-        <div class="Reports-stat-change positive" style="display: none;">
-          <i class='bx bx-up-arrow-alt'></i>
-          <span>Loading...</span>
-        </div>
+        <div class="Reports-stat-percentage" style="visibility: hidden;">0%</div>
       </div>
     </div>
 
-    <div class="Reports-stat-card">
-      <div class="Reports-stat-icon">
-        <i class='bx bx-t-shirt'></i>
-      </div>
-      <div class="Reports-stat-content">
-        <h3 class="Reports-stat-title">Uniform Violations</h3>
-        <div class="Reports-stat-value" id="uniformViolations">0</div>
-        <div class="Reports-stat-percentage" id="uniformPercentage">0%</div>
-      </div>
-    </div>
-
-    <div class="Reports-stat-card">
-      <div class="Reports-stat-icon">
-        <i class='bx bx-walk'></i>
-      </div>
-      <div class="Reports-stat-content">
-        <h3 class="Reports-stat-title">Footwear Violations</h3>
-        <div class="Reports-stat-value" id="footwearViolations">0</div>
-        <div class="Reports-stat-percentage" id="footwearPercentage">0%</div>
-      </div>
-    </div>
-
-    <div class="Reports-stat-card">
-      <div class="Reports-stat-icon">
-        <i class='bx bx-id-card'></i>
-      </div>
-      <div class="Reports-stat-content">
-        <h3 class="Reports-stat-title">No ID Violations</h3>
-        <div class="Reports-stat-value" id="noIdViolations">0</div>
-        <div class="Reports-stat-percentage" id="noIdPercentage">0%</div>
-      </div>
+    <div id="ReportsTypeStatsContainer" class="Reports-stats-type-container">
+      <p class="Reports-stats-loading">Loading violation types...</p>
     </div>
   </div>
 
@@ -177,6 +145,13 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
 
       <div class="filter-group">
+        <label for="ReportsViolationTypeFilter">Violation Type</label>
+        <select id="ReportsViolationTypeFilter" class="Reports-filter-select">
+          <option value="all">All Types</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
         <label for="ReportsSortBy">Sort By</label>
         <select id="ReportsSortBy" class="Reports-filter-select">
           <option value="total_desc">Total Violations (High to Low)</option>
@@ -232,58 +207,8 @@ require_once __DIR__ . '/../../core/View.php';
     <div class="Reports-table-container" id="reportsTableView">
       <table class="Reports-table">
         <thead>
-          <tr>
-            <th>
-              <div class="Reports-table-header-content">
-                <span>Student Info</span>
-              </div>
-            </th>
-            <th class="Reports-sortable" data-sort="department">
-              <div class="Reports-table-header-content">
-                <span>Department</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
-            <th class="Reports-sortable" data-sort="section">
-              <div class="Reports-table-header-content">
-                <span>Section</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
-            <th>
-              <div class="Reports-table-header-content">
-                <span>Year Level</span>
-              </div>
-            </th>
-            <th class="Reports-sortable" data-sort="uniform">
-              <div class="Reports-table-header-content">
-                <span>Improper Uniform</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
-            <th class="Reports-sortable" data-sort="footwear">
-              <div class="Reports-table-header-content">
-                <span>Improper Footwear</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
-            <th class="Reports-sortable" data-sort="idCount">
-              <div class="Reports-table-header-content">
-                <span>No ID</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
-            <th class="Reports-sortable" data-sort="total">
-              <div class="Reports-table-header-content">
-                <span>Total Violations</span>
-                <i class='bx bx-sort'></i>
-              </div>
-            </th>
-            <th>
-              <div class="Reports-table-header-content">
-                <span>Actions</span>
-              </div>
-            </th>
+          <tr id="ReportsTableHeaderRow">
+            <th colspan="9" style="text-align:center;padding:16px;color:#666;">Loading columns...</th>
           </tr>
         </thead>
 

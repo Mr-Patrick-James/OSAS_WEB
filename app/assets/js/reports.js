@@ -27,6 +27,7 @@ function initReportsModule() {
         const deptFilter = document.getElementById('ReportsDepartmentFilter');
         const sectionFilter = document.getElementById('ReportsSectionFilter');
         const statusFilter = document.getElementById('ReportsStatusFilter');
+        const violationTypeFilter = document.getElementById('ReportsViolationTypeFilter');
         const timeFilter = document.getElementById('ReportsTimeFilter');
         const sortByFilter = document.getElementById('ReportsSortBy');
         const applyFiltersBtn = document.getElementById('applyFilters');
@@ -66,6 +67,7 @@ function initReportsModule() {
         // Reports data loaded from API
         let reports = [];
         let allReports = []; // Store all reports for client-side filtering
+        let reportViolationTypes = [];
 
         let currentPage = 1;
         let itemsPerPage = 10;
@@ -75,6 +77,157 @@ function initReportsModule() {
 
         // ========== HELPER FUNCTIONS ==========
         
+        function getTypeIcon(name, solid = false) {
+            const n = (name || '').toLowerCase();
+            const prefix = solid ? 'bxs-' : 'bx-';
+            if (n.includes('uniform')) return prefix + 't-shirt';
+            if (n.includes('footwear') || n.includes('shoe')) return prefix + 'walk';
+            if (n.includes('id')) return prefix + 'id-card';
+            if (n.includes('misconduct') || n.includes('behavior')) return prefix + 'error';
+            return prefix + 'error-circle';
+        }
+
+        function getReportTypeCount(report, typeId) {
+            const id = String(typeId);
+            if (report.typeCounts) {
+                if (report.typeCounts[typeId] !== undefined) return parseInt(report.typeCounts[typeId], 10) || 0;
+                if (report.typeCounts[id] !== undefined) return parseInt(report.typeCounts[id], 10) || 0;
+            }
+            const type = reportViolationTypes.find(t => String(t.id) === id);
+            if (!type) return 0;
+            const name = (type.name || '').toLowerCase();
+            if (name.includes('uniform')) return parseInt(report.uniformCount, 10) || 0;
+            if (name.includes('footwear') || name.includes('shoe')) return parseInt(report.footwearCount, 10) || 0;
+            if (name.includes('id')) return parseInt(report.noIdCount, 10) || 0;
+            return 0;
+        }
+
+        function getReportsTableColspan() {
+            return 6 + reportViolationTypes.length;
+        }
+
+        function renderTypeCountCells(report) {
+            return reportViolationTypes.map(type => {
+                const count = getReportTypeCount(report, type.id);
+                const countClass = getCountBadgeClass(count);
+                return `<td class="violation-count" data-label="${type.name}">
+                    <div class="count-badge ${countClass}">${count}/5</div>
+                </td>`;
+            }).join('');
+        }
+
+        function renderTypeStatCards(typeStats) {
+            const container = document.getElementById('ReportsTypeStatsContainer');
+            if (!container) return;
+
+            const stats = typeStats || [];
+            if (!stats.length) {
+                container.innerHTML = '<p class="Reports-stats-loading">No violation types found</p>';
+                return;
+            }
+
+            container.innerHTML = stats.map(typeStat => {
+                const icon = getTypeIcon(typeStat.name, true);
+                const label = typeStat.name.length > 24 ? `${typeStat.name.slice(0, 22)}…` : typeStat.name;
+                return `
+                <div class="Reports-stat-card" title="${typeStat.name}">
+                    <div class="Reports-stat-icon"><i class='bx ${icon}'></i></div>
+                    <div class="Reports-stat-content">
+                        <h3 class="Reports-stat-title">${label}</h3>
+                        <div class="Reports-stat-value">${typeStat.count}</div>
+                        <div class="Reports-stat-percentage">${typeStat.percentage}%</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function populateViolationTypeFilter(types) {
+            if (!violationTypeFilter) return;
+            const current = violationTypeFilter.value || 'all';
+            violationTypeFilter.innerHTML = '<option value="all">All Types</option>';
+            (types || []).forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.id;
+                option.textContent = type.name;
+                violationTypeFilter.appendChild(option);
+            });
+            if ([...violationTypeFilter.options].some(opt => opt.value === current)) {
+                violationTypeFilter.value = current;
+            }
+        }
+
+        function updateSortByOptions() {
+            if (!sortByFilter) return;
+            const current = sortByFilter.value;
+            const baseOptions = [
+                ['total_desc', 'Total Violations (High to Low)'],
+                ['total_asc', 'Total Violations (Low to High)'],
+                ['name_asc', 'Name (A to Z)'],
+                ['name_desc', 'Name (Z to A)'],
+                ['dept_asc', 'Department (A to Z)'],
+                ['section_asc', 'Section (A to Z)']
+            ];
+            sortByFilter.innerHTML = '';
+            baseOptions.forEach(([value, label]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                sortByFilter.appendChild(option);
+            });
+            reportViolationTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = `type_${type.id}_desc`;
+                option.textContent = `${type.name} (High to Low)`;
+                sortByFilter.appendChild(option);
+            });
+            if ([...sortByFilter.options].some(opt => opt.value === current)) {
+                sortByFilter.value = current;
+            }
+        }
+
+        function renderReportsTableHeader() {
+            const row = document.getElementById('ReportsTableHeaderRow');
+            if (!row) return;
+
+            const typeHeaders = reportViolationTypes.map(type => `
+                <th class="Reports-sortable" data-sort="type_${type.id}">
+                    <div class="Reports-table-header-content">
+                        <span>${type.name}</span>
+                        <i class='bx bx-sort'></i>
+                    </div>
+                </th>
+            `).join('');
+
+            row.innerHTML = `
+                <th>
+                    <div class="Reports-table-header-content"><span>Student Info</span></div>
+                </th>
+                <th class="Reports-sortable" data-sort="department">
+                    <div class="Reports-table-header-content"><span>Department</span><i class='bx bx-sort'></i></div>
+                </th>
+                <th class="Reports-sortable" data-sort="section">
+                    <div class="Reports-table-header-content"><span>Section</span><i class='bx bx-sort'></i></div>
+                </th>
+                <th>
+                    <div class="Reports-table-header-content"><span>Year Level</span></div>
+                </th>
+                ${typeHeaders}
+                <th class="Reports-sortable" data-sort="total">
+                    <div class="Reports-table-header-content"><span>Total Violations</span><i class='bx bx-sort'></i></div>
+                </th>
+                <th>
+                    <div class="Reports-table-header-content"><span>Actions</span></div>
+                </th>
+            `;
+        }
+
+        function setReportViolationTypes(types) {
+            reportViolationTypes = Array.isArray(types) ? types : [];
+            renderReportsTableHeader();
+            populateViolationTypeFilter(reportViolationTypes);
+            updateSortByOptions();
+        }
+
         function getDepartmentClass(deptCode) {
             const classes = {
                 'BSIS': 'bsis',
@@ -114,60 +267,28 @@ function initReportsModule() {
         }
 
         function getStatusBreakdown(report) {
-            // Show current level per type as X/5 + status label
-            // Levels: Permitted 1=1, Permitted 2=2, Warning 1=3, Warning 2=4, Warning 3/Disciplinary=5
-            const typeLevels = { uniform: 0, footwear: 0, id: 0 };
-
-            if (report.history && report.history.length > 0) {
-                report.history.forEach(h => {
-                    const title = (h.title || '').toLowerCase();
-                    
-                    let type = null;
-                    if (title.includes('uniform')) type = 'uniform';
-                    else if (title.includes('footwear') || title.includes('shoe')) type = 'footwear';
-                    else if (title.includes('id') || title.includes('no id')) type = 'id';
-                    if (!type) return;
-
-                    let level = 0;
-                    // New offense naming
-                    if (title.includes('5th offense'))      level = 5;
-                    else if (title.includes('4th offense')) level = 4;
-                    else if (title.includes('3rd offense')) level = 3;
-                    else if (title.includes('2nd offense')) level = 2;
-                    else if (title.includes('1st offense')) level = 1;
-                    // Legacy naming fallback
-                    else if (title.includes('disciplinary')) level = 5;
-                    else if (title.includes('warning 3'))    level = 5;
-                    else if (title.includes('warning 2'))    level = 4;
-                    else if (title.includes('warning 1'))    level = 3;
-                    else if (title.includes('permitted 2'))  level = 2;
-                    else if (title.includes('permitted 1'))  level = 1;
-                    else if (title.includes('warning'))      level = 3;
-                    else if (title.includes('permitted'))    level = 1;
-                    
-                    if (level > typeLevels[type]) typeLevels[type] = level;
-                });
-            } else {
-                if (report.uniformCount > 0) typeLevels.uniform = Math.min(report.uniformCount, 5);
-                if (report.footwearCount > 0) typeLevels.footwear = Math.min(report.footwearCount, 5);
-                if (report.noIdCount > 0) typeLevels.id = Math.min(report.noIdCount, 5);
+            if (!reportViolationTypes.length) {
+                return `<span class="Reports-status-badge ${getStatusClass(report.status)}" style="font-size:9px;">Total: ${report.totalViolations}</span>`;
             }
 
-            const typeLabels = { uniform: 'Uniform', footwear: 'Footwear', id: 'No ID' };
             const offenseLabels = ['', '1st', '2nd', '3rd', '4th', '5th'];
-            let parts = [];
-            
-            for (const [type, level] of Object.entries(typeLevels)) {
-                if (level === 0) continue;
+            const parts = [];
+
+            reportViolationTypes.forEach(type => {
+                const count = getReportTypeCount(report, type.id);
+                if (count <= 0) return;
+
+                const level = Math.min(count, 5);
                 let badgeClass;
-                // 1st & 2nd = green (permitted), 3rd & 4th = orange (warning), 5th/Disciplinary = red
-                if (level <= 2)      { badgeClass = 'permitted'; }
-                else if (level <= 4) { badgeClass = 'warning'; }
-                else                 { badgeClass = 'disciplinary'; }
-                const offenseLabel = level >= 5 ? 'DISCIPLINARY' : (offenseLabels[level] || level) + ' OFFENSE';
-                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${typeLabels[type]}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${offenseLabel}</strong>`);
-            }
-            
+                if (level <= 2) badgeClass = 'permitted';
+                else if (level <= 4) badgeClass = 'warning';
+                else badgeClass = 'disciplinary';
+
+                const shortName = type.name.length > 14 ? `${type.name.slice(0, 12)}…` : type.name;
+                const offenseLabel = level >= 5 ? 'DISCIPLINARY' : `${offenseLabels[level]} OFFENSE`;
+                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${shortName}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${offenseLabel}</strong>`);
+            });
+
             if (parts.length === 0) {
                 return `<span class="Reports-status-badge ${getStatusClass(report.status)}" style="font-size:9px;">Total: ${report.totalViolations}</span>`;
             }
@@ -186,53 +307,29 @@ function initReportsModule() {
         }
 
         function calculateStats(statsData = null) {
-            // Use provided stats or calculate from current reports
-            let totalViolations, uniformViolations, footwearViolations, noIdViolations, totalStudents;
-            
+            let totalViolations, totalStudents, typeStats;
+
             if (statsData) {
                 totalViolations = statsData.totalViolations || 0;
-                uniformViolations = statsData.uniformViolations || 0;
-                footwearViolations = statsData.footwearViolations || 0;
-                noIdViolations = statsData.noIdViolations || 0;
                 totalStudents = statsData.totalStudents || reports.length;
+                typeStats = statsData.typeStats || [];
             } else {
                 totalViolations = reports.reduce((sum, report) => sum + report.totalViolations, 0);
-                uniformViolations = reports.reduce((sum, report) => sum + report.uniformCount, 0);
-                footwearViolations = reports.reduce((sum, report) => sum + report.footwearCount, 0);
-                noIdViolations = reports.reduce((sum, report) => sum + report.noIdCount, 0);
                 totalStudents = reports.length;
+                typeStats = reportViolationTypes.map(type => {
+                    const count = reports.reduce((sum, report) => sum + getReportTypeCount(report, type.id), 0);
+                    return {
+                        id: type.id,
+                        name: type.name,
+                        count,
+                        percentage: totalViolations > 0 ? Math.round((count / totalViolations) * 100) : 0
+                    };
+                });
             }
-            
-            // Update stats cards
+
             const totalViolationsEl = document.getElementById('totalViolationsCount');
-            const uniformViolationsEl = document.getElementById('uniformViolations');
-            const footwearViolationsEl = document.getElementById('footwearViolations');
-            const noIdViolationsEl = document.getElementById('noIdViolations');
-            
             if (totalViolationsEl) totalViolationsEl.textContent = totalViolations;
-            if (uniformViolationsEl) uniformViolationsEl.textContent = uniformViolations;
-            if (footwearViolationsEl) footwearViolationsEl.textContent = footwearViolations;
-            if (noIdViolationsEl) noIdViolationsEl.textContent = noIdViolations;
-            
-            // Calculate and update percentages
-            const uniformPercentageEl = document.getElementById('uniformPercentage');
-            const footwearPercentageEl = document.getElementById('footwearPercentage');
-            const noIdPercentageEl = document.getElementById('noIdPercentage');
-            
-            if (uniformPercentageEl) {
-                const percentage = totalViolations > 0 ? ((uniformViolations / totalViolations) * 100).toFixed(0) : 0;
-                uniformPercentageEl.textContent = percentage + '%';
-            }
-            if (footwearPercentageEl) {
-                const percentage = totalViolations > 0 ? ((footwearViolations / totalViolations) * 100).toFixed(0) : 0;
-                footwearPercentageEl.textContent = percentage + '%';
-            }
-            if (noIdPercentageEl) {
-                const percentage = totalViolations > 0 ? ((noIdViolations / totalViolations) * 100).toFixed(0) : 0;
-                noIdPercentageEl.textContent = percentage + '%';
-            }
-            
-            // Update footer stats
+            renderTypeStatCards(typeStats);
             const totalStudentsEl = document.getElementById('totalStudentsCount');
             const totalViolationsFooterEl = document.getElementById('totalViolationsFooter');
             const avgViolationsEl = document.getElementById('avgViolations');
@@ -261,7 +358,7 @@ function initReportsModule() {
             try {
                 if (showLoading) {
                     if (tableBody) {
-                        tableBody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 20px;">Loading reports...</td></tr>';
+                        tableBody.innerHTML = `<tr><td colspan="${getReportsTableColspan()}" style="text-align: center; padding: 20px;">Loading reports...</td></tr>`;
                     }
                 }
                 
@@ -272,12 +369,14 @@ function initReportsModule() {
                 const deptValue = deptFilter ? deptFilter.value : 'all';
                 const sectionValue = sectionFilter ? sectionFilter.value : 'all';
                 const statusValue = statusFilter ? statusFilter.value : 'all';
+                const violationTypeValue = violationTypeFilter ? violationTypeFilter.value : 'all';
                 const timeValue = timeFilter ? timeFilter.value : 'all';
                 const searchValue = searchInput ? searchInput.value.trim() : '';
                 
                 if (deptValue !== 'all') params.append('department', deptValue);
                 if (sectionValue !== 'all') params.append('section', sectionValue);
                 if (statusValue !== 'all') params.append('status', statusValue);
+                if (violationTypeValue !== 'all') params.append('violationType', violationTypeValue);
                 if (searchValue) params.append('search', searchValue);
                 
                 // Handle time period
@@ -311,13 +410,17 @@ function initReportsModule() {
                 
                 // Store all reports
                 allReports = data.reports || data.data || [];
-                reports = [...allReports]; // Copy for filtering
+                reports = [...allReports];
+
+                if (data.violationTypes && data.violationTypes.length) {
+                    setReportViolationTypes(data.violationTypes);
+                }
                 
                 console.log(`✅ Loaded ${reports.length} reports from database`);
                 
                 if (reports.length === 0) {
                     if (tableBody) {
-                        tableBody.innerHTML = `<tr><td colspan="9">
+                        tableBody.innerHTML = `<tr><td colspan="${getReportsTableColspan()}">
                             <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 24px;text-align:center;">
                                 <div style="width:56px;height:56px;border-radius:50%;background:rgba(212,175,55,0.08);border:1.5px solid rgba(212,175,55,0.2);display:flex;align-items:center;justify-content:center;">
                                     <i class='bx bx-bar-chart-alt-2' style="font-size:24px;color:#D4AF37;"></i>
@@ -345,18 +448,20 @@ function initReportsModule() {
                 console.error('❌ Error loading reports:', error);
                 console.error('Error details:', error.stack);
                 if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #e74c3c;">
+                    tableBody.innerHTML = `<tr><td colspan="${getReportsTableColspan()}" style="text-align: center; padding: 20px; color: #e74c3c;">
                         <div style="margin-bottom: 10px;">❌ Error loading reports: ${error.message}</div>
                         <div style="font-size: 0.9em; color: #666;">Check browser console for details</div>
                     </td></tr>`;
                 }
-                // Set empty stats
                 calculateStats({
                     totalViolations: 0,
-                    uniformViolations: 0,
-                    footwearViolations: 0,
-                    noIdViolations: 0,
-                    totalStudents: 0
+                    totalStudents: 0,
+                    typeStats: reportViolationTypes.map(type => ({
+                        id: type.id,
+                        name: type.name,
+                        count: 0,
+                        percentage: 0
+                    }))
                 });
             }
         }
@@ -383,6 +488,10 @@ function initReportsModule() {
 
             // Sort reports
             filteredReports.sort((a, b) => {
+                if (sortValue.startsWith('type_') && sortValue.endsWith('_desc')) {
+                    const typeId = sortValue.replace('type_', '').replace('_desc', '');
+                    return getReportTypeCount(b, typeId) - getReportTypeCount(a, typeId);
+                }
                 switch(sortValue) {
                     case 'total_desc':
                         return b.totalViolations - a.totalViolations;
@@ -433,14 +542,10 @@ function initReportsModule() {
 
             // ── TABLE VIEW ──────────────────────────────────────────────────
             if (filteredReports.length === 0 && reports.length > 0) {
-                tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#666;">No reports match the current filters.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${getReportsTableColspan()}" style="text-align:center;padding:20px;color:#666;">No reports match the current filters.</td></tr>`;
             } else {
                 tableBody.innerHTML = pageItems.map(report => {
                     const deptClass    = getDepartmentClass(report.deptCode);
-                    const statusClass  = getStatusClass(report.status);
-                    const uniformClass = getCountBadgeClass(report.uniformCount);
-                    const footwearClass= getCountBadgeClass(report.footwearCount);
-                    const noIdClass    = getCountBadgeClass(report.noIdCount);
                     const totalClass   = getCountBadgeClass(report.totalViolations);
                     return `
                     <tr data-id="${report.id}">
@@ -463,15 +568,7 @@ function initReportsModule() {
                         <td class="report-yearlevel" data-label="Year Level">
                             <span class="yearlevel-badge">${report.yearlevel || 'N/A'}</span>
                         </td>
-                        <td class="violation-count uniform" data-label="Uniform">
-                            <div class="count-badge ${uniformClass}">${report.uniformCount}/5</div>
-                        </td>
-                        <td class="violation-count footwear" data-label="Footwear">
-                            <div class="count-badge ${footwearClass}">${report.footwearCount}/5</div>
-                        </td>
-                        <td class="violation-count no-id" data-label="No ID">
-                            <div class="count-badge ${noIdClass}">${report.noIdCount}/5</div>
-                        </td>
+                        ${renderTypeCountCells(report)}
                         <td class="total-violations" data-label="Total">
                             <div class="total-badge ${totalClass}">${report.totalViolations}</div>
                         </td>
@@ -490,11 +587,17 @@ function initReportsModule() {
                 } else {
                     gridBody.innerHTML = pageItems.map(report => {
                         const deptClass    = getDepartmentClass(report.deptCode);
-                        const statusClass  = getStatusClass(report.status);
-                        const uniformClass = getCountBadgeClass(report.uniformCount);
-                        const footwearClass= getCountBadgeClass(report.footwearCount);
-                        const noIdClass    = getCountBadgeClass(report.noIdCount);
                         const totalClass   = getCountBadgeClass(report.totalViolations);
+                        const typeCountItems = reportViolationTypes.map(type => {
+                            const count = getReportTypeCount(report, type.id);
+                            const countClass = getCountBadgeClass(count);
+                            const shortName = type.name.length > 12 ? `${type.name.slice(0, 10)}…` : type.name;
+                            return `
+                                    <div class="report-card-count-item">
+                                        <span class="report-card-count-label">${shortName}</span>
+                                        <span class="report-card-count-value ${countClass}">${count}/5</span>
+                                    </div>`;
+                        }).join('');
                         return `
                         <div class="report-card" data-id="${report.id}">
                             <div class="report-card-top ${report.status}"></div>
@@ -513,18 +616,7 @@ function initReportsModule() {
                                 </div>
                                 <div class="report-card-divider"></div>
                                 <div class="report-card-counts">
-                                    <div class="report-card-count-item">
-                                        <span class="report-card-count-label">Uniform</span>
-                                        <span class="report-card-count-value ${uniformClass}">${report.uniformCount}/5</span>
-                                    </div>
-                                    <div class="report-card-count-item">
-                                        <span class="report-card-count-label">Footwear</span>
-                                        <span class="report-card-count-value ${footwearClass}">${report.footwearCount}/5</span>
-                                    </div>
-                                    <div class="report-card-count-item">
-                                        <span class="report-card-count-label">No ID</span>
-                                        <span class="report-card-count-value ${noIdClass}">${report.noIdCount}/5</span>
-                                    </div>
+                                    ${typeCountItems}
                                     <div class="report-card-count-item">
                                         <span class="report-card-count-label">Total</span>
                                         <span class="report-card-count-value ${totalClass}">${report.totalViolations}</span>
@@ -548,11 +640,6 @@ function initReportsModule() {
                 } else {
                     listBody.innerHTML = pageItems.map(report => {
                         const deptClass    = getDepartmentClass(report.deptCode);
-                        const statusClass  = getStatusClass(report.status);
-                        const uniformClass = getCountBadgeClass(report.uniformCount);
-                        const footwearClass= getCountBadgeClass(report.footwearCount);
-                        const noIdClass    = getCountBadgeClass(report.noIdCount);
-                        const totalClass   = getCountBadgeClass(report.totalViolations);
                         const statusBreakdown = getStatusBreakdown(report);
                         const periodLabel = getReportPeriodLabel(report);
                         return `
@@ -745,34 +832,58 @@ function initReportsModule() {
             // Populate violation statistics
             const statsGrid = detailsModal.querySelector('.stats-grid');
             if (statsGrid) {
-                statsGrid.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bxs-t-shirt'></i>
+                let statsHtml = '';
+                
+                // Dynamically add cards for each violation type
+                if (reportViolationTypes && reportViolationTypes.length > 0) {
+                    reportViolationTypes.forEach(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        // Only show if count > 0 or it's one of the main types the user expects
+                        const isMainType = ['uniform', 'footwear', 'shoe', 'id'].some(kw => type.name.toLowerCase().includes(kw));
+                        
+                        if (count > 0 || isMainType) {
+                            statsHtml += `
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class='bx ${getTypeIcon(type.name, true)}'></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <span class="stat-title">${type.name}</span>
+                                        <span class="stat-value">${count}/5</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                } else {
+                    // Fallback to basic types if global list is unavailable
+                    statsHtml += `
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bxs-t-shirt'></i></div>
+                            <div class="stat-content">
+                                <span class="stat-title">Uniform Violations</span>
+                                <span class="stat-value">${report.uniformCount}/5</span>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <span class="stat-title">Uniform Violations</span>
-                            <span class="stat-value">${report.uniformCount}/5</span>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bxs-walk'></i></div>
+                            <div class="stat-content">
+                                <span class="stat-title">Footwear Violations</span>
+                                <span class="stat-value">${report.footwearCount}/5</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bxs-shopping-bag-alt'></i>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bxs-id-card'></i></div>
+                            <div class="stat-content">
+                                <span class="stat-title">No ID Violations</span>
+                                <span class="stat-value">${report.noIdCount}/5</span>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <span class="stat-title">Footwear Violations</span>
-                            <span class="stat-value">${report.footwearCount}/5</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class='bx bxs-id-card'></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-title">No ID Violations</span>
-                            <span class="stat-value">${report.noIdCount}/5</span>
-                        </div>
-                    </div>
+                    `;
+                }
+
+                // Add Total Violations card at the end
+                statsHtml += `
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i class='bx bxs-bar-chart-alt-2'></i>
@@ -783,6 +894,8 @@ function initReportsModule() {
                         </div>
                     </div>
                 `;
+                
+                statsGrid.innerHTML = statsHtml;
             }
             
             // Populate timeline
@@ -1024,6 +1137,13 @@ function initReportsModule() {
             });
         }
 
+        if (violationTypeFilter) {
+            violationTypeFilter.addEventListener('change', function() {
+                currentPage = 1;
+                loadReports(true);
+            });
+        }
+
         if (timeFilter) {
             timeFilter.addEventListener('change', function() {
                 if (this.value === 'custom') {
@@ -1054,6 +1174,7 @@ function initReportsModule() {
                 if (deptFilter) deptFilter.value = 'all';
                 if (sectionFilter) sectionFilter.value = 'all';
                 if (statusFilter) statusFilter.value = 'all';
+                if (violationTypeFilter) violationTypeFilter.value = 'all';
                 if (timeFilter) timeFilter.value = 'today';
                 if (sortByFilter) sortByFilter.value = 'total_desc';
                 if (dateRangeGroup) dateRangeGroup.style.display = 'none';
@@ -1069,6 +1190,7 @@ function initReportsModule() {
                 if (deptFilter) deptFilter.value = 'all';
                 if (sectionFilter) sectionFilter.value = 'all';
                 if (statusFilter) statusFilter.value = 'all';
+                if (violationTypeFilter) violationTypeFilter.value = 'all';
                 currentPage = 1;
                 loadReports(true);
             });
@@ -2013,48 +2135,51 @@ function initReportsModule() {
         
         async function loadViolationTypes() {
             try {
-                // Try to fetch from API
                 const response = await fetch(API_BASE + 'violations.php?action=types');
                 const data = await response.json();
                 
                 const generateViolationTypeCheckboxes = document.getElementById('generateViolationTypeCheckboxes');
-                if (!generateViolationTypeCheckboxes) return;
-
                 if (data.status === 'success' && data.data) {
-                    // Filter out Misconduct as requested by user
                     const types = data.data.filter(type => {
                         const name = (type.type_name || type.name || '').toLowerCase();
                         return !name.includes('misconduct');
                     });
-                    
-                    generateViolationTypeCheckboxes.innerHTML = '';
-                    types.forEach(type => {
-                        const label = document.createElement('label');
-                        label.className = 'checkbox-label';
-                        label.innerHTML = `
-                            <input type="checkbox" name="violationTypes" value="${type.id}" checked>
-                            <span>${type.type_name || type.name}</span>
-                        `;
-                        generateViolationTypeCheckboxes.appendChild(label);
-                    });
-                    console.log(`✅ Loaded ${types.length} violation types from API (Misconduct filtered out)`);
+
+                    setReportViolationTypes(types.map(type => ({
+                        id: type.id,
+                        name: type.type_name || type.name
+                    })));
+
+                    if (generateViolationTypeCheckboxes) {
+                        generateViolationTypeCheckboxes.innerHTML = '';
+                        types.forEach(type => {
+                            const label = document.createElement('label');
+                            label.className = 'checkbox-label';
+                            label.innerHTML = `
+                                <input type="checkbox" name="violationTypes" value="${type.id}" checked>
+                                <span>${type.type_name || type.name}</span>
+                            `;
+                            generateViolationTypeCheckboxes.appendChild(label);
+                        });
+                    }
+                    console.log(`✅ Loaded ${types.length} violation types from API`);
                 } else {
                     throw new Error('Invalid API response');
                 }
             } catch (error) {
                 console.warn('⚠️ Error loading violation types, using defaults:', error);
-                // Fallback to defaults
                 const fallbackTypes = [
-                    { value: 'uniform', label: 'Improper Uniform' },
-                    { value: 'footwear', label: 'Improper Footwear' },
-                    { value: 'no_id', label: 'No ID' }
+                    { id: 'uniform', name: 'Improper Uniform' },
+                    { id: 'footwear', name: 'Improper Footwear' },
+                    { id: 'no_id', name: 'No ID' }
                 ];
+                setReportViolationTypes(fallbackTypes);
                 const container = document.getElementById('generateViolationTypeCheckboxes');
                 if (container) {
                     container.innerHTML = fallbackTypes.map(type => `
                         <label class="checkbox-label">
-                            <input type="checkbox" name="violationTypes" value="${type.value}" checked>
-                            <span>${type.label}</span>
+                            <input type="checkbox" name="violationTypes" value="${type.id}" checked>
+                            <span>${type.name}</span>
                         </label>
                     `).join('');
                 }
@@ -2095,11 +2220,10 @@ function initReportsModule() {
             return;
         }
 
-        initCharts(); // Initialize charts
+        initCharts();
         loadDepartments();
-        loadViolationTypes();
         loadSections();
-        loadReports(true);
+        loadViolationTypes().then(() => loadReports(true));
         console.log('✅ Reports module initialized successfully!');
         
     } catch (error) {

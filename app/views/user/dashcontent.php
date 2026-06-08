@@ -55,7 +55,7 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="sd-stat__icon"><i class='bx bxs-check-shield'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statResolvedViolations">—</span>
-        <span class="sd-stat__lbl">Resolved</span>
+        <span class="sd-stat__lbl">PERMITTED</span>
       </div>
       <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>

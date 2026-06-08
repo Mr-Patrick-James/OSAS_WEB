@@ -124,6 +124,7 @@ class ReportController extends Controller {
                 'department' => $this->getGet('department', 'all'),
                 'section' => $this->getGet('section', 'all'),
                 'status' => $this->getGet('status', 'all'),
+                'violationType' => $this->getGet('violationType', 'all'),
                 'startDate' => $this->getGet('startDate', null),
                 'endDate' => $this->getGet('endDate', null),
                 'search' => $this->getGet('search', ''),
@@ -144,6 +145,7 @@ class ReportController extends Controller {
             
             // Get statistics
             $stats = $this->model->getReportStats($filters);
+            $violationTypes = $this->model->getViolationTypesList();
             
             error_log("ReportController: Retrieved " . count($reports) . " reports");
             error_log("ReportController: Stats: " . print_r($stats, true));
@@ -154,6 +156,7 @@ class ReportController extends Controller {
                 'reports' => $reports,
                 'data' => $reports,
                 'stats' => $stats,
+                'violationTypes' => $violationTypes,
                 'count' => count($reports),
                 'filters_applied' => $filters
             ];

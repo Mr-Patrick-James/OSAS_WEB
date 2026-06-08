@@ -25,33 +25,15 @@ require_once __DIR__ . '/../../core/View.php';
 
   <!-- ── STAT CARDS ── -->
   <div class="uv-stats">
-    <div class="uv-stat">
+    <div class="uv-stat uv-stat--total">
       <div class="uv-stat__icon"><i class='bx bxs-calendar-check'></i></div>
       <div class="uv-stat__body">
         <span class="uv-stat__lbl">All Time Total</span>
         <span class="uv-stat__val" id="statTotal">0</span>
       </div>
     </div>
-    <div class="uv-stat">
-      <div class="uv-stat__icon"><i class='bx bxs-t-shirt'></i></div>
-      <div class="uv-stat__body">
-        <span class="uv-stat__lbl">Uniform <small>(this month)</small></span>
-        <span class="uv-stat__val" id="statUniform">0</span>
-      </div>
-    </div>
-    <div class="uv-stat">
-      <div class="uv-stat__icon"><i class='fas fa-shoe-prints'></i></div>
-      <div class="uv-stat__body">
-        <span class="uv-stat__lbl">Footwear <small>(this month)</small></span>
-        <span class="uv-stat__val" id="statFootwear">0</span>
-      </div>
-    </div>
-    <div class="uv-stat">
-      <div class="uv-stat__icon"><i class='bx bxs-id-card'></i></div>
-      <div class="uv-stat__body">
-        <span class="uv-stat__lbl">No ID <small>(this month)</small></span>
-        <span class="uv-stat__val" id="statId">0</span>
-      </div>
+    <div class="uv-stats-type-container" id="uvTypeStatsContainer">
+      <p class="uv-stats-loading">Loading violation types...</p>
     </div>
   </div>
 
@@ -78,9 +60,6 @@ require_once __DIR__ . '/../../core/View.php';
         </select>
         <select id="violationFilter" class="uv-select" onchange="filterViolations()">
           <option value="all">All Types</option>
-          <option value="improper_uniform">Improper Uniform</option>
-          <option value="improper_footwear">Improper Footwear</option>
-          <option value="no_id">No ID Card</option>
         </select>
         <select id="statusFilter" class="uv-select" onchange="filterViolations()">
           <option value="all">All Status</option>

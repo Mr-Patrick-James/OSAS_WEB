@@ -63,6 +63,45 @@ class ViolationModel extends Model {
             @$this->conn->query("ALTER TABLE violations ADD COLUMN is_read TINYINT(1) DEFAULT 0");
             @$this->conn->query("ALTER TABLE violations ADD INDEX idx_is_read (is_read)");
         }
+
+        // Auto-fix: Check status column in violation_types and violation_levels
+        $vtStatusCheck = @$this->conn->query("SHOW COLUMNS FROM violation_types LIKE 'status'");
+        if ($vtStatusCheck === false || $vtStatusCheck->num_rows === 0) {
+            @$this->conn->query("ALTER TABLE violation_types ADD COLUMN status ENUM('active', 'archived') DEFAULT 'active'");
+            @$this->conn->query("ALTER TABLE violation_types ADD INDEX idx_vt_status (status)");
+        }
+        $vlStatusCheck = @$this->conn->query("SHOW COLUMNS FROM violation_levels LIKE 'status'");
+        if ($vlStatusCheck === false || $vlStatusCheck->num_rows === 0) {
+            @$this->conn->query("ALTER TABLE violation_levels ADD COLUMN status ENUM('active', 'archived') DEFAULT 'active'");
+            @$this->conn->query("ALTER TABLE violation_levels ADD INDEX idx_vl_status (status)");
+        }
+
+        // Auto-fix: Create violation_statuses table if it doesn't exist
+        $this->conn->query("CREATE TABLE IF NOT EXISTS violation_statuses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            status_color VARCHAR(20) DEFAULT '#f59e0b',
+            status ENUM('active', 'archived') DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+
+        // Seed default statuses if table is empty
+        $statusCountCheck = $this->conn->query("SELECT COUNT(*) as count FROM violation_statuses");
+        if ($statusCountCheck && $statusCountCheck->fetch_assoc()['count'] == 0) {
+            $defaultStatuses = [
+                ['Warning', '#f59e0b'],
+                ['Permitted', '#10b981'],
+                ['Disciplinary', '#ef4444'],
+                ['Resolved', '#3b82f6']
+            ];
+            $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
+            foreach ($defaultStatuses as $ds) {
+                $stmt->bind_param("ss", $ds[0], $ds[1]);
+                $stmt->execute();
+            }
+            $stmt->close();
+        }
         
         // First, check if there are any violations at all (without JOIN)
         $countQuery = "SELECT COUNT(*) as total FROM violations WHERE is_archived = ?";
@@ -507,21 +546,145 @@ class ViolationModel extends Model {
     }
 
     /**
+     * Get all violation statuses
+     */
+    public function getViolationStatuses($includeArchived = false) {
+        // Auto-fix: Create violation_statuses table if it doesn't exist
+        $this->conn->query("CREATE TABLE IF NOT EXISTS violation_statuses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            status_color VARCHAR(20) DEFAULT '#f59e0b',
+            status ENUM('active', 'archived') DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+
+        // Seed default statuses if table is empty
+        $statusCountCheck = $this->conn->query("SELECT COUNT(*) as count FROM violation_statuses");
+        if ($statusCountCheck && $statusCountCheck->fetch_assoc()['count'] == 0) {
+            $defaultStatuses = [
+                ['Warning', '#f59e0b'],
+                ['Permitted', '#10b981'],
+                ['Disciplinary', '#ef4444'],
+                ['Resolved', '#3b82f6']
+            ];
+            $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
+            foreach ($defaultStatuses as $ds) {
+                $stmt->bind_param("ss", $ds[0], $ds[1]);
+                $stmt->execute();
+            }
+            $stmt->close();
+        }
+
+        $where = $includeArchived ? "" : " WHERE status = 'active'";
+        $query = "SELECT * FROM violation_statuses" . $where . " ORDER BY name ASC";
+        $result = $this->conn->query($query);
+        $statuses = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $statuses[] = $row;
+            }
+        }
+        return $statuses;
+    }
+
+    /**
+     * Create a new violation status
+     */
+    public function createViolationStatus($name, $color = '#f59e0b') {
+        $name = trim($name);
+        if ($name === '') throw new Exception('Status name is required');
+        
+        $stmt = $this->conn->prepare("INSERT INTO violation_statuses (name, status_color) VALUES (?, ?)");
+        $stmt->bind_param("ss", $name, $color);
+        if (!$stmt->execute()) {
+            if ($this->conn->errno == 1062) throw new Exception('Status name already exists');
+            throw new Exception('Failed to create status: ' . $stmt->error);
+        }
+        $id = $stmt->insert_id;
+        $stmt->close();
+        return $id;
+    }
+
+    /**
+     * Update a violation status
+     */
+    public function updateViolationStatus($id, $name, $color) {
+        $name = trim($name);
+        if ($name === '') throw new Exception('Status name is required');
+        
+        $stmt = $this->conn->prepare("UPDATE violation_statuses SET name = ?, status_color = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $name, $color, $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Delete/Archive a violation status
+     */
+    public function deleteViolationStatus($id) {
+        // Check if status is in use in violation_levels
+        $stmt = $this->conn->prepare("SELECT name FROM violation_statuses WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $statusRow = $res->fetch_assoc();
+        $stmt->close();
+
+        if ($statusRow) {
+            $statusName = $statusRow['name'];
+            $stmt = $this->conn->prepare("SELECT COUNT(*) as cnt FROM violation_levels WHERE default_status = ?");
+            $stmt->bind_param("s", $statusName);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $count = $res->fetch_assoc()['cnt'];
+            $stmt->close();
+
+            if ($count > 0) {
+                // Archive if in use
+                $stmt = $this->conn->prepare("UPDATE violation_statuses SET status = 'archived' WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $success = $stmt->execute();
+                $stmt->close();
+                return $success;
+            } else {
+                // Delete if not in use
+                $stmt = $this->conn->prepare("DELETE FROM violation_statuses WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $success = $stmt->execute();
+                $stmt->close();
+                return $success;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Restore a violation status
+     */
+    public function restoreViolationStatus($id) {
+        $stmt = $this->conn->prepare("UPDATE violation_statuses SET status = 'active' WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
      * Get all violation types
      */
-    public function getViolationTypes() {
-        return $this->query("SELECT * FROM violation_types ORDER BY name ASC");
+    public function getViolationTypes($includeArchived = false) {
+        $where = $includeArchived ? "" : " WHERE status = 'active'";
+        return $this->query("SELECT * FROM violation_types $where ORDER BY name ASC");
     }
 
     /**
      * Get violation levels by type
      */
-    public function getViolationLevels($typeId) {
-        // This method relies on the base Model::query method which returns an array
-        // We need to implement query() in Model.php or use prepare/execute here
-        // Since Model.php as I read earlier didn't have query(), I should implement it properly using prepare
-        
-        $query = "SELECT * FROM violation_levels WHERE violation_type_id = ? ORDER BY level_order ASC";
+    public function getViolationLevels($typeId, $includeArchived = false) {
+        $where = $includeArchived ? "" : " AND status = 'active'";
+        $query = "SELECT * FROM violation_levels WHERE violation_type_id = ? $where ORDER BY level_order ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("i", $typeId);
         $stmt->execute();
@@ -535,6 +698,231 @@ class ViolationModel extends Model {
         return $levels;
     }
 
+    /**
+     * Default offense levels for a new violation type
+     */
+    private function getDefaultLevelTemplates() {
+        return [
+            ['1st Offense', 'First offense', 1],
+            ['2nd Offense', 'Second offense', 2],
+            ['3rd Offense', 'Third offense', 3],
+            ['4th Offense', 'Fourth offense', 4],
+            ['5th Offense', 'Fifth offense — triggers disciplinary action', 5],
+        ];
+    }
+
+    /**
+     * Create a violation type with default levels
+     */
+    public function createViolationType($name, $description = '') {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Violation type name is required');
+        }
+
+        $existing = $this->query(
+            "SELECT id FROM violation_types WHERE LOWER(name) = LOWER(?)",
+            [$name]
+        );
+        if (!empty($existing)) {
+            throw new Exception('A violation type with this name already exists');
+        }
+
+        $stmt = $this->conn->prepare(
+            "INSERT INTO violation_types (name, description, created_at) VALUES (?, ?, NOW())"
+        );
+        $stmt->bind_param("ss", $name, $description);
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new Exception('Failed to create violation type: ' . $error);
+        }
+        $typeId = (int)$stmt->insert_id;
+        $stmt->close();
+
+        foreach ($this->getDefaultLevelTemplates() as [$levelName, $levelDesc, $order]) {
+            $this->createViolationLevel($typeId, $levelName, $levelDesc, $order);
+        }
+
+        return $typeId;
+    }
+
+    /**
+     * Update a violation type
+     */
+    public function updateViolationType($id, $name, $description = '') {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Violation type name is required');
+        }
+
+        $existing = $this->query(
+            "SELECT id FROM violation_types WHERE LOWER(name) = LOWER(?) AND id != ?",
+            [$name, $id]
+        );
+        if (!empty($existing)) {
+            throw new Exception('A violation type with this name already exists');
+        }
+
+        $stmt = $this->conn->prepare(
+            "UPDATE violation_types SET name = ?, description = ?, updated_at = NOW() WHERE id = ?"
+        );
+        $stmt->bind_param("ssi", $name, $description, $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Delete a violation type
+     * If historical records exist, mark as 'archived'.
+     * If no records exist, fully delete from database.
+     */
+    public function deleteViolationType($id) {
+        $count = $this->countViolationsByType($id);
+        
+        if ($count > 0) {
+            // ARCHIVE if history exists
+            $stmt = $this->conn->prepare("UPDATE violation_types SET status = 'archived' WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
+            $stmt->close();
+            return $success;
+        } else {
+            // HARD DELETE if no history
+            $stmt = $this->conn->prepare("DELETE FROM violation_types WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
+            $stmt->close();
+            return $success;
+        }
+    }
+
+    /**
+     * Create a violation level
+     */
+    public function createViolationLevel($typeId, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b') {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Level name is required');
+        }
+
+        if ($levelOrder === null) {
+            $rows = $this->query(
+                "SELECT COALESCE(MAX(level_order), 0) + 1 AS next_order FROM violation_levels WHERE violation_type_id = ?",
+                [$typeId]
+            );
+            $levelOrder = (int)($rows[0]['next_order'] ?? 1);
+        }
+
+        $stmt = $this->conn->prepare(
+            "INSERT INTO violation_levels (violation_type_id, level_order, name, description, default_status, status_color, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())"
+        );
+        $stmt->bind_param("iissss", $typeId, $levelOrder, $name, $description, $defaultStatus, $statusColor);
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            throw new Exception('Failed to create violation level: ' . $error);
+        }
+        $levelId = (int)$stmt->insert_id;
+        $stmt->close();
+        return $levelId;
+    }
+
+    /**
+     * Update a violation level
+     */
+    public function updateViolationLevel($id, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b') {
+        $name = trim($name);
+        if ($name === '') {
+            throw new Exception('Level name is required');
+        }
+
+        if ($levelOrder !== null) {
+            $stmt = $this->conn->prepare(
+                "UPDATE violation_levels SET name = ?, description = ?, level_order = ?, default_status = ?, status_color = ?, updated_at = NOW() WHERE id = ?"
+            );
+            $stmt->bind_param("ssissi", $name, $description, $levelOrder, $defaultStatus, $statusColor, $id);
+        } else {
+            $stmt = $this->conn->prepare(
+                "UPDATE violation_levels SET name = ?, description = ?, default_status = ?, status_color = ?, updated_at = NOW() WHERE id = ?"
+            );
+            $stmt->bind_param("ssssi", $name, $description, $defaultStatus, $statusColor, $id);
+        }
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Delete a violation level
+     * If historical records exist, mark as 'archived'.
+     * If no records exist, fully delete from database.
+     */
+    public function deleteViolationLevel($id) {
+        $count = $this->countViolationsByLevel($id);
+        
+        if ($count > 0) {
+            // ARCHIVE if history exists
+            $stmt = $this->conn->prepare("UPDATE violation_levels SET status = 'archived' WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
+            $stmt->close();
+            return $success;
+        } else {
+            // HARD DELETE if no history
+            $stmt = $this->conn->prepare("DELETE FROM violation_levels WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $success = $stmt->execute();
+            $stmt->close();
+            return $success;
+        }
+    }
+
+    /**
+     * Restore a violation type from archive
+     */
+    public function restoreViolationType($id) {
+        $stmt = $this->conn->prepare("UPDATE violation_types SET status = 'active' WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Restore a violation level from archive
+     */
+    public function restoreViolationLevel($id) {
+        $stmt = $this->conn->prepare("UPDATE violation_levels SET status = 'active' WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+
+    /**
+     * Count violations using a type
+     */
+    public function countViolationsByType($typeId) {
+        $rows = $this->query(
+            "SELECT COUNT(*) AS cnt FROM violations WHERE violation_type_id = ?",
+            [$typeId]
+        );
+        return (int)($rows[0]['cnt'] ?? 0);
+    }
+
+    /**
+     * Count violations using a level
+     */
+    public function countViolationsByLevel($levelId) {
+        $rows = $this->query(
+            "SELECT COUNT(*) AS cnt FROM violations WHERE violation_level_id = ?",
+            [$levelId]
+        );
+        return (int)($rows[0]['cnt'] ?? 0);
+    }
 
     /**
      * Count total violations

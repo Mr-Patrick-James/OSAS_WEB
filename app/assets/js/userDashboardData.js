@@ -147,14 +147,18 @@ class UserDashboardData {
         // Current month stats (from active violations only)
         this.stats.activeViolations = this.violations.filter(v => {
             const status = (v.status || '').toLowerCase();
-            const level = (v.violation_level_name || v.violationLevelLabel || '').toLowerCase();
-            return status === 'disciplinary' || status === 'warning' ||
-                   level.includes('5th offense') || level.includes('warning 3') || level.includes('3rd');
+            const defaultStatus = (v.levelDefaultStatus || '').toLowerCase();
+            
+            // It's active if it's disciplinary or warning, or if the level defaults to those
+            return status === 'disciplinary' || status === 'warning' || 
+                   (status === 'active' && (defaultStatus === 'disciplinary' || defaultStatus === 'warning'));
         }).length;
 
         this.stats.resolvedViolations = this.violations.filter(v => {
             const status = (v.status || '').toLowerCase();
-            return status === 'resolved' || status === 'permitted';
+            const defaultStatus = (v.levelDefaultStatus || '').toLowerCase();
+            return status === 'resolved' || status === 'permitted' || 
+                   (status === 'active' && (defaultStatus === 'resolved' || defaultStatus === 'permitted'));
         }).length;
 
         this.stats.violationTypes = {};
