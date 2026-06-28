@@ -56,6 +56,7 @@ class ReportController extends Controller {
                 
                 // If format is PDF, DOCX or Excel, fetch data for client-side generation
                 $reportsData = null;
+                $selectedViolationTypes = null;
                 if ($format === 'pdf' || $format === 'docx' || $format === 'excel') {
                     $reportFilters = [
                         'department' => $departments ?? 'all',
@@ -64,7 +65,20 @@ class ReportController extends Controller {
                         'status' => 'all',
                         'section' => 'all'
                     ];
+                    if ($violationTypes) {
+                        $reportFilters['violationType'] = $violationTypes;
+                    }
                     $reportsData = $this->model->getStudentReports($reportFilters);
+                    
+                    // Get selected violation types for charts
+                    if ($violationTypes) {
+                        $selectedTypesArray = explode(',', $violationTypes);
+                        $allTypes = $this->model->getViolationTypesList();
+                        $selectedViolationTypes = array_filter($allTypes, function($type) use ($selectedTypesArray) {
+                            return in_array($type['id'], $selectedTypesArray);
+                        });
+                        $selectedViolationTypes = array_values($selectedViolationTypes);
+                    }
                 }
                 
                 $response = [
@@ -74,7 +88,8 @@ class ReportController extends Controller {
                     'updated' => $result['updated'],
                     'total' => $result['total'],
                     'downloadUrl' => $downloadUrl,
-                    'reports' => $reportsData
+                    'reports' => $reportsData,
+                    'selectedViolationTypes' => $selectedViolationTypes
                 ];
                 
                 $this->json($response);

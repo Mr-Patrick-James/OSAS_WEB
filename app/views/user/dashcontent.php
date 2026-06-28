@@ -55,15 +55,15 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="sd-stat__icon"><i class='bx bxs-check-shield'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statResolvedViolations">—</span>
-        <span class="sd-stat__lbl">PERMITTED</span>
+        <span class="sd-stat__lbl">Resolved</span>
       </div>
       <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
     <div class="sd-stat sd-stat--amber">
-      <div class="sd-stat__icon"><i class='bx bxs-error'></i></div>
+      <div class="sd-stat__icon"><i class='bx bxs-error-alt'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statActiveViolations">—</span>
-        <span class="sd-stat__lbl">Disciplinary</span>
+        <span class="sd-stat__lbl">Expulsion Risk</span>
       </div>
       <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
@@ -114,6 +114,20 @@ require_once __DIR__ . '/../../core/View.php';
           </div>
         </div>
         <div class="sd-violations-list" id="recentViolationsList">
+          <div class="sd-loading"><div class="sd-spinner"></div><span>Loading&hellip;</span></div>
+        </div>
+      </div>
+
+      <!-- My Sanctions -->
+      <div class="sd-card" id="sdSanctionsCard">
+        <div class="sd-card__head" style="padding:14px 18px 12px;">
+          <div class="sd-card__title-wrap">
+            <span class="sd-card__icon-badge" style="background:rgba(212,175,55,.15);"><i class='bx bx-shield-quarter' style="color:#92650a;"></i></span>
+            <h3 class="sd-card__title">My Sanctions</h3>
+          </div>
+          <span style="font-size:11px;color:#9ca3af;">Based on your current violations</span>
+        </div>
+        <div id="sdSanctionsList" style="padding:12px 16px 16px;">
           <div class="sd-loading"><div class="sd-spinner"></div><span>Loading&hellip;</span></div>
         </div>
       </div>
@@ -223,17 +237,17 @@ require_once __DIR__ . '/../../core/View.php';
               <th>Date &amp; Time</th>
               <th>Location</th>
               <th>Reported By</th>
-              <th>Status</th>
+              <th>Status / Sanction</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><span class="detail-value badge" id="detailViolationType">-</span></td>
-              <td><span class="detail-value badge warning" id="detailViolationLevel">-</span></td>
+              <td><span class="detail-value badge" id="detailViolationLevel">-</span></td>
               <td><span class="detail-value" id="detailDateTime">-</span></td>
               <td><span class="detail-value" id="detailLocation">-</span></td>
               <td><span class="detail-value" id="detailReportedBy">-</span></td>
-              <td><span class="detail-value badge warning" id="detailStatus">-</span></td>
+              <td><span class="detail-value" id="detailStatus">-</span></td>
             </tr>
           </tbody>
         </table>
@@ -241,6 +255,14 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="violation-notes-section">
         <h4>Violation Description</h4>
         <div class="notes-content"><p id="detailNotes">-</p></div>
+      </div>
+      <!-- Sanction Section -->
+      <div id="detailSanctionSection" style="display:none;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:14px 16px;margin-top:10px;">
+        <h4 style="display:flex;align-items:center;gap:7px;color:#b8860b;margin-bottom:8px;">
+          <i class='bx bx-shield-quarter' style="font-size:16px;"></i>
+          Your Sanction: <span id="detailSanctionName" style="font-weight:700;"></span>
+        </h4>
+        <p id="detailSanctionDesc" style="font-size:13px;color:#374151;margin:0;line-height:1.6;">-</p>
       </div>
       <div class="violation-notes-section" id="resolutionSection" style="display:none;">
         <h4>Resolution</h4>

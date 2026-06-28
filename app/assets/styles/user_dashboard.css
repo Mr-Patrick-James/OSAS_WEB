@@ -1085,6 +1085,7 @@ body.dark {
 .sd-badge--resolved { background: var(--green-light); color: var(--green); }
 .sd-badge--pending  { background: rgba(255,140,0,.12); color: var(--orange); }
 .sd-badge--warning  { background: var(--red-light);   color: var(--red); }
+.sd-badge--sanction { background: rgba(212,175,55,.15); color: #92650a; border: 1px solid rgba(212,175,55,.4); }
 .sd-badge--info     { background: var(--blue-light);  color: var(--blue); }
 
 /* Action Buttons Layout */

@@ -291,12 +291,12 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         .hero-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 1rem;
+            gap: 0.35rem;
+            padding: 0.25rem 0.7rem;
             background: rgba(212, 175, 55, 0.08);
             border: 1px solid rgba(212, 175, 55, 0.3);
             border-radius: 50px;
-            font-size: 0.8rem;
+            font-size: 0.65rem;
             font-weight: 600;
             color: var(--gold-light);
             margin-bottom: 2rem;

@@ -88,12 +88,19 @@ function updateActiveNavItem(page) {
 // Privilege Check Helper
 function isMainAdmin() {
     const sessionStr = localStorage.getItem('userSession');
-    if (!sessionStr) return false;
+    if (!sessionStr) {
+        // Fallback to cookie
+        const cookieRole = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+        if (cookieRole) {
+            const role = decodeURIComponent(cookieRole.split('=')[1]);
+            return role.toLowerCase() === 'admin';
+        }
+        return false;
+    }
     try {
         const session = JSON.parse(sessionStr);
-        // Only 'admin' role gets full settings access
-        // OSAS Staff gets dashboard access but limited settings
-        return session.role === 'admin';
+        const role = session.role || '';
+        return role.toLowerCase() === 'admin';
     } catch (e) {
         return false;
     }

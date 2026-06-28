@@ -156,6 +156,13 @@ function initializeNotifications() {
         if (v.violation_date && v.violation_time && !v.created_at) {
           dateStr = `${v.violation_date} ${v.violation_time}`;
         }
+        const status = (v.status || '').toLowerCase();
+        const isResolved = status === 'resolved';
+
+        // Use updated_at as the date for resolved notifications so they sort correctly
+        const resolvedDateStr = isResolved ? (v.updated_at || dateStr) : dateStr;
+
+        // Original "Violation Recorded" notification entry
         allNotifs.push({
           id: 'v-' + v.id,
           type: 'violation',
@@ -166,6 +173,21 @@ function initializeNotifications() {
           isRead: readNotifs.includes(String(v.id)) || v.is_read == 1,
           rawId: v.id
         });
+
+        // "Violation Resolved" notification entry — only shown when resolved
+        if (isResolved) {
+          const resolvedNotifId = 'vr-' + v.id;
+          allNotifs.push({
+            id: resolvedNotifId,
+            type: 'violation_resolved',
+            title: 'Violation Resolved ✅',
+            desc: (v.violation_type_name || v.violationTypeLabel || v.violation_type || 'Violation') + ' has been resolved by the admin.',
+            date: resolvedDateStr,
+            icon: 'bxs-check-circle',
+            isRead: readNotifs.includes(resolvedNotifId),
+            rawId: v.id
+          });
+        }
       });
 
       // Add slip requests (only approved/denied — not pending since they already know they requested)
@@ -212,11 +234,15 @@ function initializeNotifications() {
         const date = new Date((n.date || '').replace(' ', 'T'));
         const timeAgo = formatTimeAgo(date);
         const unreadClass = !n.isRead ? 'unread' : '';
-        const typeClass = n.type === 'violation' ? 'notif-violation' : (n.type === 'slip_approved' ? 'notif-slip-approved' : 'notif-slip-denied');
+        const typeClass = n.type === 'violation' ? 'notif-violation'
+          : n.type === 'violation_resolved' ? 'notif-violation-resolved'
+          : (n.type === 'slip_approved' ? 'notif-slip-approved' : 'notif-slip-denied');
         
         let badgeHtml = '';
         if (n.type === 'violation') {
           badgeHtml = '<span class="notif-badge-tag violation"><i class="bx bx-error-alt"></i> Violation</span>';
+        } else if (n.type === 'violation_resolved') {
+          badgeHtml = '<span class="notif-badge-tag resolved" style="background:rgba(59,130,246,0.12);color:#3b82f6;"><i class="bx bx-check-circle"></i> Resolved</span>';
         } else if (n.type === 'slip_approved') {
           badgeHtml = '<span class="notif-badge-tag approved"><i class="bx bx-check-circle"></i> Approved</span>';
         } else if (n.type === 'slip_denied') {

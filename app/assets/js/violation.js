@@ -34,6 +34,8 @@ function initViolationsModule() {
             { name: 'Gray', value: '#6b7280' }
         ];
 
+        let selectedNewLevelColor = '#f59e0b'; // tracks color for new level form
+
         /** Map removed location values for edit / legacy records */
         const LEGACY_LOCATION_MAP = { gate_1: 'campus', gate_2: 'campus', cafeteria: 'canteen' };
         function mapViolationLocation(loc) {
@@ -154,7 +156,7 @@ function initViolationsModule() {
         let violations      = _cache.violations;
         let filteredViolations = [];
         let currentView     = 'current';
-        let displayMode     = 'latest'; // 'latest' = one per student, 'all' = full history
+        let displayMode     = 'all'; // 'latest' = one per student, 'all' = full history
         let viewMode        = localStorage.getItem('violationsViewMode') || 'list'; // 'table', 'grid', 'list'
         let students        = _cache.students;
         let violationTypes  = _cache.violationTypes;
@@ -166,7 +168,7 @@ function initViolationsModule() {
         let totalRecords    = 0;
         let totalPages      = 0;
         let selectedFiles   = [];
-        let manageView      = 'types'; // 'types' or 'statuses'
+        let manageView = 'types'; // kept for compatibility
 
         function getCurrentAdminName() {
             // Try localStorage session first
@@ -666,18 +668,7 @@ function initViolationsModule() {
         }
 
         function renderMainStatusFilter() {
-            const filter = document.getElementById('ViolationsStatusFilter');
-            if (!filter) return;
-
-            const currentVal = filter.value;
-            let html = '<option value="all">All Status</option>';
-            
-            violationStatuses.filter(s => s.status === 'active').forEach(s => {
-                html += `<option value="${s.name.toLowerCase()}">${s.name}</option>`;
-            });
-            
-            filter.innerHTML = html;
-            if (currentVal) filter.value = currentVal;
+            // Status filter is now static — sanction-based options set in HTML
         }
 
         function renderManageStatusesList() {
@@ -856,34 +847,7 @@ function initViolationsModule() {
             finally { hideLoadingOverlay(); }
         }
 
-        function toggleManageView() {
-            const typesContainer = document.getElementById('vtManageTypesContainer');
-            const statusesContainer = document.getElementById('vtManageStatusesContainer');
-            const titleEl = document.getElementById('vtManageLeftTitle');
-            const toggleBtn = document.getElementById('vtToggleStatusesBtn');
-
-            if (manageView === 'types') {
-                manageView = 'statuses';
-                typesContainer.style.display = 'none';
-                statusesContainer.style.display = 'block';
-                titleEl.textContent = 'Global Statuses';
-                toggleBtn.innerHTML = "<i class='bx bx-left-arrow-alt'></i>";
-                toggleBtn.title = "Back to Violation Types";
-                
-                loadViolationStatuses(true).then(() => {
-                    renderManageStatusesList();
-                    initNewStatusColorPresets();
-                });
-            } else {
-                manageView = 'types';
-                typesContainer.style.display = 'block';
-                statusesContainer.style.display = 'none';
-                titleEl.textContent = 'Violation Types';
-                toggleBtn.innerHTML = "<i class='bx bx-cog'></i>";
-                toggleBtn.title = "Manage global statuses";
-                renderManageTypesList();
-            }
-        }
+        // toggleManageView removed — Global Statuses panel replaced by per-level sanctions
 
         function initNewStatusColorPresets() {
             const container = document.getElementById('vtNewStatusColorPresets');
@@ -896,6 +860,27 @@ function initViolationsModule() {
                 dot.onclick = () => {
                     container.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
                     dot.classList.add('active');
+                };
+                container.appendChild(dot);
+            });
+        }
+
+        // Resets level color state after a level is added.
+        // The level add form has no color picker UI, so this just resets the tracked color variable.
+        function initNewLevelColorPresets() {
+            selectedNewLevelColor = '#f59e0b';
+            // If a color preset container is ever added to the level form, wire it up here.
+            const container = document.getElementById('vtNewLevelColorPresets');
+            if (!container) return;
+            container.innerHTML = '';
+            STATUS_COLOR_PRESETS.forEach(preset => {
+                const dot = document.createElement('div');
+                dot.className = 'vt-color-dot' + (preset.value === '#f59e0b' ? ' active' : '');
+                dot.style.backgroundColor = preset.value;
+                dot.onclick = () => {
+                    container.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    selectedNewLevelColor = preset.value;
                 };
                 container.appendChild(dot);
             });
@@ -939,43 +924,19 @@ function initViolationsModule() {
         }
 
         async function openViolationTypesManageModal() {
-            // CHECK ONLINE STATUS
             if (!navigator.onLine) {
                 showNotification("Please check your internet connection. Internet requires to manage violation types and levels.", 'error');
                 return;
             }
-
             const modal = document.getElementById('ViolationTypesManageModal');
             if (!modal) return;
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            
-            // Reload including archived for management
-            await Promise.all([
-                loadViolationTypes(true),
-                loadViolationStatuses(true)
-            ]);
-            
+
+            await loadViolationTypes(true);
             selectedManageTypeId = violationTypes.length > 0 ? violationTypes[0].id : null;
-            
-            // Initialize dynamic dropdown for Add Level form
-            updateAddLevelStatusDropdown();
-            
             renderManageTypesList();
             renderManageLevelsList(selectedManageTypeId);
-
-            // Setup toggle and status add listeners (only once)
-            const toggleBtn = document.getElementById('vtToggleStatusesBtn');
-            if (toggleBtn && !toggleBtn.dataset.listenerAdded) {
-                toggleBtn.onclick = toggleManageView;
-                toggleBtn.dataset.listenerAdded = 'true';
-            }
-
-            const addStatusBtn = document.getElementById('vtAddStatusBtn');
-            if (addStatusBtn && !addStatusBtn.dataset.listenerAdded) {
-                addStatusBtn.onclick = addViolationStatus;
-                addStatusBtn.dataset.listenerAdded = 'true';
-            }
         }
 
         function updateAddLevelStatusDropdown() {
@@ -1100,45 +1061,58 @@ function initViolationsModule() {
                 return;
             }
 
+            // Build status options for the default_status dropdown
+            const statusOpts = violationStatuses.length > 0
+                ? violationStatuses.map(s =>
+                    `<option value="${escapeHtml(s.name.toLowerCase())}">{name}</option>`.replace('{name}', escapeHtml(s.name))
+                  ).join('')
+                : ['warning','permitted','disciplinary','resolved'].map(s =>
+                    `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
+                  ).join('');
+
             list.innerHTML = '';
             levels.forEach(level => {
                 const isArchived = level.status === 'archived';
+                const currentColor = level.status_color || '#f59e0b';
+                const currentDefaultStatus = (level.default_status || 'warning').toLowerCase();
+
+                // Build color dot presets
+                let colorDotsHtml = STATUS_COLOR_PRESETS.map(preset => {
+                    const isActive = currentColor === preset.value;
+                    return `<div class="vt-color-dot ${isActive ? 'active' : ''}" 
+                                 style="background-color:${preset.value};" 
+                                 title="${preset.name}"
+                                 onclick="updateLevelColorDot(this)"></div>`;
+                }).join('');
+
+
+
                 const item = document.createElement('div');
                 item.className = 'vt-manage-item' + (isArchived ? ' archived' : '');
                 item.dataset.levelId = level.id;
-                
-                // Dynamic statuses from database
-                let statusOptionsHtml = '';
-                let activeStatuses = (violationStatuses || []).filter(s => s.status === 'active');
-                
-                // Fallback if no active statuses found
-                if (activeStatuses.length === 0) {
-                    activeStatuses = [
-                        { name: 'Warning' }, { name: 'Permitted' }, { name: 'Disciplinary' }, { name: 'Resolved' }
-                    ];
-                }
-
-                activeStatuses.forEach(s => {
-                    const statusName = (s.name || '').trim();
-                    const currentStatus = (level.default_status || 'warning').trim();
-                    const selected = currentStatus.toLowerCase() === statusName.toLowerCase() ? 'selected' : '';
-                    statusOptionsHtml += `<option value="${escapeHtml(statusName)}" ${selected}>${escapeHtml(statusName)}</option>`;
-                });
 
                 item.innerHTML = `
                     <span class="vt-manage-item-order">#${level.level_order || '-'}</span>
                     <div class="vt-manage-item-info" style="flex: 1;">
-                        <input type="text" class="vt-level-name-input" value="${escapeHtml(level.name)}" style="font-weight: 600; font-size: 13px; border: none; background: transparent; width: 100%; margin-bottom: 2px;" placeholder="Level Name">
-                        <div class="vt-manage-item-status-select" style="margin-top: 5px;">
-                            <label style="font-size: 10px; color: #666; display: block; margin-bottom: 2px;">Default Status:</label>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <select class="vt-level-status-input" style="font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #ddd; flex: 1;">
-                                    ${statusOptionsHtml}
-                                </select>
-                                <button type="button" class="vt-save-level-btn" title="Save changes" style="background: var(--gold); border: none; border-radius: 4px; color: #fff; padding: 4px 8px; font-size: 10px; cursor: pointer;">
-                                    Save
-                                </button>
-                            </div>
+                        <input type="text" class="vt-level-name-input" value="${escapeHtml(level.name)}"
+                            style="font-weight:600;font-size:13px;border:none;background:transparent;width:100%;margin-bottom:4px;"
+                            placeholder="Level Name (e.g. 1st Offense)">
+                        <input type="text" class="vt-level-sanction-name-input"
+                            value="${escapeHtml(level.sanction_name || '')}"
+                            style="font-size:12px;border:1px solid #e5e7eb;border-radius:5px;padding:3px 7px;width:100%;margin-bottom:4px;background:#fafafa;"
+                            placeholder="Sanction name (e.g. Sanction 1 — Verbal Warning)">
+                        <textarea class="vt-level-sanction-desc-input"
+                            style="font-size:11px;border:1px solid #e5e7eb;border-radius:5px;padding:4px 7px;width:100%;resize:vertical;min-height:44px;background:#fafafa;margin-bottom:6px;"
+                            placeholder="Sanction description — what this means for the student...">${escapeHtml(level.sanction_description || '')}</textarea>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                            <span style="font-size:10px;color:#6b7280;flex-shrink:0;">Color:</span>
+                            <div class="vt-level-presets-row" style="display:flex;gap:4px;align-items:center;">${colorDotsHtml}</div>
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;margin-top:2px;">
+                            <button type="button" class="vt-save-level-btn"
+                                style="background:var(--gold);border:none;border-radius:4px;color:#fff;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600;">
+                                Save
+                            </button>
                         </div>
                     </div>
                     <div class="vt-manage-item-actions">
@@ -1154,21 +1128,29 @@ function initViolationsModule() {
                     </div>
                 `;
 
-                // Add event listeners for the newly created elements
                 const nameInput = item.querySelector('.vt-level-name-input');
-                const statusInput = item.querySelector('.vt-level-status-input');
+                const sanctionNameInput = item.querySelector('.vt-level-sanction-name-input');
+                const sanctionDescInput = item.querySelector('.vt-level-sanction-desc-input');
                 const saveBtn = item.querySelector('.vt-save-level-btn');
-                
+
                 if (saveBtn) {
                     saveBtn.onclick = () => {
-                        const newName = nameInput.value.trim();
-                        const newStatus = statusInput.value;
-                        
-                        // Find color from global statuses
-                        const statusObj = violationStatuses.find(s => s.name === newStatus);
-                        const hexColor = statusObj ? statusObj.status_color : '#f59e0b';
-                        
-                        saveLevelChanges(level.id, newName, newStatus, hexColor, typeId);
+                        // Resolve active color dot back to hex
+                        const activeDot = item.querySelector('.vt-level-presets-row .vt-color-dot.active');
+                        let color = activeDot ? activeDot.style.backgroundColor : currentColor;
+                        if (color && color.startsWith('rgb')) {
+                            const rgb = color.match(/\d+/g);
+                            color = '#' + rgb.map(x => { const h = parseInt(x).toString(16); return h.length === 1 ? '0' + h : h; }).join('');
+                        }
+                        saveLevelChanges(
+                            level.id,
+                            nameInput.value.trim(),
+                            sanctionNameInput.value.trim(),
+                            sanctionDescInput.value.trim(),
+                            typeId,
+                            color,
+                            currentDefaultStatus
+                        );
                     };
                 }
 
@@ -1284,95 +1266,97 @@ function initViolationsModule() {
             }
         };
 
+        window.updateLevelColorDot = function(dotEl) {
+            const row = dotEl.closest('.vt-level-presets-row');
+            if (row) {
+                row.querySelectorAll('.vt-color-dot').forEach(d => d.classList.remove('active'));
+                dotEl.classList.add('active');
+            }
+        };
+
         async function saveAllLevels() {
             if (!selectedManageTypeId) return;
-            
+
             const list = document.getElementById('vtManageLevelsList');
             const items = list.querySelectorAll('.vt-manage-item');
             const updates = [];
-            
+
             items.forEach(item => {
                 const levelId = item.dataset.levelId;
                 const nameInput = item.querySelector('.vt-level-name-input');
-                const statusInput = item.querySelector('.vt-level-status-input');
-                
-                if (levelId && nameInput && statusInput) {
-                    const statusName = statusInput.value.trim();
-                    const statusObj = violationStatuses.find(s => s.name === statusName);
-                    const color = statusObj ? statusObj.status_color : '#f59e0b';
-                    
+                const sanctionNameInput = item.querySelector('.vt-level-sanction-name-input');
+                const sanctionDescInput = item.querySelector('.vt-level-sanction-desc-input');
+
+                // Resolve active color dot
+                const activeDot = item.querySelector('.vt-level-presets-row .vt-color-dot.active');
+                let color = activeDot ? activeDot.style.backgroundColor : '#f59e0b';
+                if (color && color.startsWith('rgb')) {
+                    const rgb = color.match(/\d+/g);
+                    color = '#' + rgb.map(x => { const h = parseInt(x).toString(16); return h.length === 1 ? '0' + h : h; }).join('');
+                }
+
+                if (levelId && nameInput) {
                     updates.push({
                         id: levelId,
                         name: nameInput.value.trim(),
-                        default_status: statusName,
+                        sanction_name: sanctionNameInput ? (sanctionNameInput.value.trim() || null) : null,
+                        sanction_description: sanctionDescInput ? (sanctionDescInput.value.trim() || null) : null,
                         status_color: color
                     });
                 }
             });
-            
+
             if (updates.length === 0) return;
 
             try {
                 showLoadingOverlay('Saving all levels...');
-                
-                // Save each level one by one (or you could implement a batch API)
-                // Since there's no batch API, we'll use Promise.all
-                const promises = updates.map(update => 
+                const promises = updates.map(update =>
                     fetch(API_BASE + `violations.php?action=update_level&id=${update.id}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(update)
                     }).then(res => res.json())
                 );
-                
+
                 const results = await Promise.all(promises);
                 const failed = results.filter(r => r.status !== 'success');
-                
-                if (failed.length > 0) {
-                    throw new Error(`Failed to update ${failed.length} levels`);
-                }
+                if (failed.length > 0) throw new Error(`Failed to update ${failed.length} levels`);
 
                 showNotification('All levels updated successfully', 'success');
-                await loadViolationTypes();
+                await loadViolationTypes(true);
                 renderManageLevelsList(selectedManageTypeId);
             } catch (error) {
-                console.error('Error saving all levels:', error);
                 showNotification(error.message || 'Failed to save all levels', 'error');
             } finally {
                 hideLoadingOverlay();
             }
         }
 
-        async function saveLevelChanges(levelId, name, status, color, typeId) {
+        async function saveLevelChanges(levelId, name, sanctionName, sanctionDescription, typeId, statusColor, defaultStatus) {
             if (!name) {
                 showNotification('Level name cannot be empty', 'warning');
                 return;
             }
-
             try {
                 showLoadingOverlay('Saving changes...');
                 const response = await fetch(API_BASE + `violations.php?action=update_level&id=${levelId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: name,
-                        default_status: status,
-                        status_color: color
+                        name,
+                        sanction_name: sanctionName || null,
+                        sanction_description: sanctionDescription || null,
+                        status_color: statusColor || '#f59e0b',
+                        default_status: defaultStatus || 'warning'
                     })
                 });
                 const data = await response.json();
-                if (data.status !== 'success') {
-                    throw new Error(data.message || 'Failed to update level');
-                }
-
+                if (data.status !== 'success') throw new Error(data.message || 'Failed to update level');
                 showNotification('Level updated successfully', 'success');
-                await loadViolationTypes(true); // Load with true to keep management view updated
+                await loadViolationTypes(true);
                 renderManageLevelsList(typeId);
-                // Also refresh main list if it exists
                 if (typeof renderViolations === 'function') renderViolations();
-                if (typeof updateStats === 'function') updateStats();
             } catch (error) {
-                console.error('Error updating level:', error);
                 showNotification(error.message || 'Failed to update level', 'error');
             } finally {
                 hideLoadingOverlay();
@@ -1381,27 +1365,33 @@ function initViolationsModule() {
 
         async function addViolationLevelFromManage() {
             const nameInput = document.getElementById('vtNewLevelName');
-            const statusInput = document.getElementById('vtNewLevelStatus');
+            const sanctionNameInput = document.getElementById('vtNewLevelSanctionName');
+            const sanctionDescInput = document.getElementById('vtNewLevelSanctionDesc');
+            const colorRow = document.getElementById('vtNewLevelColorRow');
             if (!nameInput || !selectedManageTypeId) return;
 
-            // CHECK ONLINE STATUS
             if (!navigator.onLine) {
                 showNotification("Internet connection required to add new violation levels.", 'error');
                 return;
             }
 
             const name = nameInput.value.trim();
-            const defaultStatus = statusInput ? statusInput.value : 'Warning';
-            
             if (!name) {
                 showNotification('Please enter a level name', 'warning');
                 nameInput.focus();
                 return;
             }
 
-            // Find color from global statuses
-            const statusObj = violationStatuses.find(s => s.name === defaultStatus);
-            const color = statusObj ? statusObj.status_color : '#f59e0b';
+            const sanctionName = sanctionNameInput ? sanctionNameInput.value.trim() : '';
+            const sanctionDescription = sanctionDescInput ? sanctionDescInput.value.trim() : '';
+
+            // Resolve selected color dot
+            const activeDot = colorRow ? colorRow.querySelector('.vt-color-dot.active') : null;
+            let statusColor = activeDot ? activeDot.style.backgroundColor : '#f59e0b';
+            if (statusColor && statusColor.startsWith('rgb')) {
+                const rgb = statusColor.match(/\d+/g);
+                statusColor = '#' + rgb.map(x => { const h = parseInt(x).toString(16); return h.length === 1 ? '0' + h : h; }).join('');
+            }
 
             try {
                 showLoadingOverlay('Adding level...');
@@ -1410,28 +1400,28 @@ function initViolationsModule() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         violation_type_id: selectedManageTypeId,
-                        name: name,
-                        default_status: defaultStatus,
-                        status_color: color
+                        name,
+                        sanction_name: sanctionName || null,
+                        sanction_description: sanctionDescription || null,
+                        status_color: statusColor
                     })
                 });
                 const data = await response.json();
-                if (data.status !== 'success') {
-                    throw new Error(data.message || 'Failed to create violation level');
-                }
+                if (data.status !== 'success') throw new Error(data.message || 'Failed to create violation level');
 
                 nameInput.value = '';
-                if (statusInput) statusInput.value = 'warning';
-                selectedNewLevelColor = '#f59e0b';
-                initNewLevelColorPresets();
-                
+                if (sanctionNameInput) sanctionNameInput.value = '';
+                if (sanctionDescInput) sanctionDescInput.value = '';
+                // Reset color dot to first (orange)
+                if (colorRow) {
+                    colorRow.querySelectorAll('.vt-color-dot').forEach((d, i) => d.classList.toggle('active', i === 0));
+                }
+
                 showNotification('Violation level added', 'success');
                 await loadViolationTypes(true);
                 renderManageLevelsList(selectedManageTypeId);
                 if (typeof renderViolations === 'function') renderViolations();
-                if (typeof updateStats === 'function') updateStats();
             } catch (error) {
-                console.error('Error creating violation level:', error);
                 showNotification(error.message || 'Failed to add violation level', 'error');
             } finally {
                 hideLoadingOverlay();
@@ -1664,44 +1654,126 @@ function initViolationsModule() {
                 const typeId = parseInt(input.value);
                 
                 // 3. Find history for this student and type
-                // Include both synced and pending violations for badge display
                 const history = violations.filter(v => 
                     v.studentId === studentId && 
                     (v.violationType == typeId)
                 );
                 
                 if (history.length > 0) {
-                    // 4. Find the most relevant level
-                    // Sort by date descending
+                    // Sort ascending by level_order so highest offense is last
                     history.sort((a, b) => {
-                        const dateA = new Date((a.dateReported || a.violationDate) + ' ' + (a.violationTime || '00:00'));
-                        const dateB = new Date((b.dateReported || b.violationDate) + ' ' + (b.violationTime || '00:00'));
-                        return dateB - dateA;
+                        const getOrder = v => {
+                            const type = violationTypes.find(t => String(t.id) === String(v.violationType));
+                            const level = type?.levels?.find(l => String(l.id) === String(v.violationLevel));
+                            return level?.level_order ?? 0;
+                        };
+                        return getOrder(a) - getOrder(b);
                     });
-                    
-                    const latest = history[0];
-                    const levelName = latest.violationLevelLabel || 'Recorded';
-                    
-                    // Create Badge
-                    const badge = document.createElement('div');
-                    
-                    // Determine class based on status from database
-                    const status = (latest.status || 'warning').toLowerCase();
-                    let statusClass = 'warning';
-                    
-                    if (status === 'permitted') {
-                        statusClass = 'permitted';
-                    } else if (status === 'disciplinary') {
-                        statusClass = 'disciplinary';
-                    } else if (status === 'resolved') {
-                        statusClass = 'resolved';
+
+                    // Only show the HIGHEST offense with a single ✕ to step back one at a time
+                    const highest = history[history.length - 1];
+                    const levelName  = highest.violationLevelLabel || 'Recorded';
+                    const totalCount = history.length;
+                    const status     = (highest.status || 'warning').toLowerCase();
+                    const bg = status === 'permitted'    ? '#10b981'
+                             : status === 'disciplinary' ? '#ef4444'
+                             : status === 'resolved'     ? '#3b82f6'
+                             : '#f59e0b';
+                    const textColor = status === 'warning' ? '#7c2d12' : '#fff';
+                    const isPending  = String(highest.id).startsWith('TEMP-');
+
+                    const badgeWrap = document.createElement('div');
+                    badgeWrap.className = 'violation-type-badge-overlay';
+                    badgeWrap.style.cssText = `
+                        position:absolute; top:6px; right:6px;
+                        display:flex; flex-direction:column; align-items:flex-end;
+                        gap:3px; z-index:10; pointer-events:auto;
+                    `;
+
+                    const pill = document.createElement('div');
+                    pill.style.cssText = `
+                        display:inline-flex; align-items:center; gap:4px;
+                        padding:2px 5px 2px 7px; border-radius:20px;
+                        font-size:9px; font-weight:700; line-height:1.5;
+                        white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.25);
+                        background:${bg}; color:${textColor};
+                    `;
+                    pill.innerHTML = `
+                        <span style="letter-spacing:.3px;text-transform:uppercase;">
+                            ${escapeHtml(levelName)}${totalCount > 1 ? ` (${totalCount})` : ''}
+                        </span>
+                        ${!isPending ? `<button type="button"
+                            data-remove-vid="${highest.id}"
+                            data-remove-level="${escapeHtml(levelName)}"
+                            title="Remove ${escapeHtml(levelName)} — steps back to ${totalCount > 1 ? history[history.length - 2]?.violationLevelLabel || 'previous' : 'no offense'}"
+                            style="
+                                display:inline-flex;align-items:center;justify-content:center;
+                                width:14px;height:14px;border-radius:50%;
+                                background:rgba(0,0,0,.2);border:none;cursor:pointer;
+                                padding:0;flex-shrink:0;color:inherit;font-size:9px;
+                                font-weight:900;line-height:1;
+                            ">✕</button>` : ''}
+                    `;
+
+                    pill.addEventListener('click', e => e.stopPropagation());
+
+                    // Wire the remove button — always removes highest offense (step back by one)
+                    const removeBtn = pill.querySelector('[data-remove-vid]');
+                    if (removeBtn) {
+                        removeBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const vid        = removeBtn.dataset.removeVid;
+                            const levelLabel = removeBtn.dataset.removeLevel;
+                            const typeName   = card.querySelector('label span')?.textContent?.trim() || 'this type';
+                            const stepBackTo = totalCount > 1 ? history[history.length - 2]?.violationLevelLabel || 'previous offense' : 'no offense';
+
+                            const ok = typeof window.showModernAlert === 'function'
+                                ? await window.showModernAlert({
+                                    title: `Remove ${levelLabel}?`,
+                                    message: `This will delete the <strong>${levelLabel}</strong> record for <strong>${typeName}</strong>.<br><br>Student will step back to: <strong>${stepBackTo}</strong>`,
+                                    icon: 'warning',
+                                    confirmText: 'Yes, Remove',
+                                    cancelText: 'Cancel'
+                                })
+                                : confirm(`Remove "${levelLabel}" for ${typeName}? Student steps back to: ${stepBackTo}`);
+
+                            if (!ok) return;
+
+                            try {
+                                showLoadingOverlay('Removing offense...');
+                                const res = await fetch(`${API_BASE}violations.php?id=${vid}`, { method: 'DELETE' });
+                                const data = await res.json();
+                                if (data.status !== 'success') throw new Error(data.message);
+
+                                // Remove from local cache
+                                const idx = violations.findIndex(x => x.id == vid);
+                                if (idx !== -1) violations.splice(idx, 1);
+
+                                showNotification(`"${levelLabel}" offense removed. Student is now at: ${stepBackTo}.`, 'success');
+
+                                // Refresh badges and level progression
+                                updateViolationTypeBadges(studentId);
+
+                                // Re-render levels for the currently selected type
+                                const selectedTypeInput = document.querySelector('input[name="violationType"]:checked');
+                                if (selectedTypeInput) {
+                                    renderViolationLevels(selectedTypeInput.value);
+                                }
+
+                                // Refresh main list in background
+                                loadViolations(false).then(() => renderViolations());
+                            } catch (err) {
+                                showNotification('Failed to remove offense: ' + err.message, 'error');
+                            } finally {
+                                hideLoadingOverlay();
+                            }
+                        });
                     }
-                    
-                    badge.className = `violation-type-badge-overlay ${statusClass}`;
-                    badge.textContent = levelName;
-                    
-                    card.style.position = 'relative'; // Ensure relative positioning
-                    card.appendChild(badge);
+                    badgeWrap.appendChild(pill);
+
+                    card.style.position = 'relative';
+                    card.appendChild(badgeWrap);
                 }
             });
         }
@@ -2958,7 +3030,26 @@ function initViolationsModule() {
         };
         
         function renderViolations() {
-            console.log('🎨 renderViolations called, tableBody exists:', !!tableBody);
+            // RBAC: Only 'admin' role can see the Resolve button
+            let isUserAdmin = false;
+            const sessionStr = localStorage.getItem('userSession');
+            const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+            let currentRole = '';
+            
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    currentRole = session.role || '';
+                } catch (e) {}
+            }
+            
+            if (!currentRole && cookieRoleMatch) {
+                currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+            }
+            
+            isUserAdmin = (currentRole.toLowerCase() === 'admin');
+            
+            console.log('🎨 renderViolations called, currentRole:', currentRole, 'isUserAdmin:', isUserAdmin);
             console.log('📊 Current violations data:', violations.length, 'items');
 
             if (!tableBody) {
@@ -3015,7 +3106,12 @@ function initViolationsModule() {
                                     v.studentId.toLowerCase().includes(currentSearchTerm) ||
                                     v.violationTypeLabel.toLowerCase().includes(currentSearchTerm);
                 const matchesDept = currentDept === 'all' || v.department === currentDept || v.department_code === currentDept;
-                const matchesStatus = currentView === 'current' ? (statusValue === 'all' || v.status === statusValue) : true;
+                const matchesStatus = currentView === 'current' ? (
+                    statusValue === 'all' ||
+                    (statusValue === 'with_sanction' && v.sanctionName) ||
+                    (statusValue === 'no_sanction' && !v.sanctionName) ||
+                    v.status === statusValue  // backward compat
+                ) : true;
 
                 // Month filtering for archive
                 let matchesMonth = true;
@@ -3173,7 +3269,12 @@ function initViolationsModule() {
                     </td>
                     <td class="violation-date" data-label="Date Reported">${formatDate(v.dateReported)}</td>
                     <td data-label="Status">
-                        <span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>
+                        ${v.sanctionName
+                            ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
+                            : ''}
+                        ${displayStatus === 'resolved'
+                            ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;margin-left:3px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                            : ''}
                     </td>
                     <td data-label="Actions">
                         <div class="Violations-action-buttons">
@@ -3183,14 +3284,11 @@ function initViolationsModule() {
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
                             </button>
-                            ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') && !v.violationLevelLabel.toLowerCase().includes('5th offense') ?
-                                `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen">
-                                    <i class='bx bx-rotate-left'></i>
-                                </button>` :
-                                (displayStatus === 'disciplinary' ?
-                                `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
+                            ${displayStatus === 'resolved' || !isUserAdmin
+                                ? ''
+                                : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
                                     <i class='bx bx-check'></i>
-                                </button>` : '')
+                                </button>`
                             }
                         </div>
                     </td>
@@ -3245,7 +3343,14 @@ function initViolationsModule() {
                                 </div>
                             </div>
                             <div class="violation-card-footer">
-                                <span class="Violations-status-badge ${statusClass}">${displayStatusLabel}</span>
+                                <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+                                    ${v.sanctionName
+                                        ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
+                                        : ''}
+                                    ${displayStatus === 'resolved'
+                                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                                        : ''}
+                                </div>
                                 <div class="violation-card-actions">
                                     <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                         <i class='bx bx-show'></i>
@@ -3253,10 +3358,9 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') && !v.violationLevelLabel.toLowerCase().includes('5th offense') ?
-                                        `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
-                                        (displayStatus === 'disciplinary' ?
-                                        `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
+                                    ${displayStatus === 'resolved' || !isUserAdmin
+                                        ? ''
+                                        : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
                                     }
                                 </div>
                             </div>
@@ -3293,10 +3397,9 @@ function initViolationsModule() {
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
                                     </button>
-                                    ${displayStatus === 'resolved' && v.violationLevelLabel && !v.violationLevelLabel.toLowerCase().includes('warning 3') && !v.violationLevelLabel.toLowerCase().includes('3rd') && !v.violationLevelLabel.toLowerCase().includes('5th offense') ?
-                                        `<button class="Violations-action-btn reopen" data-id="${v.id}" title="Reopen"><i class='bx bx-rotate-left'></i></button>` :
-                                        (displayStatus === 'disciplinary' ?
-                                        `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>` : '')
+                                    ${displayStatus === 'resolved' || !isUserAdmin
+                                        ? ''
+                                        : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
                                     }
                                 </div>
                             </div>
@@ -3304,7 +3407,12 @@ function initViolationsModule() {
                                 <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${v.violationTypeLabel}</span>
                                 <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;">${v.violationLevelLabel}</span>
                                 <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;" title="${v.department}">${v.section || 'N/A'}</span>
-                                <span class="Violations-status-badge ${statusClass}" style="font-size:9px;">${displayStatusLabel}</span>
+                                ${v.sanctionName
+                                    ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
+                                    : ''}
+                                ${displayStatus === 'resolved'
+                                    ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                                    : ''}
                                 <span style="font-size:9px;color:var(--dark-grey);margin-left:2px;">
                                     <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.dateReported)}
                                 </span>
@@ -3321,58 +3429,12 @@ function initViolationsModule() {
 
         function updateStats() {
             const total = violations.length;
-            // Permitted = 1st & 2nd offense status
-            const resolved = violations.filter(v => v.status === 'permitted').length;
 
-            // Disciplinary = 5th offense or disciplinary status
-            const disciplinary = violations.filter(v => {
-                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                return v.status === 'disciplinary' || levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense');
-            }).length;
-
-            // Warning = violations with warning status (3rd & 4th offense, active)
-            const pending = violations.filter(v => {
-                const levelLabel = (v.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) return false;
-                return v.status === 'warning';
-            }).length;
-            
-            const totalEl = document.getElementById('totalViolations');
-            const resolvedEl = document.getElementById('resolvedViolations');
-            const pendingEl = document.getElementById('pendingViolations');
-            const disciplinaryEl = document.getElementById('disciplinaryViolations');
-            const resolvedPctEl = document.getElementById('resolvedViolationsPct');
-            const pendingPctEl = document.getElementById('pendingViolationsPct');
-            const disciplinaryPctEl = document.getElementById('disciplinaryViolationsPct');
-            
-            const _acu = window.animateCountUp || function(el, target) {
-                // Inline count-up fallback
-                const start = parseInt(el.textContent) || 0;
-                if (start === target) return;
-                const range = target - start;
-                const step  = Math.max(1, Math.abs(Math.round(range / 50)));
-                let cur = start;
-                const t = setInterval(() => {
-                    cur += range > 0 ? step : -step;
-                    if ((range > 0 && cur >= target) || (range < 0 && cur <= target)) { cur = target; clearInterval(t); }
-                    el.textContent = cur;
-                }, 16);
-            };
-            if (totalEl)        _acu(totalEl, total);
-            if (resolvedEl)     _acu(resolvedEl, resolved);
-            if (pendingEl)      _acu(pendingEl, pending);
-            if (disciplinaryEl) _acu(disciplinaryEl, disciplinary);
-
-            // Calculate percentages based on total violations
-            const resolvedPct = total > 0 ? Math.round((resolved / total) * 100) : 0;
-            const disciplinaryPct = total > 0 ? Math.round((disciplinary / total) * 100) : 0;
-            const warningPct = total > 0 ? Math.round((pending / total) * 100) : 0;
-            
-            if (resolvedPctEl) resolvedPctEl.textContent = `${resolvedPct}%`;
-            if (pendingPctEl) pendingPctEl.textContent = `${warningPct}%`;
-            if (disciplinaryPctEl) disciplinaryPctEl.textContent = `${disciplinaryPct}%`;
-
-            // Update "+X this week" on Total Violations card dynamically
+            // With sanction = violation has a sanction defined on its level
+            const withSanction = violations.filter(v => v.sanctionName).length;
+            // No sanction yet = sanction not set on the level
+            const noSanction = total - withSanction;
+            // This week
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
             const thisWeekCount = violations.filter(v => {
@@ -3381,6 +3443,40 @@ function initViolationsModule() {
                 const d = new Date(dateStr.replace(/\//g, '-'));
                 return d >= oneWeekAgo;
             }).length;
+
+            const totalEl        = document.getElementById('totalViolations');
+            const resolvedEl     = document.getElementById('resolvedViolations');
+            const pendingEl      = document.getElementById('pendingViolations');
+            const disciplinaryEl = document.getElementById('disciplinaryViolations');
+            const resolvedPctEl  = document.getElementById('resolvedViolationsPct');
+            const pendingPctEl   = document.getElementById('pendingViolationsPct');
+            const disciplinaryPctEl = document.getElementById('disciplinaryViolationsPct');
+
+            const _acu = window.animateCountUp || function(el, target) {
+                const start = parseInt(el.textContent) || 0;
+                if (start === target) return;
+                const range = target - start;
+                const step = Math.max(1, Math.abs(Math.round(range / 50)));
+                let cur = start;
+                const t = setInterval(() => {
+                    cur += range > 0 ? step : -step;
+                    if ((range > 0 && cur >= target) || (range < 0 && cur <= target)) { cur = target; clearInterval(t); }
+                    el.textContent = cur;
+                }, 16);
+            };
+
+            if (totalEl)        _acu(totalEl, total);
+            if (resolvedEl)     _acu(resolvedEl, withSanction);
+            if (pendingEl)      _acu(pendingEl, noSanction);
+            if (disciplinaryEl) _acu(disciplinaryEl, thisWeekCount);
+
+            const withSanctionPct = total > 0 ? Math.round((withSanction / total) * 100) : 0;
+            const noSanctionPct   = total > 0 ? Math.round((noSanction   / total) * 100) : 0;
+
+            if (resolvedPctEl)     resolvedPctEl.textContent = `${withSanctionPct}%`;
+            if (pendingPctEl)      pendingPctEl.textContent  = `${noSanctionPct}%`;
+            if (disciplinaryPctEl) disciplinaryPctEl.textContent = `+${thisWeekCount} this week`;
+
             const weekEl = document.getElementById('totalViolationsWeek');
             if (weekEl) weekEl.textContent = `+${thisWeekCount} this week`;
         }
@@ -3443,6 +3539,23 @@ function initViolationsModule() {
                     span.textContent = 'Edit Violation';
                 } else {
                     modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Edit Violation</span>';
+                }
+
+                // Hide student search in edit mode — student cannot be changed
+                const studentSearchSection = document.querySelector('#ViolationRecordForm .Violations-form-group:has(#studentSearch)');
+                if (studentSearchSection) studentSearchSection.style.display = 'none';
+
+                // Show edit-mode banner
+                let editBanner = document.getElementById('violationEditModeBanner');
+                if (!editBanner) {
+                    editBanner = document.createElement('div');
+                    editBanner.id = 'violationEditModeBanner';
+                    editBanner.style.cssText = 'display:flex;align-items:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:11px;color:#1d4ed8;margin:0 16px 0;';
+                    editBanner.innerHTML = '<i class=\'bx bx-info-circle\' style="font-size:16px;flex-shrink:0;"></i><span>You are editing an existing violation record. The student cannot be changed. All edits are logged with your name and timestamp.</span>';
+                    const form = document.getElementById('ViolationRecordForm');
+                    if (form) form.insertAdjacentElement('afterbegin', editBanner);
+                } else {
+                    editBanner.style.display = 'flex';
                 }
                 const violation = violations.find(v => v.id == editId);
                 if (violation) {
@@ -3573,10 +3686,15 @@ function initViolationsModule() {
                         }
                     }
                     
-                    document.getElementById('violationNotes').value = violation.notes || '';
+                    document.getElementById('violationNotes').value = (violation.notes || '').replace(/\n\[Edited by[^\]]*\]/g, '').replace(/\n\[Notes updated by[^\]]*\]/g, '').trim();
 
-                    // Update notes counter
-                    updateNotesCounter((violation.notes || '').length);
+                    // Update notes counter (strip audit lines for length)
+                    const cleanNotes = (violation.notes || '').replace(/\n\[Edited by[^\]]*\]/g, '').replace(/\n\[Notes updated by[^\]]*\]/g, '').trim();
+                    updateNotesCounter(cleanNotes.length);
+
+                    // Update submit button label for edit mode
+                    const submitBtn = document.querySelector('#ViolationRecordForm .Violations-btn-primary');
+                    if (submitBtn) submitBtn.textContent = 'Save Changes';
                 }
             } else {
                 // Add new mode
@@ -3586,6 +3704,17 @@ function initViolationsModule() {
                 } else {
                     modalTitle.innerHTML = '<i class=\'bx bxs-shield-x\'></i><span>Record New Violation</span>';
                 }
+
+                // Restore student search section and hide edit banner
+                const studentSearchSection = document.querySelector('#ViolationRecordForm .Violations-form-group:has(#studentSearch)');
+                if (studentSearchSection) studentSearchSection.style.display = '';
+                const editBanner = document.getElementById('violationEditModeBanner');
+                if (editBanner) editBanner.style.display = 'none';
+
+                // Reset submit button label for add mode
+                const submitBtn = document.querySelector('#ViolationRecordForm .Violations-btn-primary');
+                if (submitBtn) submitBtn.textContent = 'Record Violation';
+
                 if (form) {
                     form.reset();
                     setDefaultViolationLocation();
@@ -3703,10 +3832,10 @@ function initViolationsModule() {
                 if (el) el.className = className;
             };
             
-            // Case header
-            // Override Status Display Logic for Modal:
+            // Case header — show sanction name if defined, otherwise status
+            const currentSanctionName = violation.sanctionName || null;
             let displayStatus = violation.status;
-            let displayStatusLabel = violation.statusLabel;
+            let displayStatusLabel = violation.statusLabel || (displayStatus ? displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1) : '—');
 
             const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
             if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
@@ -3715,8 +3844,11 @@ function initViolationsModule() {
             }
 
             setElementText('detailCaseId', '#' + violation.caseId);
-            setElementText('detailStatusBadge', displayStatusLabel);
-            setElementClass('detailStatusBadge', `case-status-badge ${getStatusClass(displayStatus)}`);
+            // Show sanction if defined, otherwise show offense level (not raw DB status)
+            const badgeLabel = currentSanctionName || violation.violationLevelLabel || displayStatusLabel;
+            const badgeClass = currentSanctionName ? 'sanction' : (violation.violationLevelLabel ? 'level' : getStatusClass(displayStatus));
+            setElementText('detailStatusBadge', badgeLabel);
+            setElementClass('detailStatusBadge', `case-status-badge ${badgeClass}`);
             
             // Student info with fixed image URL
             const studentImageUrl = getImageUrl(violation.studentImage, violation.studentName);
@@ -3796,22 +3928,86 @@ function initViolationsModule() {
             // Reported By
             renderList('detailReportedBy', studentViolations, v => v.reportedBy || '-');
             
-            // Statuses
+            // Status / Sanction column — show sanction if defined, fall back to status
             renderList('detailStatus', studentViolations, v => {
+                if (v.sanctionName) {
+                    return `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`;
+                }
                 let itemStatus = v.status;
-                let itemStatusLabel = v.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : 'Unknown');
-                
+                let itemStatusLabel = v.statusLabel || (itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : '—');
                 const levelLabel = (v.violationLevelLabel || '').toLowerCase();
                 if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
-                    itemStatus = 'disciplinary';
-                    itemStatusLabel = 'Disciplinary';
+                    itemStatus = 'disciplinary'; itemStatusLabel = 'Disciplinary';
                 }
-                
                 return `<span class="badge ${getStatusClass(itemStatus)}">${itemStatusLabel}</span>`;
             });
+
+            // Sanction description block — show ALL sanctions from the student's full violation history
+            const sanctionSection = document.getElementById('detailAdminSanctionSection');
+            if (sanctionSection) {
+                // Use the full unfiltered history for this student, not the deduped latest-per-type
+                const allStudentViolations = violations
+                    .filter(v => v.studentId === violation.studentId && v.sanctionName)
+                    .sort((a, b) => {
+                        const dateA = new Date((a.dateReported || '') + ' ' + (a.violationTime || '00:00'));
+                        const dateB = new Date((b.dateReported || '') + ' ' + (b.violationTime || '00:00'));
+                        return dateA - dateB; // oldest first so offenses read in order
+                    });
+
+                if (allStudentViolations.length > 0) {
+                    sanctionSection.style.display = 'block';
+
+                    const snEl = document.getElementById('detailAdminSanctionName');
+                    const sdEl = document.getElementById('detailAdminSanctionDesc');
+
+                    if (allStudentViolations.length === 1) {
+                        const sv = allStudentViolations[0];
+                        const typeName = sv.violationTypeLabel || '';
+                        if (snEl) snEl.textContent = typeName ? `${sv.sanctionName} — ${typeName}` : sv.sanctionName;
+                        if (sdEl) sdEl.textContent = sv.sanctionDescription || 'No description provided.';
+                    } else {
+                        if (snEl) snEl.textContent = `${allStudentViolations.length} Sanctions`;
+                        if (sdEl) {
+                            sdEl.innerHTML = allStudentViolations.map((sv, idx) => {
+                                const typeName = sv.violationTypeLabel || '';
+                                const levelName = sv.violationLevelLabel || '';
+                                const desc = sv.sanctionDescription || 'No description provided.';
+                                const date = sv.dateReported ? `<span style="font-size:10px;color:#9ca3af;margin-left:6px;">${formatDate(sv.dateReported)}</span>` : '';
+                                const isLast = idx === allStudentViolations.length - 1;
+                                return `<div style="margin-bottom:${isLast ? '0' : '10px'};padding-bottom:${isLast ? '0' : '8px'};${isLast ? '' : 'border-bottom:1px solid rgba(212,175,55,0.2);'}">
+                                    <strong style="font-size:12px;color:#b8860b;display:block;margin-bottom:3px;">
+                                        ${escapeHtml(sv.sanctionName)}${typeName ? ` — ${escapeHtml(typeName)}` : ''}
+                                        ${levelName ? `<span style="font-weight:400;color:#6b7280;font-size:11px;">(${escapeHtml(levelName)})</span>` : ''}
+                                        ${date}
+                                    </strong>
+                                    <span style="font-size:12px;color:#374151;">${escapeHtml(desc)}</span>
+                                </div>`;
+                            }).join('');
+                        }
+                    }
+                } else {
+                    sanctionSection.style.display = 'none';
+                }
+            }
             
-            setElementText('detailNotes', violation.notes || 'No notes available.');
-            
+            setElementText('detailNotes', (violation.notes || 'No notes available.').replace(/\n\[Edited by[^\]]*\]/g, '').replace(/\n\[Notes updated by[^\]]*\]/g, '').trim() || 'No notes available.');
+
+            // Show edit audit trail if present
+            const editAuditContainer = document.getElementById('detailEditAuditTrail');
+            if (editAuditContainer) {
+                const auditMatches = (violation.notes || '').match(/\[(Edited|Notes updated) by [^\]]+\]/g);
+                if (auditMatches && auditMatches.length > 0) {
+                    editAuditContainer.innerHTML = `
+                        <div class="edit-audit-trail" style="margin-top:8px;padding:8px 10px;background:#f8fafc;border-left:3px solid #3b82f6;border-radius:0 4px 4px 0;font-size:11px;color:#64748b;">
+                            <strong style="display:block;margin-bottom:4px;color:#475569;"><i class='bx bx-history'></i> Edit History</strong>
+                            ${auditMatches.map(a => `<div style="padding:2px 0;">${escapeHtml(a.replace(/^\[|\]$/g, ''))}</div>`).join('')}
+                        </div>`;
+                    editAuditContainer.style.display = 'block';
+                } else {
+                    editAuditContainer.style.display = 'none';
+                }
+            }
+
             // Attachments display
              // Evidence is now shown via the Evidence badge in Violation History — not here
              const attachmentsContainer = document.getElementById('detailAttachments');
@@ -3868,9 +4064,10 @@ function initViolationsModule() {
                                         let s = v.status;
                                         const ll = (v.violationLevelLabel || '').toLowerCase();
                                         if (ll.includes('warning 3') || ll.includes('3rd') || ll.includes('5th offense')) s = 'disciplinary';
-                                        if (s === 'resolved') return '<span style="color:green;font-weight:bold;">(Resolved)</span>';
-                                        if (s === 'disciplinary') return '<span style="color:#e74c3c;font-weight:bold;">(Disciplinary)</span>';
-                                        return '';
+                                        const statusHtml = s === 'resolved' ? '<span style="color:green;font-weight:bold;">(Resolved)</span>' :
+                                            s === 'disciplinary' ? '<span style="color:#e74c3c;font-weight:bold;">(Disciplinary)</span>' : '';
+                                        const sanctionHtml = v.sanctionName ? `<span class="sanction-badge" style="font-size:10px;margin-left:4px;">${escapeHtml(v.sanctionName)}</span>` : '';
+                                        return statusHtml + sanctionHtml;
                                     })()}
                                 </span>
                             </div>
@@ -3913,25 +4110,43 @@ function initViolationsModule() {
             document.body.style.overflow = 'hidden';
 
             // Update action buttons visibility based on status
+            const detailEditBtn = document.getElementById('detailEditBtn');
             const detailResolveBtn = document.getElementById('detailResolveBtn');
             const detailPrintSlipBtn = document.getElementById('detailPrintSlipBtn');
             const detailSlipStatus = document.getElementById('detailSlipStatus');
             const detailApproveSlipBtn = document.getElementById('detailApproveSlipBtn');
             const detailDenySlipBtn = document.getElementById('detailDenySlipBtn');
             
-            if (detailResolveBtn) {
-                let currentStatus = violation.status;
-                const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-                
-                // Treat Warning 3 as disciplinary for button visibility
-                if (violation.status !== 'resolved' && (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense'))) {
-                    currentStatus = 'disciplinary';
-                }
+            // RBAC: Check for admin role
+            let isUserAdmin = false;
+            const sessionStr = localStorage.getItem('userSession');
+            const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+            let currentRole = '';
+            
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    currentRole = session.role || '';
+                } catch (e) {}
+            }
+            
+            if (!currentRole && cookieRoleMatch) {
+                currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+            }
+            
+            isUserAdmin = (currentRole.toLowerCase() === 'admin');
 
-                if (currentStatus === 'disciplinary') {
-                    detailResolveBtn.style.display = 'inline-flex';
-                } else {
+            if (detailEditBtn) {
+                detailEditBtn.style.display = isUserAdmin ? 'inline-flex' : 'none';
+            }
+            
+            if (detailResolveBtn) {
+                // Show Resolve on all violations; show Reopen if already resolved
+                if (violation.status === 'resolved' || !isUserAdmin) {
                     detailResolveBtn.style.display = 'none';
+                } else {
+                    detailResolveBtn.style.display = 'inline-flex';
+                    detailResolveBtn.innerHTML = '<i class=\'bx bx-check\'></i> Mark Resolved';
                 }
             }
 
@@ -4005,6 +4220,12 @@ function initViolationsModule() {
             const studentCard = document.getElementById('selectedStudentCard');
             if (studentCard) studentCard.style.display = 'none';
 
+            // Restore student search section and hide edit banner
+            const studentSearchSection = document.querySelector('#ViolationRecordForm .Violations-form-group:has(#studentSearch)');
+            if (studentSearchSection) studentSearchSection.style.display = '';
+            const editBanner = document.getElementById('violationEditModeBanner');
+            if (editBanner) editBanner.style.display = 'none';
+
             // Explicitly clear student info on close as well
             if (document.getElementById('modalStudentName')) {
                 document.getElementById('modalStudentId').textContent = '';
@@ -4030,7 +4251,7 @@ function initViolationsModule() {
 
         // ========== EVENT HANDLERS ==========
         
-        function handleTableClick(e) {
+        async function handleTableClick(e) {
             const viewBtn = e.target.closest('.Violations-action-btn.view');
             const editBtn = e.target.closest('.Violations-action-btn.edit');
             const resolveBtn = e.target.closest('.Violations-action-btn.resolve');
@@ -4048,6 +4269,30 @@ function initViolationsModule() {
             }
 
             if (editBtn) {
+                // RBAC: Only 'admin' role can edit
+                let isUserAdmin = false;
+                const sessionStr = localStorage.getItem('userSession');
+                const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+                let currentRole = '';
+                
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        currentRole = session.role || '';
+                    } catch (e) {}
+                }
+                
+                if (!currentRole && cookieRoleMatch) {
+                    currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+                }
+                
+                isUserAdmin = (currentRole.toLowerCase() === 'admin');
+
+                if (!isUserAdmin) {
+                    showNotification('Only Administrators can edit violations.', 'error');
+                    return;
+                }
+
                 const id = editBtn.dataset.id;
                 openRecordModal(id);
             }
@@ -4061,31 +4306,55 @@ function initViolationsModule() {
             }
 
             if (resolveBtn) {
+                // RBAC: Only 'admin' role can resolve
+                let isUserAdmin = false;
+                const sessionStr = localStorage.getItem('userSession');
+                const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+                let currentRole = '';
+                
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        currentRole = session.role || '';
+                    } catch (e) {}
+                }
+                
+                if (!currentRole && cookieRoleMatch) {
+                    currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+                }
+                
+                isUserAdmin = (currentRole.toLowerCase() === 'admin');
+
+                if (!isUserAdmin) {
+                    showNotification('Only Administrators can resolve violations.', 'error');
+                    return;
+                }
+
                 const id = resolveBtn.dataset.id;
                 const violation = violations.find(v => v.id == id);
-                
-                if (violation) {
-                    // Check status - logic must match renderViolations
-                    let currentStatus = violation.status;
-                    const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-                    if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
-                        currentStatus = 'disciplinary';
-                    }
 
-                    if (currentStatus !== 'disciplinary') {
-                        alert('Only disciplinary violations can be marked as resolved.');
+                if (violation) {
+                    if (violation.status === 'resolved') {
+                        showNotification('This violation is already resolved.', 'info');
                         return;
                     }
 
-                    if (confirm(`Mark violation ${violation.caseId} as resolved?`)) {
-                        updateViolation(id, { status: 'resolved' })
-                            .then(() => {
-                                alert('Violation marked as resolved!');
-                            })
-                            .catch(error => {
-                                console.error('Error resolving violation:', error);
-                                alert('Failed to resolve violation. Please try again.');
-                            });
+                    const confirmed = typeof window.showModernAlert === 'function'
+                        ? await window.showModernAlert({
+                            title: 'Mark as Resolved',
+                            message: `Mark violation ${violation.caseId} as resolved? This will update the student's record.`,
+                            icon: 'check',
+                            confirmText: 'Resolve'
+                          })
+                        : confirm(`Mark violation ${violation.caseId} as resolved?`);
+
+                    if (confirmed) {
+                        try {
+                            await updateViolation(id, { status: 'resolved' });
+                            showNotification('Violation marked as resolved!', 'success');
+                        } catch (error) {
+                            showNotification('Failed to resolve violation. Please try again.', 'error');
+                        }
                     }
                 }
             }
@@ -4093,15 +4362,24 @@ function initViolationsModule() {
             if (reopenBtn) {
                 const id = reopenBtn.dataset.id;
                 const violation = violations.find(v => v.id == id);
-                if (violation && confirm(`Reopen violation ${violation.caseId}?`)) {
-                    updateViolation(id, { status: 'warning' })
-                        .then(() => {
-                            alert('Violation reopened!');
-                        })
-                        .catch(error => {
-                            console.error('Error reopening violation:', error);
-                            alert('Failed to reopen violation. Please try again.');
-                        });
+                if (violation) {
+                    const confirmed = typeof window.showModernAlert === 'function'
+                        ? await window.showModernAlert({
+                            title: 'Reopen Violation',
+                            message: `Reopen violation ${violation.caseId}? The student's violation will be marked as active again.`,
+                            icon: 'warning',
+                            confirmText: 'Reopen'
+                          })
+                        : confirm(`Reopen violation ${violation.caseId}?`);
+
+                    if (confirmed) {
+                        try {
+                            await updateViolation(id, { status: 'warning' });
+                            showNotification('Violation reopened.', 'success');
+                        } catch (error) {
+                            showNotification('Failed to reopen violation. Please try again.', 'error');
+                        }
+                    }
                 }
             }
         }
@@ -4336,10 +4614,93 @@ function initViolationsModule() {
 
         if (detailEditBtn) {
             detailEditBtn.addEventListener('click', function() {
+                // RBAC: Extra safety check
+                let isUserAdmin = false;
+                const sessionStr = localStorage.getItem('userSession');
+                const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+                let currentRole = '';
+                
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        currentRole = session.role || '';
+                    } catch (e) {}
+                }
+                
+                if (!currentRole && cookieRoleMatch) {
+                    currentRole = decodeURIComponent(cookieRoleMatch.split('=')[1]);
+                }
+                
+                isUserAdmin = (currentRole.toLowerCase() === 'admin');
+
+                if (!isUserAdmin) {
+                    showNotification('Only Administrators can edit violations.', 'error');
+                    return;
+                }
+
                 const violationId = detailsModal.dataset.viewingId;
                 if (violationId) {
                     closeDetailsModal();
                     openRecordModal(parseInt(violationId));
+                }
+            });
+        }
+
+        // Revert button — restores the violation to the state before the last edit
+        const detailRevertBtn = document.getElementById('detailRevertBtn');
+        if (detailRevertBtn) {
+            detailRevertBtn.addEventListener('click', async function() {
+                const violationId = detailsModal.dataset.viewingId;
+                if (!violationId) return;
+
+                const violation = violations.find(v => v.id == violationId);
+                if (!violation || !violation.previous_values) {
+                    showNotification('No previous version available to revert to.', 'warning');
+                    return;
+                }
+
+                let prev = {};
+                try { prev = JSON.parse(violation.previous_values); } catch(e) {}
+
+                const prevType      = violationTypes.find(t => String(t.id) === String(prev.violation_type_id));
+                const prevTypeName  = prevType?.name || '?';
+                const prevLevelName = prevType?.levels?.find(l => String(l.id) === String(prev.violation_level_id))?.name || '?';
+
+                const confirmed = typeof window.showModernAlert === 'function'
+                    ? await window.showModernAlert({
+                        title: 'Revert Violation?',
+                        message: `Restore this record to its previous version?<br><br>
+                            <b>Will restore to:</b><br>
+                            Type: <b>${prevTypeName}</b><br>
+                            Level: <b>${prevLevelName}</b><br>
+                            Date: <b>${prev.violation_date || '?'}</b><br>
+                            Status: <b>${prev.status || '?'}</b>`,
+                        icon: 'warning',
+                        confirmText: 'Yes, Revert',
+                        cancelText: 'Cancel'
+                    })
+                    : confirm(`Revert to: ${prevTypeName} — ${prevLevelName} (${prev.violation_date || '?'})?`);
+
+                if (!confirmed) return;
+
+                try {
+                    showLoadingOverlay('Reverting violation...');
+                    const response = await fetch(
+                        `${API_BASE}violations.php?action=revert&id=${violationId}`,
+                        { method: 'POST' }
+                    );
+                    const result = await response.json();
+                    if (result.status !== 'success') throw new Error(result.message);
+
+                    showNotification('Violation reverted to previous version.', 'success');
+                    closeDetailsModal();
+                    await loadViolations(false);
+                    renderViolations();
+                    updateStats();
+                } catch (err) {
+                    showNotification('Failed to revert: ' + err.message, 'error');
+                } finally {
+                    hideLoadingOverlay();
                 }
             });
         }
@@ -4385,19 +4746,16 @@ function initViolationsModule() {
                     return;
                 }
 
-                // Check if disciplinary
-                let currentStatus = violation.status;
-                const levelLabel = (violation.violationLevelLabel || '').toLowerCase();
-                if (levelLabel.includes('warning 3') || levelLabel.includes('3rd') || levelLabel.includes('5th offense')) {
-                    currentStatus = 'disciplinary';
-                }
+                const confirmed = typeof window.showModernAlert === 'function'
+                    ? await window.showModernAlert({
+                        title: 'Mark as Resolved',
+                        message: `Mark violation ${violation.caseId} as resolved? This will update the student's record.`,
+                        icon: 'check',
+                        confirmText: 'Resolve'
+                      })
+                    : confirm(`Mark violation ${violation.caseId} as resolved?`);
 
-                if (currentStatus !== 'disciplinary') {
-                    showNotification('Only disciplinary violations can be marked as resolved.', 'warning');
-                    return;
-                }
-
-                if (confirm(`Mark violation ${violation.caseId} as resolved?`)) {
+                if (confirmed) {
                     try {
                         await updateViolation(violationId, { status: 'resolved' });
                         showNotification('Violation marked as resolved!', 'success');
@@ -5691,44 +6049,6 @@ function initViolationsModule() {
             }
         };
 
-        // 14. MONTHLY RESET FUNCTIONALITY
-        const btnMonthlyReset = document.getElementById('btnMonthlyReset');
-        if (btnMonthlyReset) {
-            btnMonthlyReset.addEventListener('click', async function() {
-                const confirmMessage = "Are you sure you want to perform a monthly reset?\n\n" +
-                                     "This will:\n" +
-                                     "1. Archive all violations from previous months\n" +
-                                     "2. Reset all student violation levels and counts\n\n" +
-                                     "This action cannot be undone.";
-
-                if (confirm(confirmMessage)) {
-                    try {
-                        showLoadingOverlay('Performing monthly reset...');
-                        const response = await fetch(API_BASE + 'violations.php?action=archive', {
-                            method: 'POST'
-                        });
-
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            showNotification(result.message, 'success', 5000);
-                            // Refresh current view
-                            loadViolations(true).then(() => {
-                                renderViolations();
-                                updateStats();
-                            });
-                        } else {
-                            throw new Error(result.message || 'Failed to perform reset');
-                        }
-                    } catch (error) {
-                        console.error('Error during monthly reset:', error);
-                        showNotification('Reset failed: ' + error.message, 'error');
-                    } finally {
-                        hideLoadingOverlay();
-                    }
-                }
-            });
-        }
-
         // 14. SORT FUNCTIONALITY
         const sortHeaders = document.querySelectorAll('.Violations-sortable');
         sortHeaders.forEach(header => {
@@ -5774,16 +6094,13 @@ function initViolationsModule() {
                     violations     = _cache.violations;
                     students       = _cache.students;
                     violationTypes = _cache.violationTypes;
-                    violationStatuses = _cache.violationStatuses || [];
                     renderViolations();
                     updateStats();
                     loadDepartments();
                     addRefreshButton();
-                    // Refresh in background silently
                     loadViolations(false).then(() => { renderViolations(); updateStats(); });
                     loadStudents(false);
                     if (violationTypes.length === 0) loadViolationTypes();
-                    if (violationStatuses.length === 0) loadViolationStatuses();
                     hideLoadingOverlay();
                     return;
                 }
@@ -5795,8 +6112,7 @@ function initViolationsModule() {
                 // Load violations, types and statuses immediately
                 await Promise.all([
                     loadViolations(false),
-                    loadViolationTypes(),
-                    loadViolationStatuses()
+                    loadViolationTypes()
                 ]);
 
                 // Render as soon as violations are ready

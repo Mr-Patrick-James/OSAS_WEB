@@ -1,13 +1,14 @@
 /**
  * OSAS Violation Slip Generator (PDF)
  * Uses jsPDF and AutoTable to generate a professional entrance slip.
+ * Violation types and table rows are fully dynamic from DB.
  */
 
 async function generateViolationSlipPDF(violationId) {
     console.log('📄 Generating Violation Slip PDF for ID:', violationId);
-    
+
     if (typeof showLoadingOverlay === 'function') showLoadingOverlay('Preparing Entrance Slip...');
-    
+
     try {
         // 1. Fetch Violation Data from API
         const response = await fetch(`${API_BASE}violations.php?action=get_slip_data&violation_id=${violationId}`);
@@ -15,10 +16,22 @@ async function generateViolationSlipPDF(violationId) {
             const error = await response.json();
             throw new Error(error.message || 'Failed to fetch violation data');
         }
-        
+
         const result = await response.json();
-        const { violation, monthlyViolations, adminName } = result.data;
-        
+        const { violation, monthlyViolations, violationTypes, violationLevels, adminName } = result.data;
+
+        // violationTypes: ordered array of type names from DB
+        // violationLevels: ordered union of all level names from DB
+        // monthlyViolations: { "TypeName": [...violations] }
+        const typeNames = Array.isArray(violationTypes) && violationTypes.length > 0
+            ? violationTypes
+            : Object.keys(monthlyViolations);
+
+        // Use DB-provided levels as column headers; fallback to collecting from data
+        let allLevelNames = Array.isArray(violationLevels) && violationLevels.length > 0
+            ? violationLevels
+            : [];
+
         if (!window.jspdf) {
             throw new Error('PDF library (jsPDF) not loaded. Please refresh the page.');
         }
@@ -27,16 +40,14 @@ async function generateViolationSlipPDF(violationId) {
         const doc = new jsPDF('p', 'mm', 'a4');
         const now = new Date();
 
-        // Helper function to load image
-        const loadImage = (url) => {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = 'Anonymous';
-                img.onload = () => resolve(img);
-                img.onerror = (e) => reject(e);
-                img.src = url;
-            });
-        };
+        // Helper: load image
+        const loadImage = (url) => new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = (e) => reject(e);
+            img.src = url;
+        });
 
         // --- Header ---
         const headerPath = `${API_BASE.replace('api/', '')}app/assets/headers/header.png`;
@@ -60,13 +71,12 @@ async function generateViolationSlipPDF(violationId) {
         // --- Student Info ---
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
-        
+
         const startY = 55;
         const leftColX = 20;
         const rightColX = 110;
         const lineSpacing = 7;
 
-        // Draw info with labels
         const drawField = (label, value, x, y, width) => {
             doc.setFont("helvetica", "bold");
             doc.text(label + ":", x, y);
@@ -82,66 +92,116 @@ async function generateViolationSlipPDF(violationId) {
         drawField("ID Number", violation.studentId, leftColX, startY + lineSpacing, 100);
         drawField("Course & Year", courseYear, rightColX, startY + lineSpacing, 190);
 
-        // --- Checkboxes ---
-        const vType = (violation.violationTypeLabel || '').toLowerCase();
-        const vLevel = (violation.violationLevelLabel || '').toLowerCase();
+        // --- Violation Type Checkboxes (dynamic) ---
+        const currentTypeName = (violation.violationTypeLabel || '').trim();
+        const currentLevelName = (violation.violationLevelLabel || '').trim();
 
         const drawCheckbox = (label, isChecked, x, y) => {
             doc.setDrawColor(0);
-            doc.rect(x, y - 3, 4, 4); // Box
+            doc.rect(x, y - 3, 4, 4);
             if (isChecked) {
                 doc.setFont("zapfdingbats");
-                doc.text("4", x + 0.5, y - 0.2); // Checkmark
+                doc.text("4", x + 0.5, y - 0.2);
                 doc.setFont("helvetica", "normal");
             }
             doc.text(label, x + 6, y);
         };
 
         let checkY = startY + lineSpacing * 3;
+
+        // Violation Type row
         doc.setFont("helvetica", "bold");
         doc.text("Violation Type:", leftColX, checkY);
         doc.setFont("helvetica", "normal");
-        
-        drawCheckbox("Improper Uniform", vType.includes('uniform'), leftColX + 35, checkY);
-        drawCheckbox("Improper Footwear", vType.includes('foot') || vType.includes('shoe'), leftColX + 85, checkY);
-        drawCheckbox("No ID Card", vType.includes('id'), leftColX + 135, checkY);
 
-        checkY += lineSpacing;
+        // Distribute type checkboxes across the line (max ~3 per row, wrap if more)
+        const typeBoxStartX = leftColX + 35;
+        const typeBoxSpacing = 55; // mm between each checkbox
+        const maxPerRow = Math.floor((190 - 35) / typeBoxSpacing) || 3;
+
+        typeNames.forEach((typeName, idx) => {
+            const row = Math.floor(idx / maxPerRow);
+            const col = idx % maxPerRow;
+            const bx = typeBoxStartX + col * typeBoxSpacing;
+            const by = checkY + row * lineSpacing;
+            const isChecked = typeName.trim().toLowerCase() === currentTypeName.toLowerCase();
+            drawCheckbox(typeName, isChecked, bx, by);
+        });
+
+        const typeRows = Math.ceil(typeNames.length / maxPerRow);
+        checkY += typeRows * lineSpacing;
+
+        // Offense Level row — use DB-provided levels; fallback to collecting from monthly data
+        if (allLevelNames.length === 0) {
+            typeNames.forEach(typeName => {
+                const vList = monthlyViolations[typeName] || [];
+                vList.forEach(v => {
+                    const lvl = (v.violationLevelLabel || '').trim();
+                    if (lvl && !allLevelNames.includes(lvl)) allLevelNames.push(lvl);
+                });
+            });
+            // Always include the current violation's level
+            if (currentLevelName && !allLevelNames.includes(currentLevelName)) {
+                allLevelNames.unshift(currentLevelName);
+            }
+        }
+        // Final fallback
+        if (allLevelNames.length === 0) allLevelNames = ['1st Offense', '2nd Offense', '3rd Offense'];
+
         doc.setFont("helvetica", "bold");
         doc.text("Offense Level:", leftColX, checkY);
         doc.setFont("helvetica", "normal");
-        
-        drawCheckbox("1st Offense", vLevel.includes('1st'), leftColX + 35, checkY);
-        drawCheckbox("2nd Offense", vLevel.includes('2nd'), leftColX + 85, checkY);
-        drawCheckbox("3rd Offense", vLevel.includes('3rd'), leftColX + 135, checkY);
 
-        // --- Monthly History Tables ---
-        let tableY = checkY + 12;
+        allLevelNames.forEach((lvlName, idx) => {
+            const row = Math.floor(idx / maxPerRow);
+            const col = idx % maxPerRow;
+            const bx = typeBoxStartX + col * typeBoxSpacing;
+            const by = checkY + row * lineSpacing;
+            const isChecked = lvlName.toLowerCase() === currentLevelName.toLowerCase();
+            drawCheckbox(lvlName, isChecked, bx, by);
+        });
+
+        const levelRows = Math.ceil(allLevelNames.length / maxPerRow);
+        checkY += levelRows * lineSpacing;
+
+        // --- Monthly History Table (columns = DB level names) ---
+        let tableY = checkY + 8;
         doc.setFont("helvetica", "bold");
         doc.text("Monthly Violation Record:", leftColX, tableY);
         tableY += 5;
 
-        const tableColumn = ["Violation Type", "1st Date", "2nd Date", "3rd Date"];
-        const tableRows = [];
+        // Header: Violation Type | [one column per level name]
+        const tableColumn = ["Violation Type", ...allLevelNames];
 
-        const categories = [
-            { label: 'Improper Uniform', data: monthlyViolations['Improper Uniform'] },
-            { label: 'Improper Footwear', data: monthlyViolations['Improper Foot Wear'] },
-            { label: 'No ID Card', data: monthlyViolations['No ID'] }
-        ];
+        // Build rows: for each type, find which level column has a violation date
+        const tableRows = typeNames.map(typeName => {
+            const vList = monthlyViolations[typeName] || [];
+            // Index violations by level name (first match per level)
+            const levelToViolation = {};
+            vList.forEach(v => {
+                const lvl = (v.violationLevelLabel || '').trim();
+                if (lvl && !levelToViolation[lvl]) levelToViolation[lvl] = v;
+            });
 
-        categories.forEach(cat => {
-            const formatRecordDate = (vList, index) => {
-                if (!vList || !vList[index]) return "-";
-                return vList[index].dateReported;
-            };
-            tableRows.push([
-                cat.label,
-                formatRecordDate(cat.data, 0),
-                formatRecordDate(cat.data, 1),
-                formatRecordDate(cat.data, 2)
-            ]);
+            const dateCells = allLevelNames.map(levelName => {
+                const v = levelToViolation[levelName]
+                    || Object.entries(levelToViolation).find(([k]) => k.toLowerCase() === levelName.toLowerCase())?.[1];
+                return v ? v.dateReported : '-';
+            });
+
+            return [typeName, ...dateCells];
         });
+
+        const totalWidth = 170;
+        const firstColWidth = 50;
+        const dateCellWidth = allLevelNames.length > 0
+            ? (totalWidth - firstColWidth) / allLevelNames.length
+            : (totalWidth - firstColWidth) / 3;
+
+        const columnStyles = { 0: { halign: 'left', cellWidth: firstColWidth } };
+        for (let i = 1; i <= allLevelNames.length; i++) {
+            columnStyles[i] = { halign: 'center', cellWidth: dateCellWidth };
+        }
 
         doc.autoTable({
             head: [tableColumn],
@@ -150,16 +210,18 @@ async function generateViolationSlipPDF(violationId) {
             theme: 'grid',
             styles: { fontSize: 9, cellPadding: 3, halign: 'center' },
             headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-            columnStyles: { 0: { halign: 'left', cellWidth: 50 } }
+            columnStyles: columnStyles,
+            margin: { left: leftColX, right: 20 }
         });
 
         let finalY = doc.lastAutoTable.finalY + 20;
 
         // --- Signatures ---
         doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
         doc.text("__________________________", leftColX + 10, finalY);
         doc.text("__________________________", rightColX + 10, finalY);
-        
+
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.text("Student Signature", leftColX + 22, finalY + 5);

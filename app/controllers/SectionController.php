@@ -15,19 +15,23 @@ class SectionController extends Controller {
     public function index() {
         $filter = $this->getGet('filter', 'all');
         $search = $this->getGet('search', '');
-        $page = intval($this->getGet('page', 1));
-        $limit = intval($this->getGet('limit', 10));
+        $page = $this->getGet('page', '1');
+        $limit = $this->getGet('limit', '10');
+        
+        // Handle 'all' limit for exports
+        $pageParam = ($limit === 'all') ? null : intval($page);
+        $limitParam = ($limit === 'all') ? null : intval($limit);
         
         try {
-            $sections = $this->model->getAllWithFilters($filter, $search, $page, $limit);
+            $sections = $this->model->getAllWithFilters($filter, $search, $pageParam, $limitParam);
             $totalCount = $this->model->getCountWithFilters($filter, $search);
 
             $this->success('Sections retrieved successfully', [
                 'sections' => $sections,
                 'total' => $totalCount,
-                'page' => $page,
-                'limit' => $limit,
-                'total_pages' => ceil($totalCount / max(1, $limit))
+                'page' => $pageParam,
+                'limit' => $limitParam,
+                'total_pages' => $limitParam ? ceil($totalCount / max(1, $limitParam)) : 1
             ]);
         } catch (Exception $e) {
             $this->error('Failed to retrieve sections: ' . $e->getMessage());

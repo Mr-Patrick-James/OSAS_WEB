@@ -294,6 +294,7 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="reportType">Report Type</label>
             <select id="reportType" name="reportType" required>
               <option value="">Select report type</option>
+              <option value="print_all">Print All Records</option>
               <option value="summary">Summary Report</option>
               <option value="detailed">Detailed Report</option>
               <option value="department">Department-wise Report</option>
@@ -384,7 +385,7 @@ require_once __DIR__ . '/../../core/View.php';
           <p style="margin:3px 0 0;font-size:0.75rem;color:#6b7280;font-weight:400;">View student violation analysis and history.</p>
         </div>
         <div class="modal-actions">
-          <button class="Reports-action-btn export">
+          <button class="Reports-action-btn export" id="detailExportBtn">
             <i class='bx bx-download'></i> Export
           </button>
           <button class="Reports-close-btn" id="closeDetailsModal">

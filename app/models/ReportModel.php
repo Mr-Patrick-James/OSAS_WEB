@@ -720,13 +720,39 @@ class ReportModel extends Model {
     
     /**
      * Get all violation types for dynamic reports UI
+     * Includes max_level = number of levels configured for each type
      */
     public function getViolationTypesList() {
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violation_types'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
             return [];
         }
-        return $this->query("SELECT id, name FROM violation_types ORDER BY name ASC") ?: [];
+
+        // Check if violation_levels table exists
+        $levelsCheck = @$this->conn->query("SHOW TABLES LIKE 'violation_levels'");
+        if ($levelsCheck === false || $levelsCheck->num_rows === 0) {
+            // No levels table — fall back to id/name only with default max_level of 3
+            $types = $this->query("SELECT id, name FROM violation_types ORDER BY name ASC") ?: [];
+            foreach ($types as &$t) {
+                $t['max_level'] = 3;
+            }
+            return $types;
+        }
+
+        $types = $this->query(
+            "SELECT vt.id, vt.name,
+                    COALESCE(COUNT(vl.id), 0) AS max_level
+             FROM violation_types vt
+             LEFT JOIN violation_levels vl ON vl.violation_type_id = vt.id
+             GROUP BY vt.id, vt.name
+             ORDER BY vt.name ASC"
+        ) ?: [];
+
+        foreach ($types as &$t) {
+            $t['max_level'] = max(1, (int)$t['max_level']);
+        }
+
+        return $types;
     }
 
     /**
@@ -797,8 +823,7 @@ class ReportModel extends Model {
                   FROM violations v
                   INNER JOIN students s ON BINARY v.student_id = BINARY s.student_id
                   LEFT JOIN sections sec ON s.section_id = sec.id
-                  WHERE (v.is_archived = 0 OR v.is_archived IS NULL)
-                    AND s.status != 'archived'";
+                  WHERE s.status != 'archived'";
 
         $params = [];
         $types = "";
@@ -847,8 +872,7 @@ class ReportModel extends Model {
                   FROM violations v
                   INNER JOIN students s ON BINARY v.student_id = BINARY s.student_id
                   LEFT JOIN sections sec ON s.section_id = sec.id
-                  WHERE (v.is_archived = 0 OR v.is_archived IS NULL)
-                    AND s.status != 'archived'";
+                  WHERE s.status != 'archived'";
 
         $params = [];
         $types = "";

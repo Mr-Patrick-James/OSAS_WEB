@@ -28,10 +28,6 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-header-actions">
       <div class="Violations-button-group">
-        <button id="btnMonthlyReset" class="Violations-btn outline small warning" title="Archive old violations and reset student levels">
-          <i class='bx bx-reset'></i>
-          <span>Monthly Reset</span>
-        </button>
         <!-- Import button removed -->
         <button id="btnExportViolations" class="Violations-btn outline small">
           <i class='bx bx-download'></i>
@@ -64,23 +60,12 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-stat-card">
       <div class="Violations-stat-icon">
-        <i class='bx bx-check-circle'></i>
+        <i class='bx bx-shield-quarter'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Permitted</h3>
+        <h3 class="Violations-stat-title">With Sanction</h3>
         <div class="Violations-stat-value" id="resolvedViolations">0</div>
         <div class="Violations-stat-percentage" id="resolvedViolationsPct">0%</div>
-      </div>
-    </div>
-
-    <div class="Violations-stat-card">
-      <div class="Violations-stat-icon">
-        <i class='bx bx-user-voice'></i>
-      </div>
-          <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Warning</h3>
-        <div class="Violations-stat-value" id="pendingViolations">0</div>
-        <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
       </div>
     </div>
 
@@ -89,9 +74,20 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-time-five'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">Disciplinary</h3>
+        <h3 class="Violations-stat-title">No Sanction Yet</h3>
+        <div class="Violations-stat-value" id="pendingViolations">0</div>
+        <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
+      </div>
+    </div>
+
+    <div class="Violations-stat-card">
+      <div class="Violations-stat-icon">
+        <i class='bx bx-calendar-week'></i>
+      </div>
+      <div class="Violations-stat-content">
+        <h3 class="Violations-stat-title">This Week</h3>
         <div class="Violations-stat-value" id="disciplinaryViolations">0</div>
-        <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">0%</div>
+        <div class="Violations-stat-percentage" id="disciplinaryViolationsPct">+0 this week</div>
       </div>
     </div>
   </div>
@@ -110,6 +106,17 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
 
       <div class="Violations-header-right">
+        <!-- Mobile: search bar + filter toggle on one row -->
+        <div class="Violations-mobile-filter-bar">
+          <div class="Violations-search-box" id="mobileSearchBox">
+            <i class='bx bx-search'></i>
+            <input type="text" id="searchViolationMobile" placeholder="Search violations...">
+          </div>
+          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
+            <i class='bx bx-filter-alt'></i> Filters
+          </button>
+        </div>
+
         <!-- Current Month Filters -->
         <div id="currentFilters" class="Violations-filter-group">
           <div class="Violations-search-box">
@@ -117,24 +124,24 @@ require_once __DIR__ . '/../../core/View.php';
             <input type="text" id="searchViolation" placeholder="Search violations...">
           </div>
 
-          <div class="Violations-date-filter">
-            <input type="date" id="ViolationDateFrom" class="Violations-filter-date" title="From Date">
-            <span>to</span>
-            <input type="date" id="ViolationDateTo" class="Violations-filter-date" title="To Date">
+          <div class="Violations-filter-grid">
+            <div class="Violations-date-filter">
+              <input type="date" id="ViolationDateFrom" class="Violations-filter-date" title="From Date">
+              <span>to</span>
+              <input type="date" id="ViolationDateTo" class="Violations-filter-date" title="To Date">
+            </div>
+
+            <select id="ViolationsFilter" class="Violations-filter-select">
+              <option value="all">All Departments</option>
+              <!-- Departments will be loaded via JS -->
+            </select>
+
+            <select id="ViolationsStatusFilter" class="Violations-filter-select">
+              <option value="all">All Records</option>
+              <option value="with_sanction">Has Sanction</option>
+              <option value="no_sanction">No Sanction</option>
+            </select>
           </div>
-
-          <select id="ViolationsFilter" class="Violations-filter-select">
-            <option value="all">All Departments</option>
-            <!-- Departments will be loaded via JS -->
-          </select>
-
-          <select id="ViolationsStatusFilter" class="Violations-filter-select">
-            <option value="all">All Status</option>
-            <option value="permitted">Resolved / Permitted</option>
-            <option value="warning">Warning</option>
-            <option value="disciplinary">Disciplinary</option>
-            <option value="resolved">Resolved</option>
-          </select>
         </div>
 
         <!-- Archive Filters (Initially Hidden) -->
@@ -144,65 +151,70 @@ require_once __DIR__ . '/../../core/View.php';
             <input type="text" id="searchViolationArchive" placeholder="Search archive...">
           </div>
 
-          <div class="Violations-date-filter">
-            <input type="date" id="ArchiveDateFrom" class="Violations-filter-date" title="From Date">
-            <span>to</span>
-            <input type="date" id="ArchiveDateTo" class="Violations-filter-date" title="To Date">
+          <div class="Violations-filter-grid">
+            <div class="Violations-date-filter">
+              <input type="date" id="ArchiveDateFrom" class="Violations-filter-date" title="From Date">
+              <span>to</span>
+              <input type="date" id="ArchiveDateTo" class="Violations-filter-date" title="To Date">
+            </div>
+
+            <select id="ArchiveDeptFilter" class="Violations-filter-select">
+              <option value="all">All Departments</option>
+              <!-- Departments will be loaded via JS -->
+            </select>
+
+            <select id="ArchiveYearFilter" class="Violations-filter-select" style="min-width:90px;">
+              <option value="all">All Years</option>
+              <?php
+              $currentYear = (int)date('Y');
+              for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
+                  $selected = ($y == $currentYear) ? 'selected' : '';
+                  echo "<option value='$y' $selected>$y</option>";
+              }
+              ?>
+            </select>
+            
+            <select id="ArchiveMonthFilter" class="Violations-filter-select" style="min-width:90px;">
+              <option value="all">All Months</option>
+              <?php
+              for ($i = 1; $i <= 12; $i++) {
+                  $month = date('M', mktime(0, 0, 0, $i, 1));
+                  $selected = ($i == date('n')) ? 'selected' : '';
+                  echo "<option value='$i' $selected>$month</option>";
+              }
+              ?>
+            </select>
           </div>
-
-          <select id="ArchiveDeptFilter" class="Violations-filter-select">
-            <option value="all">All Departments</option>
-            <!-- Departments will be loaded via JS -->
-          </select>
-
-          <select id="ArchiveYearFilter" class="Violations-filter-select" style="min-width:90px;">
-            <option value="all">All Years</option>
-            <?php
-            $currentYear = (int)date('Y');
-            for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
-                $selected = ($y == $currentYear) ? 'selected' : '';
-                echo "<option value='$y' $selected>$y</option>";
-            }
-            ?>
-          </select>
-          
-          <select id="ArchiveMonthFilter" class="Violations-filter-select" style="min-width:90px;">
-            <option value="all">All Months</option>
-            <?php
-            for ($i = 1; $i <= 12; $i++) {
-                $month = date('M', mktime(0, 0, 0, $i, 1));
-                $selected = ($i == date('n')) ? 'selected' : '';
-                echo "<option value='$i' $selected>$month</option>";
-            }
-            ?>
-          </select>
         </div>
 
         <button class="Violations-filter-btn" title="More filters">
           <i class='bx bx-filter-alt'></i>
         </button>
 
-        <!-- Display Mode Toggle: Latest per student vs All records -->
-        <div class="Violations-view-toggle" id="displayModeToggle">
-          <button class="Violations-display-btn active" data-display="latest" title="Latest per student">
-            <i class='bx bx-user'></i>
-          </button>
-          <button class="Violations-display-btn" data-display="all" title="All violations (full history)">
-            <i class='bx bx-history'></i>
-          </button>
-        </div>
+        <!-- Display Mode + View toggles share a row on mobile -->
+        <div class="Violations-toggles-row">
+          <!-- Display Mode Toggle: Latest per student vs All records -->
+          <div class="Violations-view-toggle" id="displayModeToggle">
+            <button class="Violations-display-btn" data-display="latest" title="Latest per student">
+              <i class='bx bx-user'></i>
+            </button>
+            <button class="Violations-display-btn active" data-display="all" title="All violations (full history)">
+              <i class='bx bx-history'></i>
+            </button>
+          </div>
 
-        <!-- View Toggle -->
-        <div class="Violations-view-toggle">
-          <button class="Violations-view-btn" data-view="table" title="Table View">
-            <i class='bx bx-table'></i>
-          </button>
-          <button class="Violations-view-btn" data-view="grid" title="Grid View">
-            <i class='bx bx-grid-alt'></i>
-          </button>
-          <button class="Violations-view-btn active" data-view="list" title="List View">
-            <i class='bx bx-list-ul'></i>
-          </button>
+          <!-- View Toggle -->
+          <div class="Violations-view-toggle">
+            <button class="Violations-view-btn" data-view="table" title="Table View">
+              <i class='bx bx-table'></i>
+            </button>
+            <button class="Violations-view-btn" data-view="grid" title="Grid View">
+              <i class='bx bx-grid-alt'></i>
+            </button>
+            <button class="Violations-view-btn active" data-view="list" title="List View">
+              <i class='bx bx-list-ul'></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -458,7 +470,6 @@ require_once __DIR__ . '/../../core/View.php';
 
         <!-- Action Buttons -->
         <div class="Violations-form-actions">
-          <input type="hidden" id="violationStatus" name="status" value="warning">
           <button type="button" class="Violations-btn-outline" id="cancelRecordModal">Cancel</button>
           <button type="button" class="Violations-btn-outline entrance-btn" id="modalEntranceBtn" style="display: none;">
             <i class='bx bx-receipt'></i> Entrance Slip
@@ -550,12 +561,17 @@ require_once __DIR__ . '/../../core/View.php';
           <div class="notes-content">
             <p id="detailNotes">No notes available.</p>
           </div>
+          <div id="detailEditAuditTrail" style="display:none;"></div>
         </div>
 
-        <!-- Evidence Section REMOVED — click the Evidence badge in Violation History to view -->
-
-        <!-- Evidence Popup (shown when clicking Evidence badge in history) -->
-        <!-- REMOVED — Evidence badge now opens lightbox directly -->
+        <!-- Sanction Description Block -->
+        <div id="detailAdminSanctionSection" style="display:none;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:14px 16px;margin:10px 0;">
+          <h4 style="display:flex;align-items:center;gap:7px;color:#b8860b;margin-bottom:8px;font-size:13px;">
+            <i class='bx bx-shield-quarter'></i>
+            Sanction: <span id="detailAdminSanctionName" style="font-weight:700;"></span>
+          </h4>
+          <p id="detailAdminSanctionDesc" style="font-size:13px;color:#374151;margin:0;line-height:1.6;">-</p>
+        </div>
 
         <!-- Image Lightbox -->
         <div id="evidenceLightbox" class="evidence-lightbox" style="display:none">
@@ -589,6 +605,9 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="violation-details-actions">
           <button class="Violations-action-btn view" id="detailRecordNewBtn" title="Record New Violation" style="background: #10b981; color: white;">
             <i class='bx bx-plus'></i> Record New
+          </button>
+          <button class="Violations-action-btn edit" id="detailEditBtn" title="Edit Violation" style="background: #3b82f6; color: white;">
+            <i class='bx bx-edit'></i> Edit
           </button>
           <button class="Violations-action-btn resolve" id="detailResolveBtn" title="Mark Resolved">
             <i class='bx bx-check'></i> Mark Resolved
@@ -632,12 +651,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="vt-manage-column">
           <div class="vt-manage-column-header">
             <h3 id="vtManageLeftTitle">Violation Types</h3>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <span class="vt-manage-count" id="vtManageTypeCount" style="margin: 0;">0</span>
-              <button type="button" class="vt-toggle-view-btn" id="vtToggleStatusesBtn" title="Manage global statuses">
-                <i class='bx bx-cog'></i>
-              </button>
-            </div>
+            <span class="vt-manage-count" id="vtManageTypeCount">0</span>
           </div>
           <div id="vtManageTypesContainer">
             <div class="vt-manage-list" id="vtManageTypesList">
@@ -647,20 +661,6 @@ require_once __DIR__ . '/../../core/View.php';
               <input type="text" id="vtNewTypeName" placeholder="New violation type name..." maxlength="255">
               <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddTypeBtn">
                 <i class='bx bx-plus'></i> Add Type
-              </button>
-            </div>
-          </div>
-          <div id="vtManageStatusesContainer" style="display: none;">
-            <div class="vt-manage-list" id="vtManageStatusesList">
-              <p class="vt-manage-empty">Loading statuses...</p>
-            </div>
-            <div class="vt-manage-add-form" style="flex-direction: column; gap: 10px;">
-              <input type="text" id="vtNewStatusName" placeholder="New status name (e.g. Expulsion)..." maxlength="100">
-              <div class="vt-color-presets" id="vtNewStatusColorPresets" style="display: flex; gap: 6px; justify-content: center; padding: 5px; background: #f8f9fa; border-radius: 6px;">
-                <!-- Colors will be added by JS -->
-              </div>
-              <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddStatusBtn">
-                <i class='bx bx-plus'></i> Add Status
               </button>
             </div>
           </div>
@@ -679,11 +679,21 @@ require_once __DIR__ . '/../../core/View.php';
           <div class="vt-manage-list" id="vtManageLevelsList">
             <p class="vt-manage-empty">Select a violation type to view its levels</p>
           </div>
-          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none; flex-direction: column; gap: 10px;">
+          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none; flex-direction: column; gap: 8px;">
             <input type="text" id="vtNewLevelName" placeholder="Level name (e.g. 6th Offense)" maxlength="255">
-            <select id="vtNewLevelStatus" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px;">
-              <!-- Will be populated by JS -->
-            </select>
+            <input type="text" id="vtNewLevelSanctionName" placeholder="Sanction name (e.g. Sanction 6 — Suspension)" maxlength="150" style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:13px;">
+            <textarea id="vtNewLevelSanctionDesc" placeholder="Sanction description — what this means for the student..." style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:12px;resize:vertical;min-height:52px;"></textarea>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:#6b7280;flex-shrink:0;">Color:</span>
+              <div id="vtNewLevelColorRow" style="display:flex;gap:5px;align-items:center;">
+                <div class="vt-color-dot active" style="background:#f59e0b;" title="Orange" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#10b981;" title="Green" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#ef4444;" title="Red" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#3b82f6;" title="Blue" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#8b5cf6;" title="Purple" onclick="updateLevelColorDot(this)"></div>
+                <div class="vt-color-dot" style="background:#6b7280;" title="Gray" onclick="updateLevelColorDot(this)"></div>
+              </div>
+            </div>
             <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
               <i class='bx bx-plus'></i> Add Level
             </button>
@@ -788,6 +798,94 @@ require_once __DIR__ . '/../../core/View.php';
 <script src="<?= View::asset('js/lib/docxtemplater.js') ?>"></script>
 <script src="<?= View::asset('js/lib/docx.js') ?>"></script>
 
+<script>
+(function () {
+  // ── Mobile filter toggle ────────────────────────────────────────────────
+  var isMobile = function () { return window.innerWidth <= 768; };
+
+  var toggleBtn   = document.getElementById('violationsFilterToggle');
+  var mobileBar   = document.querySelector('.Violations-mobile-filter-bar');
+  var mobileInput = document.getElementById('searchViolationMobile');
+
+  // Wire the mobile search input to the real hidden search input
+  if (mobileInput) {
+    mobileInput.addEventListener('input', function () {
+      var real = document.getElementById('searchViolation');
+      if (real) {
+        real.value = this.value;
+        real.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+  }
+
+  function getActiveFilterGroup() {
+    // Whichever filter group is currently "active" (not display:none)
+    var current = document.getElementById('currentFilters');
+    var archive = document.getElementById('archiveFilters');
+    if (current && current.style.display !== 'none') return current;
+    if (archive && archive.style.display !== 'none') return archive;
+    return current;
+  }
+
+  function applyMobileLayout() {
+    if (!isMobile()) {
+      // Desktop — show everything normally, hide mobile-only elements
+      if (mobileBar) mobileBar.style.display = 'none';
+      var groups = document.querySelectorAll('.Violations-filter-group');
+      groups.forEach(function (g) {
+        g.classList.remove('mobile-open');
+        // restore inline display from data-attr or let tab switching handle it
+      });
+      return;
+    }
+
+    // Mobile — show the compact bar, hide filter groups until toggle
+    if (mobileBar) mobileBar.style.display = 'flex';
+    var groups = document.querySelectorAll('.Violations-filter-group');
+    groups.forEach(function (g) {
+      if (!g.classList.contains('mobile-open')) {
+        // Only hide if not forced open
+        if (g.style.display !== 'none') {
+          // Mark it as "was visible" so we can track it
+          g.dataset.wasVisible = '1';
+        }
+      }
+    });
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function () {
+      var group = getActiveFilterGroup();
+      if (!group) return;
+      var isOpen = group.classList.contains('mobile-open');
+      group.classList.toggle('mobile-open', !isOpen);
+      toggleBtn.classList.toggle('active', !isOpen);
+      toggleBtn.innerHTML = !isOpen
+        ? '<i class=\'bx bx-x\'></i> Close'
+        : '<i class=\'bx bx-filter-alt\'></i> Filters';
+    });
+  }
+
+  // Re-run on resize
+  window.addEventListener('resize', applyMobileLayout);
+  // Initial run
+  applyMobileLayout();
+
+  // When tabs switch (Current / Archive), close any open panel and update toggle
+  document.querySelectorAll('.Violations-tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!isMobile()) return;
+      document.querySelectorAll('.Violations-filter-group').forEach(function (g) {
+        g.classList.remove('mobile-open');
+      });
+      if (toggleBtn) {
+        toggleBtn.classList.remove('active');
+        toggleBtn.innerHTML = '<i class=\'bx bx-filter-alt\'></i> Filters';
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>
 

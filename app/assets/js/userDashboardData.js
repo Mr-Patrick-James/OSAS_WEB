@@ -144,22 +144,16 @@ class UserDashboardData {
         // All-time total (active + archived)
         this.stats.totalViolations = this.allViolations ? this.allViolations.length : this.violations.length;
 
-        // Current month stats (from active violations only)
-        this.stats.activeViolations = this.violations.filter(v => {
-            const status = (v.status || '').toLowerCase();
-            const defaultStatus = (v.levelDefaultStatus || '').toLowerCase();
-            
-            // It's active if it's disciplinary or warning, or if the level defaults to those
-            return status === 'disciplinary' || status === 'warning' || 
-                   (status === 'active' && (defaultStatus === 'disciplinary' || defaultStatus === 'warning'));
-        }).length;
+        // Resolved = admin explicitly set status to 'resolved'
+        this.stats.resolvedViolations = this.violations.filter(v =>
+            (v.status || '').toLowerCase() === 'resolved'
+        ).length;
 
-        this.stats.resolvedViolations = this.violations.filter(v => {
-            const status = (v.status || '').toLowerCase();
-            const defaultStatus = (v.levelDefaultStatus || '').toLowerCase();
-            return status === 'resolved' || status === 'permitted' || 
-                   (status === 'active' && (defaultStatus === 'resolved' || defaultStatus === 'permitted'));
-        }).length;
+        // Expulsion risk = violations with sanctionName containing 'expulsion' OR highest-level sanctions
+        // For now: violations where status is NOT resolved (still active)
+        this.stats.activeViolations = this.violations.filter(v =>
+            (v.status || '').toLowerCase() !== 'resolved'
+        ).length;
 
         this.stats.violationTypes = {};
         this.violations.forEach(v => {
@@ -283,6 +277,7 @@ class UserDashboardData {
 
         this.updateViolationSummary();
         this.updateRecentViolationsTable();
+        this.updateSanctionsCard();
         this.updateAnnouncementsDisplay();
         this.updateDashcontents();
         console.log('✅ Dashboard display updated');
@@ -388,25 +383,19 @@ class UserDashboardData {
         };
 
         container.innerHTML = sorted.map(v => {
+            const sanctionName = v.sanctionName || null;
             const typeLabel = v.violationTypeLabel || v.violation_type_name || v.violation_type || v.type || 'Unknown';
             const date = new Date(v.date || v.created_at || v.violation_date)
                 .toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
-            const status = (v.status || 'warning').toLowerCase();
-            const level = String(v.violation_level_name || v.violationLevelLabel || v.level || v.offense_level || '').toLowerCase();
-            const isDisciplinary = level.includes('3') || level.includes('disciplinary') || status === 'disciplinary';
-
             let badgeClass, badgeText;
-            if (status === 'resolved') {
-                badgeClass = 'sd-badge--resolved'; badgeText = 'Resolved';
-            } else if (status === 'permitted') {
-                badgeClass = 'sd-badge--resolved'; badgeText = 'Permitted';
-            } else if (status === 'disciplinary' || isDisciplinary) {
-                badgeClass = 'sd-badge--warning'; badgeText = 'Disciplinary';
-            } else if (status === 'warning') {
-                badgeClass = 'sd-badge--pending'; badgeText = 'Warning';
+            if (sanctionName) {
+                badgeClass = 'sd-badge--sanction'; badgeText = sanctionName;
             } else {
-                badgeClass = 'sd-badge--pending'; badgeText = 'Pending';
+                // Fallback: show offense level name instead of raw status
+                const levelName = v.violationLevelLabel || v.violation_level_name || v.level || '';
+                badgeClass = 'sd-badge--pending';
+                badgeText = levelName || 'Recorded';
             }
 
             const iconType = getIconColor(typeLabel);
@@ -431,6 +420,54 @@ class UserDashboardData {
                     </div>
                 </div>`;
         }).join('');
+    }
+
+    updateSanctionsCard() {
+        const container = document.getElementById('sdSanctionsList');
+        const card = document.getElementById('sdSanctionsCard');
+        if (!container) return;
+
+        const allViolations = this.allViolations || this.violations || [];
+
+        // Collect unique sanctions from the student's violations (dedupe by sanction name + type)
+        const seen = new Set();
+        const sanctions = [];
+        allViolations.forEach(v => {
+            if (!v.sanctionName) return;
+            const key = `${v.sanctionName}||${v.violationTypeLabel || ''}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            sanctions.push({
+                name: v.sanctionName,
+                description: v.sanctionDescription || '',
+                type: v.violationTypeLabel || v.violation_type_name || '',
+                level: v.violationLevelLabel || v.violation_level_name || '',
+                date: v.dateReported || v.date || v.created_at || ''
+            });
+        });
+
+        // Hide the whole card if no sanctions
+        if (card) card.style.display = sanctions.length === 0 ? 'none' : '';
+
+        if (sanctions.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = sanctions.map(s => `
+            <div style="background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <i class='bx bx-shield-quarter' style="font-size:16px;color:#92650a;flex-shrink:0;"></i>
+                    <strong style="font-size:13px;color:#92650a;">${this.escapeHtml(s.name)}</strong>
+                    ${s.type ? `<span style="font-size:11px;color:#6b7280;margin-left:auto;">for ${this.escapeHtml(s.type)}</span>` : ''}
+                </div>
+                ${s.level ? `<div style="font-size:11px;color:#6b7280;margin-bottom:4px;"><i class='bx bx-chevron-right' style="vertical-align:middle;"></i> ${this.escapeHtml(s.level)}</div>` : ''}
+                ${s.description
+                    ? `<p style="font-size:12px;color:#374151;margin:0;line-height:1.6;">${this.escapeHtml(s.description)}</p>`
+                    : `<p style="font-size:12px;color:#9ca3af;margin:0;font-style:italic;">No description provided.</p>`
+                }
+            </div>
+        `).join('');
     }
 
     updateAnnouncementsDisplay() {

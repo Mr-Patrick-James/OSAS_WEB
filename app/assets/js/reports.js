@@ -109,9 +109,10 @@ function initReportsModule() {
         function renderTypeCountCells(report) {
             return reportViolationTypes.map(type => {
                 const count = getReportTypeCount(report, type.id);
-                const countClass = getCountBadgeClass(count);
+                const maxLevel = type.max_level || 3;
+                const countClass = getCountBadgeClass(count, maxLevel);
                 return `<td class="violation-count" data-label="${type.name}">
-                    <div class="count-badge ${countClass}">${count}/5</div>
+                    <div class="count-badge ${countClass}">${count}/${maxLevel}</div>
                 </td>`;
             }).join('');
         }
@@ -247,9 +248,10 @@ function initReportsModule() {
             return classes[status] || 'default';
         }
 
-        function getCountBadgeClass(count) {
-            if (count >= 3) return 'high';
-            if (count >= 2) return 'medium';
+        function getCountBadgeClass(count, maxLevel) {
+            const max = maxLevel || 3;
+            if (count >= max) return 'high';
+            if (count >= Math.ceil(max / 2)) return 'medium';
             if (count >= 1) return 'low';
             return 'none';
         }
@@ -271,28 +273,35 @@ function initReportsModule() {
                 return `<span class="Reports-status-badge ${getStatusClass(report.status)}" style="font-size:9px;">Total: ${report.totalViolations}</span>`;
             }
 
-            const offenseLabels = ['', '1st', '2nd', '3rd', '4th', '5th'];
             const parts = [];
 
             reportViolationTypes.forEach(type => {
                 const count = getReportTypeCount(report, type.id);
                 if (count <= 0) return;
 
-                const level = Math.min(count, 5);
+                const maxLevel = type.max_level || 3;
+                const level = Math.min(count, maxLevel);
+
                 let badgeClass;
-                if (level <= 2) badgeClass = 'permitted';
-                else if (level <= 4) badgeClass = 'warning';
-                else badgeClass = 'disciplinary';
+                if (level >= maxLevel) badgeClass = 'disciplinary';
+                else if (level >= Math.ceil(maxLevel / 2)) badgeClass = 'warning';
+                else badgeClass = 'permitted';
 
                 const shortName = type.name.length > 14 ? `${type.name.slice(0, 12)}…` : type.name;
-                const offenseLabel = level >= 5 ? 'DISCIPLINARY' : `${offenseLabels[level]} OFFENSE`;
-                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${shortName}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/5 ${offenseLabel}</strong>`);
+                const offenseLabel = level >= maxLevel ? 'DISCIPLINARY' : `${getOrdinal(level)} OFFENSE`;
+                parts.push(`<span style="font-size:9px;color:var(--dark-grey);">${shortName}:</span> <strong class="Reports-status-badge ${badgeClass}" style="font-size:9px;padding:1px 6px;">${level}/${maxLevel} ${offenseLabel}</strong>`);
             });
 
             if (parts.length === 0) {
                 return `<span class="Reports-status-badge ${getStatusClass(report.status)}" style="font-size:9px;">Total: ${report.totalViolations}</span>`;
             }
             return parts.join(' ');
+        }
+
+        function getOrdinal(n) {
+            const s = ['th','st','nd','rd'];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
         }
 
         function getCurrentAdminName() {
@@ -546,7 +555,8 @@ function initReportsModule() {
             } else {
                 tableBody.innerHTML = pageItems.map(report => {
                     const deptClass    = getDepartmentClass(report.deptCode);
-                    const totalClass   = getCountBadgeClass(report.totalViolations);
+                    const totalMaxLevel = reportViolationTypes.reduce((sum, t) => sum + (t.max_level || 3), 0) || 3;
+                    const totalClass   = getCountBadgeClass(report.totalViolations, totalMaxLevel);
                     return `
                     <tr data-id="${report.id}">
                         <td class="report-student-info" data-label="Student">
@@ -587,15 +597,17 @@ function initReportsModule() {
                 } else {
                     gridBody.innerHTML = pageItems.map(report => {
                         const deptClass    = getDepartmentClass(report.deptCode);
-                        const totalClass   = getCountBadgeClass(report.totalViolations);
+                        const totalMaxLevel = reportViolationTypes.reduce((sum, t) => sum + (t.max_level || 3), 0) || 3;
+                        const totalClass   = getCountBadgeClass(report.totalViolations, totalMaxLevel);
                         const typeCountItems = reportViolationTypes.map(type => {
                             const count = getReportTypeCount(report, type.id);
-                            const countClass = getCountBadgeClass(count);
+                            const maxLevel = type.max_level || 3;
+                            const countClass = getCountBadgeClass(count, maxLevel);
                             const shortName = type.name.length > 12 ? `${type.name.slice(0, 10)}…` : type.name;
                             return `
                                     <div class="report-card-count-item">
                                         <span class="report-card-count-label">${shortName}</span>
-                                        <span class="report-card-count-value ${countClass}">${count}/5</span>
+                                        <span class="report-card-count-value ${countClass}">${count}/${maxLevel}</span>
                                     </div>`;
                         }).join('');
                         return `
@@ -838,6 +850,7 @@ function initReportsModule() {
                 if (reportViolationTypes && reportViolationTypes.length > 0) {
                     reportViolationTypes.forEach(type => {
                         const count = getReportTypeCount(report, type.id);
+                        const maxLevel = type.max_level || 3;
                         // Only show if count > 0 or it's one of the main types the user expects
                         const isMainType = ['uniform', 'footwear', 'shoe', 'id'].some(kw => type.name.toLowerCase().includes(kw));
                         
@@ -849,7 +862,7 @@ function initReportsModule() {
                                     </div>
                                     <div class="stat-content">
                                         <span class="stat-title">${type.name}</span>
-                                        <span class="stat-value">${count}/5</span>
+                                        <span class="stat-value">${count}/${maxLevel}</span>
                                     </div>
                                 </div>
                             `;
@@ -862,21 +875,21 @@ function initReportsModule() {
                             <div class="stat-icon"><i class='bx bxs-t-shirt'></i></div>
                             <div class="stat-content">
                                 <span class="stat-title">Uniform Violations</span>
-                                <span class="stat-value">${report.uniformCount}/5</span>
+                                <span class="stat-value">${report.uniformCount}</span>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon"><i class='bx bxs-walk'></i></div>
                             <div class="stat-content">
                                 <span class="stat-title">Footwear Violations</span>
-                                <span class="stat-value">${report.footwearCount}/5</span>
+                                <span class="stat-value">${report.footwearCount}</span>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon"><i class='bx bxs-id-card'></i></div>
                             <div class="stat-content">
                                 <span class="stat-title">No ID Violations</span>
-                                <span class="stat-value">${report.noIdCount}/5</span>
+                                <span class="stat-value">${report.noIdCount}</span>
                             </div>
                         </div>
                     `;
@@ -1248,10 +1261,11 @@ function initReportsModule() {
                             console.log('📊 Exporting report...', {
                                 format: reportFormat,
                                 totalReports: data.reports.length,
-                                isChecked: isChecked
+                                isChecked: isChecked,
+                                selectedViolationTypes: data.selectedViolationTypes
                             });
                             
-                            await downloadPDF(data.reports, reportName || 'Violation Report', isChecked);
+                            await downloadPDF(data.reports, reportName || 'Violation Report', isChecked, reportType, data.selectedViolationTypes);
                         } else {
                             showError('No reports found to export for the selected criteria.');
                         }
@@ -1263,6 +1277,25 @@ function initReportsModule() {
                 } else {
                     showError('Error generating reports: ' + (data.message || 'Unknown error'));
                 }
+                    // Check for client-side download (DOCX)
+                    if (reportFormat === 'docx') {
+                        if (data.reports && data.reports.length > 0) {
+                            // Get the checkbox directly from the document to be absolutely sure
+                            const includeChartsCheckbox = document.getElementById('includeCharts');
+                            const isChecked = includeChartsCheckbox ? includeChartsCheckbox.checked : false;
+                            
+                            console.log('📝 Exporting DOCX report...', {
+                                format: reportFormat,
+                                totalReports: data.reports.length,
+                                isChecked: isChecked,
+                                selectedViolationTypes: data.selectedViolationTypes
+                            });
+                            
+                            await downloadDOCX(data.reports, reportName || 'Violation Report', isChecked, data.selectedViolationTypes);
+                        } else {
+                            showError('No reports found to export for the selected criteria.');
+                        }
+                    }
                 } catch (error) {
                     console.error('Error generating reports:', error);
                     alert('Error generating reports: ' + error.message);
@@ -1305,7 +1338,7 @@ function initReportsModule() {
                 const reportId = detailsModal.dataset.viewingId;
                 const report = reports.find(r => r.id === parseInt(reportId));
                 if (report) {
-                    downloadSingleReport(report);
+                    printReport(report);
                 }
             });
         }
@@ -1466,13 +1499,23 @@ function initReportsModule() {
                 doc.text("Violation Summary", 14, y);
                 y += 5;
 
-                const statsTable = [
-                    ["Violation Type", "Count"],
-                    ["Improper Uniform", report.uniformCount.toString()],
-                    ["Improper Footwear", report.footwearCount.toString()],
-                    ["No ID", report.noIdCount.toString()],
-                    ["Total Violations", report.totalViolations.toString()]
-                ];
+                const statsTable = [["Violation Type", "Count"]];
+                
+                if (window.reportViolationTypes && window.reportViolationTypes.length > 0) {
+                    window.reportViolationTypes.forEach(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        if (count > 0) {
+                            statsTable.push([type.name, count.toString()]);
+                        }
+                    });
+                } else {
+                    // Fallback to basic counts if types not loaded
+                    if (report.uniformCount) statsTable.push(["Improper Uniform", report.uniformCount.toString()]);
+                    if (report.footwearCount) statsTable.push(["Improper Footwear", report.footwearCount.toString()]);
+                    if (report.noIdCount) statsTable.push(["No ID", report.noIdCount.toString()]);
+                }
+                
+                statsTable.push(["Total Violations", report.totalViolations.toString()]);
 
                 doc.autoTable({
                     body: statsTable.slice(1),
@@ -1534,7 +1577,8 @@ function initReportsModule() {
             }
         }
 
-        async function downloadPDF(reportsData, filenamePrefix, isChecked = false) {
+        async function downloadPDF(reportsData, filenamePrefix, isChecked = false, reportType = 'detailed', selectedTypes = null) {
+            const typesToUse = selectedTypes && selectedTypes.length > 0 ? selectedTypes : reportViolationTypes;
             if (!window.jspdf) {
                 showError('PDF library not loaded. Please refresh the page.');
                 return;
@@ -1572,7 +1616,14 @@ function initReportsModule() {
             doc.setFontSize(12); // Reduced from 14
             doc.setTextColor(41, 128, 185); 
             doc.setFont("helvetica", "bold");
-            doc.text("VIOLATION ANALYSIS REPORT", 105, 38, { align: 'center' });
+            let reportTitle = "VIOLATION ANALYSIS REPORT";
+            if (reportType === 'print_all') reportTitle = "ALL STUDENT VIOLATION RECORDS";
+            else if (reportType === 'summary') reportTitle = "SUMMARY VIOLATION REPORT";
+            else if (reportType === 'detailed') reportTitle = "DETAILED VIOLATION REPORT";
+            else if (reportType === 'department') reportTitle = "DEPARTMENT-WISE VIOLATION REPORT";
+            else if (reportType === 'violation_type') reportTitle = "VIOLATION TYPE REPORT";
+            else if (reportType === 'time_series') reportTitle = "TIME SERIES VIOLATION ANALYSIS";
+            doc.text(reportTitle, 105, 38, { align: 'center' });
 
             doc.setFontSize(8); // Reduced from 9
             doc.setTextColor(100, 100, 100);
@@ -1592,47 +1643,434 @@ function initReportsModule() {
             
             let startY = 67;
 
-            // Table
-            const tableColumn = ["Student ID", "Name", "Dept", "Section", "Period", "Uniform", "Footwear", "No ID", "Total"];
-            const tableRows = [];
+            if (reportType === 'print_all') {
+                // Print All Records - original table view
+                const tableColumn = ["Student ID", "Name", "Dept", "Section", "Year", ...typesToUse.map(t => t.name), "Total"];
+                const tableRows = [];
 
-            reportsData.forEach(report => {
-                const reportData = [
-                    report.studentId,
-                    report.studentName,
-                    report.department,
-                    report.section,
-                    getReportPeriodLabel(report),
-                    report.uniformCount + '/5',
-                    report.footwearCount + '/5',
-                    report.noIdCount + '/5',
-                    report.totalViolations
+                reportsData.forEach(report => {
+                    const reportData = [
+                        report.studentId,
+                        report.studentName,
+                        report.deptCode || report.department,
+                        report.section,
+                        report.yearlevel || 'N/A',
+                        ...typesToUse.map(type => getReportTypeCount(report, type.id) + '/' + (type.max_level || 3)),
+                        report.totalViolations
+                    ];
+                    tableRows.push(reportData);
+                });
+
+                doc.autoTable({
+                    head: [tableColumn],
+                    body: tableRows,
+                    startY: startY,
+                    theme: 'grid',
+                    styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
+                    headStyles: { 
+                        fillColor: [41, 128, 185], 
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold',
+                        lineWidth: 0.1,
+                        lineColor: [200, 200, 200]
+                    }
+                });
+            } else if (reportType === 'summary') {
+                // Summary Report: High-level stats
+                doc.setFontSize(11);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("SUMMARY STATISTICS", 14, startY);
+                startY += 7;
+
+                const totalViolations = reportsData.reduce((sum, r) => sum + r.totalViolations, 0);
+                const deptCounts = {};
+                const typeCountsMap = {};
+                const statusCounts = { permitted: 0, warning: 0, disciplinary: 0 };
+                typesToUse.forEach(t => typeCountsMap[t.id] = 0);
+
+                reportsData.forEach(r => {
+                    const dept = r.department || 'Unknown';
+                    deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+                    typesToUse.forEach(t => {
+                        typeCountsMap[t.id] += getReportTypeCount(r, t.id);
+                    });
+                    if (r.status && statusCounts.hasOwnProperty(r.status)) {
+                        statusCounts[r.status]++;
+                    }
+                });
+
+                // Key Metrics Table
+                const summaryTable = [
+                    ["Metric", "Value"],
+                    ["Total Students", reportsData.length.toString()],
+                    ["Total Violations", totalViolations.toString()],
+                    ["Average Violations/Student", (totalViolations / reportsData.length).toFixed(2)]
                 ];
-                tableRows.push(reportData);
-            });
 
-            doc.autoTable({
-                head: [tableColumn],
-                body: tableRows,
-                startY: startY,
-                theme: 'grid',
-                styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
-                headStyles: { 
-                    fillColor: [245, 245, 245], 
-                    textColor: [44, 62, 80], 
-                    fontStyle: 'bold',
-                    lineWidth: 0.1,
-                    lineColor: [200, 200, 200]
-                },
-                columnStyles: {
-                    0: { cellWidth: 25 }, // Student ID
-                    1: { cellWidth: 'auto' }, // Name
-                    7: { halign: 'center' }, // Total
-                    8: { halign: 'center' }  // Status
-                },
-                alternateRowStyles: { fillColor: [255, 255, 255] },
-                margin: { top: 60 }
-            });
+                doc.autoTable({
+                    head: [summaryTable[0]],
+                    body: summaryTable.slice(1),
+                    startY: startY,
+                    theme: 'grid',
+                    styles: { fontSize: 9, cellPadding: 4 },
+                    headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+                });
+                startY = doc.lastAutoTable.finalY + 10;
+
+                // Status Breakdown
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.text("STATUS BREAKDOWN", 14, startY);
+                startY += 5;
+                const statusTable = [
+                    ["Status", "Student Count"],
+                    ["Permitted", statusCounts.permitted.toString()],
+                    ["Warning", statusCounts.warning.toString()],
+                    ["Disciplinary Action", statusCounts.disciplinary.toString()]
+                ];
+                doc.autoTable({
+                    head: [statusTable[0]],
+                    body: statusTable.slice(1),
+                    startY: startY,
+                    theme: 'striped',
+                    styles: { fontSize: 9 },
+                    headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80] }
+                });
+                startY = doc.lastAutoTable.finalY + 10;
+
+                // Top Departments
+                doc.setFont("helvetica", "bold");
+                doc.text("TOP DEPARTMENTS", 14, startY);
+                startY += 5;
+                const sortedDepts = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]);
+                const deptTable = sortedDepts.map(([dept, count]) => [dept, count.toString()]);
+                if (deptTable.length > 0) {
+                    doc.autoTable({
+                        head: [["Department", "Student Count"]],
+                        body: deptTable,
+                        startY: startY,
+                        theme: 'striped',
+                        styles: { fontSize: 9 }
+                    });
+                    startY = doc.lastAutoTable.finalY + 10;
+                }
+
+                // Top Violation Types
+                doc.setFont("helvetica", "bold");
+                doc.text("TOP VIOLATION TYPES", 14, startY);
+                startY += 5;
+                const typeTable = typesToUse.map(t => [t.name, typeCountsMap[t.id].toString()])
+                    .sort((a, b) => parseInt(b[1]) - parseInt(a[1]));
+                doc.autoTable({
+                    head: [["Violation Type", "Total Count"]],
+                    body: typeTable,
+                    startY: startY,
+                    theme: 'striped',
+                    styles: { fontSize: 9 }
+                });
+
+            } else if (reportType === 'department') {
+                // Department-wise Report
+                const deptGroups = {};
+                reportsData.forEach(r => {
+                    const dept = r.department || 'Unknown';
+                    if (!deptGroups[dept]) deptGroups[dept] = [];
+                    deptGroups[dept].push(r);
+                });
+
+                Object.keys(deptGroups).sort().forEach(dept => {
+                    if (startY > 200) {
+                        doc.addPage();
+                        startY = 20;
+                    }
+
+                    const deptReports = deptGroups[dept];
+                    const deptTotal = deptReports.reduce((sum, r) => sum + r.totalViolations, 0);
+                    const avgDept = (deptTotal / deptReports.length).toFixed(2);
+
+                    // Department Header
+                    doc.setFontSize(12);
+                    doc.setTextColor(41, 128, 185);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`${dept}`, 14, startY);
+                    startY += 5;
+                    
+                    // Department Summary
+                    doc.setFontSize(9);
+                    doc.setTextColor(60, 60, 60);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Students: ${deptReports.length} • Total Violations: ${deptTotal} • Avg/Student: ${avgDept}`, 14, startY);
+                    startY += 7;
+
+                    // Department Students Table
+                    const deptTable = [
+                        ["Student ID", "Name", "Section", "Year", "Total Violations", "Status"]
+                    ];
+                    deptReports.forEach(r => {
+                        deptTable.push([
+                            r.studentId, 
+                            r.studentName, 
+                            r.section || 'N/A', 
+                            r.yearlevel || 'N/A',
+                            r.totalViolations.toString(),
+                            r.status || 'N/A'
+                        ]);
+                    });
+
+                    doc.autoTable({
+                        head: [deptTable[0]],
+                        body: deptTable.slice(1),
+                        startY: startY,
+                        theme: 'grid',
+                        styles: { fontSize: 8, cellPadding: 3 },
+                        headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80] }
+                    });
+                    startY = doc.lastAutoTable.finalY + 10;
+
+                    // Divider
+                    if (dept !== Object.keys(deptGroups).sort().reverse()[0]) {
+                        doc.setDrawColor(220, 220, 220);
+                        doc.setLineWidth(0.5);
+                        doc.line(14, startY, 196, startY);
+                        startY += 8;
+                    }
+                });
+
+            } else if (reportType === 'violation_type') {
+                // Violation Type Report
+                doc.setFontSize(11);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("VIOLATION TYPE ANALYSIS", 14, startY);
+                startY += 7;
+
+                typesToUse.forEach((type, index) => {
+                    if (startY > 210) {
+                        doc.addPage();
+                        startY = 20;
+                    }
+
+                    const typeReports = reportsData.filter(r => getReportTypeCount(r, type.id) > 0);
+                    const totalType = typeReports.reduce((sum, r) => sum + getReportTypeCount(r, type.id), 0);
+
+                    // Violation Type Header
+                    doc.setFontSize(10);
+                    doc.setTextColor(41, 128, 185);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`${type.name}`, 14, startY);
+                    startY += 5;
+
+                    // Violation Type Summary
+                    doc.setFontSize(9);
+                    doc.setTextColor(60, 60, 60);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Total: ${totalType} • Affected Students: ${typeReports.length} • Max Level: ${type.max_level || 3}`, 14, startY);
+                    startY += 7;
+
+                    const typeTable = [
+                        ["Student ID", "Name", "Department", "Section", "Count", "Status"]
+                    ];
+                    typeReports.forEach(r => {
+                        typeTable.push([
+                            r.studentId, 
+                            r.studentName, 
+                            r.department || 'N/A', 
+                            r.section || 'N/A', 
+                            getReportTypeCount(r, type.id).toString(),
+                            r.status || 'N/A'
+                        ]);
+                    });
+
+                    if (typeTable.length > 1) {
+                        doc.autoTable({
+                            head: [typeTable[0]],
+                            body: typeTable.slice(1),
+                            startY: startY,
+                            theme: 'striped',
+                            styles: { fontSize: 8, cellPadding: 3 },
+                            headStyles: { fillColor: [245, 245, 245], textColor: [44, 62, 80] }
+                        });
+                        startY = doc.lastAutoTable.finalY + 8;
+                    } else {
+                        doc.setFontSize(9);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text("No violations of this type in the selected criteria.", 14, startY);
+                        startY += 7;
+                    }
+
+                    // Divider
+                    if (index < reportViolationTypes.length - 1) {
+                        doc.setDrawColor(220, 220, 220);
+                        doc.setLineWidth(0.5);
+                        doc.line(14, startY, 196, startY);
+                        startY += 8;
+                    }
+                });
+
+            } else if (reportType === 'time_series') {
+                // Time Series Report
+                doc.setFontSize(11);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont("helvetica", "bold");
+                doc.text("TIME SERIES ANALYSIS", 14, startY);
+                startY += 7;
+
+                // Group by date (using lastUpdated or periodStart)
+                const dateGroups = {};
+                reportsData.forEach(r => {
+                    const dateStr = r.periodStart || r.lastUpdated;
+                    if (dateStr) {
+                        if (!dateGroups[dateStr]) dateGroups[dateStr] = { count: 0, students: new Set() };
+                        dateGroups[dateStr].count += r.totalViolations;
+                        dateGroups[dateStr].students.add(r.studentId);
+                    }
+                });
+
+                const sortedDates = Object.keys(dateGroups).sort();
+                
+                if (sortedDates.length > 0) {
+                    const timeTable = [["Date", "Total Violations", "Unique Students", "Avg Violations/Student"]];
+                    sortedDates.forEach(date => {
+                        const avg = (dateGroups[date].count / dateGroups[date].students.size).toFixed(2);
+                        timeTable.push([
+                            date, 
+                            dateGroups[date].count.toString(), 
+                            dateGroups[date].students.size.toString(),
+                            avg
+                        ]);
+                    });
+
+                    doc.autoTable({
+                        head: [timeTable[0]],
+                        body: timeTable.slice(1),
+                        startY: startY,
+                        theme: 'grid',
+                        styles: { fontSize: 9, cellPadding: 4 },
+                        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+                    });
+                    startY = doc.lastAutoTable.finalY + 10;
+
+                    // Summary Stats for Time Period
+                    const totalPeriodViolations = sortedDates.reduce((sum, date) => sum + dateGroups[date].count, 0);
+                    const totalPeriodStudents = new Set();
+                    sortedDates.forEach(date => {
+                        dateGroups[date].students.forEach(s => totalPeriodStudents.add(s));
+                    });
+                    
+                    doc.setFontSize(10);
+                    doc.setTextColor(44, 62, 80);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("PERIOD SUMMARY", 14, startY);
+                    startY += 5;
+                    
+                    doc.setFontSize(9);
+                    doc.setFont("helvetica", "normal");
+                    const summaryText = `Total Violations: ${totalPeriodViolations} • Unique Students: ${totalPeriodStudents.size} • Date Range: ${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}`;
+                    doc.text(summaryText, 14, startY);
+                } else {
+                    doc.setFontSize(9);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text("No date information available for time series analysis.", 14, startY);
+                }
+
+            } else {
+                // Detailed Report (default) - with more details per student
+                reportsData.forEach((report, index) => {
+                    if (startY > 200) {
+                        doc.addPage();
+                        startY = 20;
+                    }
+
+                    // Student Header
+                    doc.setFontSize(11);
+                    doc.setTextColor(41, 128, 185);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`${report.studentName} (${report.studentId})`, 14, startY);
+                    startY += 5;
+
+                    // Student Info
+                    doc.setFontSize(9);
+                    doc.setTextColor(60, 60, 60);
+                    doc.setFont("helvetica", "normal");
+                    const deptSection = `${report.department || 'N/A'} • ${report.section || 'N/A'} • Year: ${report.yearlevel || 'N/A'}`;
+                    doc.text(deptSection, 14, startY);
+                    startY += 7;
+
+                    // Violation Summary Table
+                    const summaryTable = [
+                        ["Violation Type", "Count"],
+                        ...typesToUse.map(t => [t.name, getReportTypeCount(report, t.id) + '/' + (t.max_level || 3)]),
+                        ["TOTAL", report.totalViolations.toString()]
+                    ];
+
+                    doc.autoTable({
+                        head: [summaryTable[0]],
+                        body: summaryTable.slice(1),
+                        startY: startY,
+                        theme: 'grid',
+                        styles: { fontSize: 8, cellPadding: 3 },
+                        headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255] },
+                        columnStyles: {
+                            0: { cellWidth: 100 },
+                            1: { halign: 'center' }
+                        }
+                    });
+                    startY = doc.lastAutoTable.finalY + 7;
+
+                    // Violation History (if available)
+                    if (report.history && report.history.length > 0) {
+                        doc.setFontSize(9);
+                        doc.setTextColor(44, 62, 80);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Violation History", 14, startY);
+                        startY += 5;
+
+                        const historyTable = report.history.map(h => [h.date || 'N/A', h.title || 'N/A', h.desc || '']);
+                        doc.autoTable({
+                            head: [["Date", "Offense", "Notes"]],
+                            body: historyTable,
+                            startY: startY,
+                            theme: 'striped',
+                            styles: { fontSize: 7 },
+                            columnStyles: {
+                                0: { cellWidth: 30 },
+                                1: { cellWidth: 70 },
+                                2: { cellWidth: 'auto' }
+                            }
+                        });
+                        startY = doc.lastAutoTable.finalY + 7;
+                    }
+
+                    // Recommendations
+                    if (report.recommendations && report.recommendations.length > 0) {
+                        doc.setFontSize(9);
+                        doc.setTextColor(44, 62, 80);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Recommendations", 14, startY);
+                        startY += 5;
+
+                        doc.setFont("helvetica", "normal");
+                        report.recommendations.forEach(rec => {
+                            if (startY > 280) {
+                                doc.addPage();
+                                startY = 20;
+                            }
+                            doc.text(`• ${rec}`, 14, startY);
+                            startY += 5;
+                        });
+                        startY += 2;
+                    }
+
+                    // Divider
+                    if (index < reportsData.length - 1) {
+                        doc.setDrawColor(220, 220, 220);
+                        doc.setLineWidth(0.5);
+                        doc.line(14, startY, 196, startY);
+                        startY += 10;
+                    }
+                });
+            }
 
             // Charts Section (Bottom)
             if (isChecked === true) {
@@ -1671,19 +2109,25 @@ function initReportsModule() {
                     };
                     
                     // Type Data
-                    const typeCounts = { uniform: 0, footwear: 0, noId: 0 };
-                    reportsData.forEach(r => {
-                        typeCounts.uniform += parseInt(r.uniformCount) || 0;
-                        typeCounts.footwear += parseInt(r.footwearCount) || 0;
-                        typeCounts.noId += parseInt(r.noIdCount) || 0;
+                    const typeCountsArray = [];
+                    const typeLabels = [];
+                    const typeColors = ['#4e73df', '#f6c23e', '#e74a3b', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#76A346'];
+                    
+                    typesToUse.forEach((type, index) => {
+                        typeLabels.push(type.name);
+                        let count = 0;
+                        reportsData.forEach(r => {
+                            count += getReportTypeCount(r, type.id);
+                        });
+                        typeCountsArray.push(count);
                     });
 
                     const typeChartData = {
-                        labels: ['Uniform', 'Footwear', 'No ID'],
+                        labels: typeLabels,
                         datasets: [{
                             label: 'Violations',
-                            data: [typeCounts.uniform, typeCounts.footwear, typeCounts.noId],
-                            backgroundColor: ['#4e73df', '#f6c23e', '#e74a3b']
+                            data: typeCountsArray,
+                            backgroundColor: typeColors.slice(0, typeLabels.length)
                         }]
                     };
 
@@ -1718,7 +2162,8 @@ function initReportsModule() {
             doc.save(`${filenamePrefix}_${now.toISOString().slice(0, 10)}.pdf`);
         }
 
-        async function downloadDOCX(reportsData, filenamePrefix, isChecked = false) {
+        async function downloadDOCX(reportsData, filenamePrefix, isChecked = false, selectedTypes = null) {
+            const typesToUse = selectedTypes && selectedTypes.length > 0 ? selectedTypes : reportViolationTypes;
             if (!window.docx) {
                 showError('DOCX library not loaded. Please refresh the page.');
                 return;
@@ -1823,18 +2268,24 @@ function initReportsModule() {
                         }]
                     };
 
-                    const typeCounts = { uniform: 0, footwear: 0, noId: 0 };
-                    reportsData.forEach(r => {
-                        typeCounts.uniform += parseInt(r.uniformCount) || 0;
-                        typeCounts.footwear += parseInt(r.footwearCount) || 0;
-                        typeCounts.noId += parseInt(r.noIdCount) || 0;
+                    const typeCountsArray = [];
+                    const typeLabels = [];
+                    const typeColors = ['#4e73df', '#f6c23e', '#e74a3b', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#76A346'];
+                    
+                    typesToUse.forEach((type, index) => {
+                        typeLabels.push(type.name);
+                        let count = 0;
+                        reportsData.forEach(r => {
+                            count += getReportTypeCount(r, type.id);
+                        });
+                        typeCountsArray.push(count);
                     });
                     const typeChartData = {
-                        labels: ['Uniform', 'Footwear', 'No ID'],
+                        labels: typeLabels,
                         datasets: [{
                             label: 'Violations',
-                            data: [typeCounts.uniform, typeCounts.footwear, typeCounts.noId],
-                            backgroundColor: ['#4e73df', '#f6c23e', '#e74a3b']
+                            data: typeCountsArray,
+                            backgroundColor: typeColors.slice(0, typeLabels.length)
                         }]
                     };
 
@@ -1882,17 +2333,19 @@ function initReportsModule() {
             }
             
             // Table Header with modern styling
+            const headerColumns = [
+                "Student ID", "Name", "Dept", "Section", "Period", ...typesToUse.map(t => t.name), "Total"
+            ];
+            const columnCount = headerColumns.length;
             const tableHeader = new TableRow({
-                children: [
-                    "Student ID", "Name", "Dept", "Section", "Period", "Uniform", "Footwear", "No ID", "Total"
-                ].map(text => new TableCell({
+                children: headerColumns.map(text => new TableCell({
                     children: [new Paragraph({ 
                         children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
                         alignment: AlignmentType.CENTER
                     })],
                     shading: { fill: "2C3E50", val: "clear", color: "auto" },
                     verticalAlign: VerticalAlign.CENTER,
-                    width: { size: 100 / 9, type: WidthType.PERCENTAGE },
+                    width: { size: 100 / columnCount, type: WidthType.PERCENTAGE },
                     margins: { top: 80, bottom: 80, left: 80, right: 80 }
                 })),
                 tableHeader: true,
@@ -1904,25 +2357,29 @@ function initReportsModule() {
                 const isEven = index % 2 === 0;
                 const rowColor = isEven ? "FFFFFF" : "F8F9FA";
                 
+                const rowColumns = [
+                    report.studentId,
+                    report.studentName,
+                    report.department,
+                    report.section,
+                    getReportPeriodLabel(report),
+                    ...typesToUse.map(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        const maxLevel = type.max_level || 3;
+                        return count + '/' + maxLevel;
+                    }),
+                    String(report.totalViolations)
+                ];
+                
                 return new TableRow({
-                    children: [
-                        report.studentId,
-                        report.studentName,
-                        report.department,
-                        report.section,
-                        getReportPeriodLabel(report),
-                        report.uniformCount + '/5',
-                        report.footwearCount + '/5',
-                        report.noIdCount + '/5',
-                        String(report.totalViolations)
-                    ].map(text => new TableCell({
+                    children: rowColumns.map(text => new TableCell({
                         children: [new Paragraph({ 
                             children: [new TextRun({ text: text || "", size: 18 })],
                             alignment: AlignmentType.LEFT
                         })],
                         shading: { fill: rowColor, val: "clear", color: "auto" },
                         verticalAlign: VerticalAlign.CENTER,
-                        width: { size: 100 / 9, type: WidthType.PERCENTAGE },
+                        width: { size: 100 / columnCount, type: WidthType.PERCENTAGE },
                         margins: { top: 60, bottom: 60, left: 80, right: 80 }
                     })),
                     height: { value: 400, rule: "atLeast" }
@@ -2030,8 +2487,10 @@ function initReportsModule() {
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Report ID</th>
                                 <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
                                 <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student Name</th>
-                                <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
+                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Department</th>
+                                <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Year Level</th>
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Section</th>
+                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Contact No</th>
                                 <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Period</th>
                                 <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Uniform</th>
                                 <th width="80" style="width: 80px; background-color: #e0e0e0; border: 0.5pt solid #000;">Footwear</th>
@@ -2041,17 +2500,22 @@ function initReportsModule() {
                 `;
 
                 reportsData.forEach(report => {
+                    const typeCells = reportViolationTypes.map(type => {
+                        const count = getReportTypeCount(report, type.id);
+                        const maxLevel = type.max_level || 3;
+                        return `<td align="center" style="mso-number-format:'\@';">${count + '/' + maxLevel}</td>`;
+                    }).join('');
                     html += `
                         <tr>
                             <td>${report.reportId || ''}</td>
                             <td>${report.studentId || ''}</td>
                             <td>${report.studentName || ''}</td>
                             <td>${report.department || ''}</td>
+                            <td>${report.yearlevel || report.year_level || ''}</td>
                             <td>${report.section || ''}</td>
+                            <td>${report.studentContact || report.contact_no || ''}</td>
                             <td style="mso-number-format:'\@';">${getReportPeriodLabel(report)}</td>
-                            <td align="center" style="mso-number-format:'\@';">${(report.uniformCount || 0) + '/5'}</td>
-                            <td align="center" style="mso-number-format:'\@';">${(report.footwearCount || 0) + '/5'}</td>
-                            <td align="center" style="mso-number-format:'\@';">${(report.noIdCount || 0) + '/5'}</td>
+                            ${typeCells}
                             <td align="center"><b>${report.totalViolations || 0}</b></td>
                         </tr>
                     `;

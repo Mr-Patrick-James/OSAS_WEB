@@ -54,18 +54,16 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-search'></i>
           <input type="text" id="searchViolation" placeholder="Search…">
         </div>
-        <select id="timePeriodFilter" class="uv-select" onchange="filterViolations()">
-          <option value="current_month">This Month</option>
+        <select id="timePeriodFilter" class="uv-select" onchange="filterViolations()" style="display:none;">
           <option value="all">All History</option>
         </select>
         <select id="violationFilter" class="uv-select" onchange="filterViolations()">
           <option value="all">All Types</option>
         </select>
         <select id="statusFilter" class="uv-select" onchange="filterViolations()">
-          <option value="all">All Status</option>
-          <option value="resolved">Resolved / Permitted</option>
-          <option value="warning">Warning</option>
-          <option value="disciplinary">Disciplinary</option>
+          <option value="all">All Records</option>
+          <option value="with_sanction">Has Sanction</option>
+          <option value="no_sanction">No Sanction Yet</option>
         </select>
         <!-- View Toggle -->
         <div class="Violations-view-toggle">
@@ -91,7 +89,7 @@ require_once __DIR__ . '/../../core/View.php';
               <th>Violation Type</th>
               <th>Offense Level</th>
               <th>Date</th>
-              <th>Status</th>
+              <th>Sanction</th>
               <th></th>
             </tr>
           </thead>
@@ -171,17 +169,17 @@ require_once __DIR__ . '/../../core/View.php';
                 <th>Date &amp; Time</th>
                 <th>Location</th>
                 <th>Reported By</th>
-                <th>Status</th>
+                <th>Status / Sanction</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><span class="detail-value badge" id="detailViolationType">-</span></td>
-                <td><span class="detail-value badge warning" id="detailViolationLevel">-</span></td>
+                <td><span class="detail-value badge" id="detailViolationLevel">-</span></td>
                 <td><span class="detail-value" id="detailDateTime">-</span></td>
                 <td><span class="detail-value" id="detailLocation">-</span></td>
                 <td><span class="detail-value" id="detailReportedBy">-</span></td>
-                <td><span class="detail-value badge warning" id="detailStatus">-</span></td>
+                <td><span class="detail-value" id="detailStatus">-</span></td>
               </tr>
             </tbody>
           </table>
@@ -189,6 +187,14 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="violation-notes-section">
           <h4>Violation Description</h4>
           <div class="notes-content"><p id="detailNotes">-</p></div>
+        </div>
+        <!-- Sanction Section -->
+        <div id="detailSanctionSection" style="display:none;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:14px 16px;margin-top:10px;">
+          <h4 style="display:flex;align-items:center;gap:7px;color:#b8860b;margin-bottom:8px;">
+            <i class='bx bx-shield-quarter' style="font-size:16px;"></i>
+            Your Sanction: <span id="detailSanctionName" style="font-weight:700;"></span>
+          </h4>
+          <p id="detailSanctionDesc" style="font-size:13px;color:#374151;margin:0;line-height:1.6;">-</p>
         </div>
         <div class="violation-evidence-section" id="evidenceSection">
           <h4>Evidence / Attachments</h4>

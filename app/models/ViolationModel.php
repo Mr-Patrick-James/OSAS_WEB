@@ -76,6 +76,13 @@ class ViolationModel extends Model {
             @$this->conn->query("ALTER TABLE violation_levels ADD INDEX idx_vl_status (status)");
         }
 
+        // Auto-fix: Add sanction_name and sanction_description to violation_levels if missing
+        $snCheck = @$this->conn->query("SHOW COLUMNS FROM violation_levels LIKE 'sanction_name'");
+        if ($snCheck === false || $snCheck->num_rows === 0) {
+            @$this->conn->query("ALTER TABLE violation_levels ADD COLUMN sanction_name VARCHAR(150) DEFAULT NULL AFTER description");
+            @$this->conn->query("ALTER TABLE violation_levels ADD COLUMN sanction_description TEXT DEFAULT NULL AFTER sanction_name");
+        }
+
         // Auto-fix: Create violation_statuses table if it doesn't exist
         $this->conn->query("CREATE TABLE IF NOT EXISTS violation_statuses (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -131,6 +138,8 @@ class ViolationModel extends Model {
                     v.*, 
                     vt.name as violation_type_name,
                     vl.name as violation_level_name,
+                    vl.sanction_name as level_sanction_name,
+                    vl.sanction_description as level_sanction_description,
                     s.student_id as student_id_no,
                     s.first_name, 
                     s.middle_name, 
@@ -288,6 +297,10 @@ class ViolationModel extends Model {
                 $violationTypeLabel = $row['violation_type_name'] ?? 'Unknown Type';
                 $violationLevelLabel = $row['violation_level_name'] ?? 'Unknown Level';
 
+                // Sanction fields from the level definition
+                $sanctionName = $row['level_sanction_name'] ?? null;
+                $sanctionDescription = $row['level_sanction_description'] ?? null;
+
                 $statusLabels = [
                     'permitted' => 'Permitted',
                     'warning' => 'Warning',
@@ -330,6 +343,8 @@ class ViolationModel extends Model {
                     'violationTypeLabel' => $violationTypeLabel,
                     'violationLevel' => $row['violation_level_id'] ?? '',
                     'violationLevelLabel' => $violationLevelLabel,
+                    'sanctionName' => $sanctionName,
+                    'sanctionDescription' => $sanctionDescription,
                     'department' => $row['department_name'] ?? $row['student_dept'] ?? 'N/A',
                     'department_code' => $row['student_dept_code'] ?? $row['student_dept'] ?? 'N/A',
                     'section' => $row['section_code'] ?? $row['section_name'] ?? 'N/A',
@@ -684,7 +699,7 @@ class ViolationModel extends Model {
      */
     public function getViolationLevels($typeId, $includeArchived = false) {
         $where = $includeArchived ? "" : " AND status = 'active'";
-        $query = "SELECT * FROM violation_levels WHERE violation_type_id = ? $where ORDER BY level_order ASC";
+        $query = "SELECT id, violation_type_id, level_order, name, description, sanction_name, sanction_description, default_status, status_color, status, created_at, updated_at FROM violation_levels WHERE violation_type_id = ? $where ORDER BY level_order ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("i", $typeId);
         $stmt->execute();
@@ -801,7 +816,7 @@ class ViolationModel extends Model {
     /**
      * Create a violation level
      */
-    public function createViolationLevel($typeId, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b') {
+    public function createViolationLevel($typeId, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b', $sanctionName = null, $sanctionDescription = null) {
         $name = trim($name);
         if ($name === '') {
             throw new Exception('Level name is required');
@@ -816,10 +831,10 @@ class ViolationModel extends Model {
         }
 
         $stmt = $this->conn->prepare(
-            "INSERT INTO violation_levels (violation_type_id, level_order, name, description, default_status, status_color, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())"
+            "INSERT INTO violation_levels (violation_type_id, level_order, name, description, default_status, status_color, sanction_name, sanction_description, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())"
         );
-        $stmt->bind_param("iissss", $typeId, $levelOrder, $name, $description, $defaultStatus, $statusColor);
+        $stmt->bind_param("iissssss", $typeId, $levelOrder, $name, $description, $defaultStatus, $statusColor, $sanctionName, $sanctionDescription);
         if (!$stmt->execute()) {
             $error = $stmt->error;
             $stmt->close();
@@ -833,7 +848,7 @@ class ViolationModel extends Model {
     /**
      * Update a violation level
      */
-    public function updateViolationLevel($id, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b') {
+    public function updateViolationLevel($id, $name, $description = '', $levelOrder = null, $defaultStatus = 'warning', $statusColor = '#f59e0b', $sanctionName = null, $sanctionDescription = null) {
         $name = trim($name);
         if ($name === '') {
             throw new Exception('Level name is required');
@@ -841,14 +856,14 @@ class ViolationModel extends Model {
 
         if ($levelOrder !== null) {
             $stmt = $this->conn->prepare(
-                "UPDATE violation_levels SET name = ?, description = ?, level_order = ?, default_status = ?, status_color = ?, updated_at = NOW() WHERE id = ?"
+                "UPDATE violation_levels SET name = ?, description = ?, level_order = ?, default_status = ?, status_color = ?, sanction_name = ?, sanction_description = ?, updated_at = NOW() WHERE id = ?"
             );
-            $stmt->bind_param("ssissi", $name, $description, $levelOrder, $defaultStatus, $statusColor, $id);
+            $stmt->bind_param("ssissssi", $name, $description, $levelOrder, $defaultStatus, $statusColor, $sanctionName, $sanctionDescription, $id);
         } else {
             $stmt = $this->conn->prepare(
-                "UPDATE violation_levels SET name = ?, description = ?, default_status = ?, status_color = ?, updated_at = NOW() WHERE id = ?"
+                "UPDATE violation_levels SET name = ?, description = ?, default_status = ?, status_color = ?, sanction_name = ?, sanction_description = ?, updated_at = NOW() WHERE id = ?"
             );
-            $stmt->bind_param("ssssi", $name, $description, $defaultStatus, $statusColor, $id);
+            $stmt->bind_param("ssssssi", $name, $description, $defaultStatus, $statusColor, $sanctionName, $sanctionDescription, $id);
         }
         $success = $stmt->execute();
         $stmt->close();
