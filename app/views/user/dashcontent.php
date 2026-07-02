@@ -275,8 +275,11 @@ require_once __DIR__ . '/../../core/View.php';
         </div>
       </div>
       <div class="Violations-form-actions">
-        <button class="Violations-btn primary" onclick="printViolationSlip()">
-          <i class='bx bxs-printer'></i> Print Slip
+        <button id="requestSlipBtn" class="Violations-btn warning" onclick="handleStudentSlipRequest()" style="display:none;">
+          <i class='bx bx-paper-plane'></i> Request Receipt
+        </button>
+        <button id="downloadSlipBtn" class="Violations-btn success" onclick="printViolationSlip()" style="display:none;">
+          <i class='bx bxs-download'></i> Download Slip
         </button>
         <button class="Violations-btn-outline" onclick="closeViolationModal()">Close</button>
       </div>

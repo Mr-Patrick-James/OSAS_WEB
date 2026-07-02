@@ -6,11 +6,14 @@
   "start_url": "./index.php",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "browser"],
+  "display_override": ["standalone", "fullscreen", "minimal-ui", "browser"],
   "orientation": "portrait-primary",
   "background_color": "#0f0f0f",
   "theme_color": "#D4AF37",
   "categories": ["education", "productivity"],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "app/assets/img/default.png",

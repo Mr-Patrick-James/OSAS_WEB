@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-05-16-ann';
+const BUILD_DATE = '2026-06-28-viol-notifs';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -316,6 +316,7 @@ self.addEventListener('notificationclick', event => {
   const targetUrl = new URL(path, self.registration.scope).href;
 
   event.waitUntil((async () => {
+    // Try to match all window clients first
     const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     const sameOrigin = (c) => {
       try { return new URL(c.url).origin === self.location.origin; } catch (e) { return false; }
@@ -334,7 +335,7 @@ self.addEventListener('notificationclick', event => {
       return;
     }
 
-    // No window open — openURL; with manifest scope this should launch the installed PWA on Android
+    // Open the URL, which will use the installed PWA if it's set as the default
     return clients.openWindow(targetUrl);
   })());
 });

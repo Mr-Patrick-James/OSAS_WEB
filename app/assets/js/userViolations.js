@@ -79,6 +79,14 @@ async function initUserViolations() {
 
     await loadUserViolationTypes();
     await loadUserViolations();
+
+    // Start periodic refresh to check for updated sanctions/violations
+    startPeriodicRefresh();
+
+    // Also expose to window for manual calls if needed
+    window.updateUserViolationsSanctions = updateUserViolationsSanctions;
+    window.startPeriodicRefresh = startPeriodicRefresh;
+    window.stopPeriodicRefresh = stopPeriodicRefresh;
 }
 
 function getUserTypeIcon(name) {
@@ -90,24 +98,81 @@ function getUserTypeIcon(name) {
     return 'bx-error-circle';
 }
 
+function updateUserViolationsSanctions() {
+    // Update all user violations with the latest sanction info from userViolationTypes
+    const updateArray = (arr) => {
+        return arr.map(v => {
+            // Find the corresponding violation type and level
+            const type = userViolationTypes.find(t => t.id == v.violation_type_id || t.id == v.violationType);
+            if (type && type.levels) {
+                const level = type.levels.find(l => l.id == v.violation_level_id || l.id == v.violationLevel);
+                if (level) {
+                    return {
+                        ...v,
+                        sanctionName: level.sanction_name || null,
+                        sanctionDescription: level.sanction_description || null
+                    };
+                }
+            }
+            return v;
+        });
+    };
+
+    userViolations = updateArray(userViolations);
+    allUserViolations = updateArray(allUserViolations);
+    // Also update window cache variables if they exist
+    if (window.userViolations) window.userViolations = userViolations;
+    if (window.allUserViolations) window.allUserViolations = allUserViolations;
+
+    // Refresh details modal if open
+    const detailsModal = document.getElementById('ViolationDetailsModal');
+    if (detailsModal && detailsModal.style.display !== 'none' && currentViolationId) {
+        viewViolationDetails(currentViolationId);
+    }
+
+    // Re-render the violations table
+    renderViolationTable();
+}
+
+let refreshIntervalId = null;
+function startPeriodicRefresh() {
+    if (refreshIntervalId) return;
+
+    // Refresh every 30 seconds to get updated violation types and sanctions
+    refreshIntervalId = setInterval(async () => {
+        try {
+            // Reload violation types first to get latest sanction info
+            await loadUserViolationTypes();
+            // Reload violations to get any new ones
+            await loadUserViolations();
+        } catch (e) {
+            console.error('Periodic refresh failed:', e);
+        }
+    }, 30000); // 30 seconds
+}
+
+function stopPeriodicRefresh() {
+    if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+        refreshIntervalId = null;
+    }
+}
+
 async function loadUserViolationTypes() {
     try {
         const response = await fetch(`${API_BASE}violations.php?action=types`);
         const data = await response.json();
         if (data.status === 'success' && Array.isArray(data.data)) {
-            userViolationTypes = data.data.map(type => ({
-                id: type.id,
-                name: type.type_name || type.name
-            }));
+            userViolationTypes = data.data; // save full data including levels
         } else {
             throw new Error('Invalid types response');
         }
     } catch (error) {
         console.warn('Could not load violation types, using defaults:', error);
         userViolationTypes = [
-            { id: 'uniform', name: 'Improper Uniform' },
-            { id: 'footwear', name: 'Improper Footwear' },
-            { id: 'no_id', name: 'No ID' }
+            { id: 'uniform', name: 'Improper Uniform', levels: [] },
+            { id: 'footwear', name: 'Improper Footwear', levels: [] },
+            { id: 'no_id', name: 'No ID', levels: [] }
         ];
     }
 
@@ -239,6 +304,9 @@ async function loadUserViolations() {
         allUserViolations = [...userViolations, ...archivedViolations];
         console.log('✅ Loaded', userViolations.length, 'active +', archivedViolations.length, 'archived violations');
 
+        // Update sanctions on all violations
+        updateUserViolationsSanctions();
+
         updateViolationStats();
         renderViolationTable();
 
@@ -353,14 +421,14 @@ function renderViolationTable() {
         return `
             <tr class="violation-row">
                 <td data-label="Violation Type">${escapeHtml(violationTypeFormatted)}</td>
-                <td data-label="Offense Level"><span class="violation-level-badge ${getViolationLevelClass(level)}">${level}</span></td>
+                <td data-label="Offense Level"><span class="violation-level-badge ${getViolationLevelClass(level)}" style="${getLevelBadgeStyle(v)}">${level}</span></td>
                 <td data-label="Date">${formatDate(v.created_at || v.violation_date || v.date)}</td>
                 <td data-label="Status">
                     ${v.sanctionName
                         ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
                         : ''}
                     ${status === 'resolved'
-                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;${getStatusBadgeStyle(v)}"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                         : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                 </td>
                 <td data-label="Actions">
@@ -418,13 +486,13 @@ function renderViolationTable() {
                 </div>
                 <div class="violation-list-badges">
                     <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${escapeHtml(violationTypeFormatted)}</span>
-                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
+                    <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;${getLevelBadgeStyle(v)}">${escapeHtml(level)}</span>
                     <span class="dept-badge" style="font-size:9px;padding:2px 7px;">${escapeHtml(section)}</span>
                     ${v.sanctionName
                         ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
                         : ''}
                     ${statusClass === 'resolved'
-                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;${getStatusBadgeStyle(v)}"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                         : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                     <span style="font-size:9px;color:var(--text-3);margin-left:2px;">
                         <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.created_at || v.violation_date || v.date)}
@@ -463,11 +531,11 @@ function renderViolationTable() {
                         ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
                         : ''}
                     ${statusClass === 'resolved'
-                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
+                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;${getStatusBadgeStyle(v)}"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
                         : `<span class="Violations-status-badge warning" style="font-size:9px;padding:2px 7px;"><i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending</span>`}
                 </div>
                 <div style="margin-bottom:8px;">
-                    <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px; ${v.levelStatusColor ? `background-color: ${v.levelStatusColor}; color: white; border: none;` : ''}">${escapeHtml(level)}</span>
+                    <span class="violation-level-badge ${levelClass}" style="font-size:10px;padding:3px 8px;${getLevelBadgeStyle(v)}">${escapeHtml(level)}</span>
                 </div>
                 <div style="font-size:11px;color:var(--text-3,#64748b);display:flex;align-items:center;gap:4px;">
                     <i class='bx bx-calendar' style="font-size:12px;"></i>
@@ -574,7 +642,6 @@ function getViolationTypeClass(typeLabel) {
 function getViolationLevelClass(level) {
     if (level === null || level === undefined) return 'default';
     const lowerLevel = String(level).toLowerCase();
-    // 1st & 2nd Offense = green (permitted), 3rd & 4th = orange (warning), 5th/Disciplinary = red
     if (lowerLevel.includes('1st offense') || lowerLevel.includes('2nd offense') ||
         lowerLevel.startsWith('permitted')) return 'permitted';
     if (lowerLevel.includes('3rd offense') || lowerLevel.includes('4th offense') ||
@@ -582,6 +649,41 @@ function getViolationLevelClass(level) {
     if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
         lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
     return 'default';
+}
+
+/**
+ * Build a transparent badge inline style from a hex color string.
+ * Matches the same style used across the admin side.
+ */
+function buildBadgeStyleFromHex(hex) {
+    if (!hex) return '';
+    const h = hex.replace('#', '');
+    let r = 128, g = 128, b = 128;
+    if (h.length === 6) {
+        r = parseInt(h.substring(0, 2), 16);
+        g = parseInt(h.substring(2, 4), 16);
+        b = parseInt(h.substring(4, 6), 16);
+    } else if (h.length === 3) {
+        r = parseInt(h[0] + h[0], 16);
+        g = parseInt(h[1] + h[1], 16);
+        b = parseInt(h[2] + h[2], 16);
+    }
+    const tr = Math.round(r * 0.45);
+    const tg = Math.round(g * 0.45);
+    const tb = Math.round(b * 0.45);
+    return `background:rgba(${r},${g},${b},0.18);color:rgb(${tr},${tg},${tb});border-color:rgba(${r},${g},${b},0.35);`;
+}
+
+function getLevelBadgeStyle(v) {
+    return v.levelColor ? buildBadgeStyleFromHex(v.levelColor) : '';
+}
+
+function getStatusBadgeStyle(v) {
+    if (v.statusColor) return buildBadgeStyleFromHex(v.statusColor);
+    if (v.status === 'resolved')     return buildBadgeStyleFromHex('#10b981');
+    if (v.status === 'disciplinary') return buildBadgeStyleFromHex('#ef4444');
+    if (v.status === 'permitted')    return buildBadgeStyleFromHex('#10b981');
+    return buildBadgeStyleFromHex('#f59e0b');
 }
 
 function getDepartmentClass(dept) {
@@ -858,9 +960,8 @@ function viewViolationDetails(id) {
                 const hIsDisciplinary = hlLabel.includes('warning 3') || hlLabel.includes('3rd') || hlLabel.includes('5th offense') || hlLabel.includes('disciplinary');
                 
                 let statusHtml = '';
-                if (itemStatus === 'resolved' || itemStatus === 'permitted') {
-                    const label = hIsDisciplinary ? 'Resolved' : 'Permitted';
-                    statusHtml = `<span style="color: green; font-weight: bold;">(${label})</span>`;
+                if (itemStatus === 'resolved') {
+                    statusHtml = `<span style="color: green; font-weight: bold;">(Resolved)</span>`;
                 } else if (hIsDisciplinary || itemStatus === 'disciplinary') {
                     statusHtml = '<span style="color: #e74c3c; font-weight: bold;">(Disciplinary)</span>';
                 }

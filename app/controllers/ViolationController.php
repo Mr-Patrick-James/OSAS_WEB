@@ -360,9 +360,21 @@ class ViolationController extends Controller
         }
 
         try {
-            // Check for duplicate violation (Double Submission Check)
-            // We check if a violation with the same details was already created
-            // This prevents "2 copies of the same violation"
+            // TEMPORARILY COMMENTED OUT: Check if student already has this violation type recorded on the same day
+            /*
+            $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
+                $studentId,
+                $violationType,
+                $violationDate
+            );
+            
+            if ($existingViolation) {
+                $this->error('This violation type has already been recorded for this student today by ' . $existingViolation['reported_by'], ['existing_id' => $existingViolation['id'], 'reported_by' => $existingViolation['reported_by']]);
+                return;
+            }
+            */
+
+            // Check for duplicate violation (Double Submission Check - same exact details)
             $existingId = $this->model->checkDuplicateSubmission(
                $studentId, 
                $violationType, 
@@ -373,9 +385,6 @@ class ViolationController extends Controller
             );
             
             if ($existingId) {
-                // If it exists, we check if it was created very recently (e.g. < 10 seconds ago) to treat it as a double-submit
-                // Or just block it entirely as "Duplicate".
-                // User said "prevent duplicate of the same violation only one", so blocking duplicates is correct.
                 $this->error('This violation has already been recorded.', ['existing_id' => $existingId]);
                 return;
             }

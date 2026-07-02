@@ -369,7 +369,7 @@
 }
 
 #content main .table-data .order table tr td .status.completed {
-    background: var(--gold);
+    background: #10b981;
 }
 
 #content main .table-data .order table tr td .status.permitted {

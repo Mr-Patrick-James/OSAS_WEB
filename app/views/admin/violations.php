@@ -9,6 +9,8 @@ require_once __DIR__ . '/../../core/View.php';
   <title>Violations | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/violation.css') ?>">
+  <!-- html5-qrcode: camera-based QR scanner (no extra install needed) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
   
@@ -344,6 +346,9 @@ require_once __DIR__ . '/../../core/View.php';
             <label for="studentSearch">Search Student</label>
           <div class="student-search-wrapper">
             <input type="text" id="studentSearch" placeholder="Search by Student ID or Name...">
+            <button type="button" id="qrScanStudentBtn" class="Violations-qr-btn" title="Scan QR Code">
+              <i class='bx bx-qr-scan'></i>
+            </button>
             <button type="button" id="searchStudentBtn" class="Violations-search-btn">
               <i class='bx bx-search-alt'></i> Search
             </button>
@@ -651,7 +656,12 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="vt-manage-column">
           <div class="vt-manage-column-header">
             <h3 id="vtManageLeftTitle">Violation Types</h3>
-            <span class="vt-manage-count" id="vtManageTypeCount">0</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="vt-manage-count" id="vtManageTypeCount">0</span>
+              <button type="button" class="vt-manage-cog-btn" id="vtToggleManageViewBtn" title="Toggle Global Statuses" style="background: transparent; border: none; cursor: pointer; font-size: 20px; color: #6b7280;">
+                <i class='bx bx-cog'></i>
+              </button>
+            </div>
           </div>
           <div id="vtManageTypesContainer">
             <div class="vt-manage-list" id="vtManageTypesList">
@@ -666,37 +676,70 @@ require_once __DIR__ . '/../../core/View.php';
           </div>
         </div>
 
-        <div class="vt-manage-column">
-          <div class="vt-manage-column-header">
-            <h3 id="vtManageLevelsTitle">Offense Levels</h3>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <span class="vt-manage-count" id="vtManageLevelCount">0</span>
-              <button type="button" class="vt-save-all-btn" id="vtSaveAllLevelsBtn" style="display: none;">
-                Save All
+        <div class="vt-manage-column" id="vtManageMiddleColumn">
+          <!-- Offense Levels View -->
+          <div id="vtManageLevelsView">
+            <div class="vt-manage-column-header">
+              <h3 id="vtManageLevelsTitle">Offense Levels</h3>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="vt-manage-count" id="vtManageLevelCount">0</span>
+                <button type="button" class="vt-save-all-btn" id="vtSaveAllLevelsBtn" style="display: none;">
+                  Save All
+                </button>
+              </div>
+            </div>
+            <div class="vt-manage-list" id="vtManageLevelsList">
+              <p class="vt-manage-empty">Select a violation type to view its levels</p>
+            </div>
+            <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none; flex-direction: column; gap: 8px;">
+              <input type="text" id="vtNewLevelName" placeholder="Level name (e.g. 6th Offense)" maxlength="255">
+              <input type="text" id="vtNewLevelSanctionName" placeholder="Sanction name (e.g. Sanction 6 — Suspension)" maxlength="150" style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:13px;">
+              <textarea id="vtNewLevelSanctionDesc" placeholder="Sanction description — what this means for the student..." style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:12px;resize:vertical;min-height:52px;"></textarea>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:#6b7280;flex-shrink:0;">Color:</span>
+                <div id="vtNewLevelColorRow" style="display:flex;gap:5px;align-items:center;">
+                  <div class="vt-color-dot active" style="background:#f59e0b;" title="Orange" onclick="updateLevelColorDot(this)"></div>
+                  <div class="vt-color-dot" style="background:#10b981;" title="Green" onclick="updateLevelColorDot(this)"></div>
+                  <div class="vt-color-dot" style="background:#ef4444;" title="Red" onclick="updateLevelColorDot(this)"></div>
+                  <div class="vt-color-dot" style="background:#3b82f6;" title="Blue" onclick="updateLevelColorDot(this)"></div>
+                  <div class="vt-color-dot" style="background:#8b5cf6;" title="Purple" onclick="updateLevelColorDot(this)"></div>
+                  <div class="vt-color-dot" style="background:#6b7280;" title="Gray" onclick="updateLevelColorDot(this)"></div>
+                </div>
+              </div>
+              <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
+                <i class='bx bx-plus'></i> Add Level
               </button>
             </div>
           </div>
-          <div class="vt-manage-list" id="vtManageLevelsList">
-            <p class="vt-manage-empty">Select a violation type to view its levels</p>
-          </div>
-          <div class="vt-manage-add-form" id="vtAddLevelForm" style="display:none; flex-direction: column; gap: 8px;">
-            <input type="text" id="vtNewLevelName" placeholder="Level name (e.g. 6th Offense)" maxlength="255">
-            <input type="text" id="vtNewLevelSanctionName" placeholder="Sanction name (e.g. Sanction 6 — Suspension)" maxlength="150" style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:13px;">
-            <textarea id="vtNewLevelSanctionDesc" placeholder="Sanction description — what this means for the student..." style="padding:8px;border-radius:6px;border:1px solid #ddd;font-size:12px;resize:vertical;min-height:52px;"></textarea>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="font-size:11px;color:#6b7280;flex-shrink:0;">Color:</span>
-              <div id="vtNewLevelColorRow" style="display:flex;gap:5px;align-items:center;">
-                <div class="vt-color-dot active" style="background:#f59e0b;" title="Orange" onclick="updateLevelColorDot(this)"></div>
-                <div class="vt-color-dot" style="background:#10b981;" title="Green" onclick="updateLevelColorDot(this)"></div>
-                <div class="vt-color-dot" style="background:#ef4444;" title="Red" onclick="updateLevelColorDot(this)"></div>
-                <div class="vt-color-dot" style="background:#3b82f6;" title="Blue" onclick="updateLevelColorDot(this)"></div>
-                <div class="vt-color-dot" style="background:#8b5cf6;" title="Purple" onclick="updateLevelColorDot(this)"></div>
-                <div class="vt-color-dot" style="background:#6b7280;" title="Gray" onclick="updateLevelColorDot(this)"></div>
+          
+          <!-- Violation Statuses View -->
+          <div id="vtManageStatusesView" style="display: none;">
+            <div class="vt-manage-column-header">
+              <h3 id="vtManageStatusesTitle">Violation Statuses</h3>
+              <span class="vt-manage-count" id="vtManageStatusCount">0</span>
+            </div>
+            <div id="vtManageStatusesContainer">
+              <div class="vt-manage-list" id="vtManageStatusesList">
+                <p class="vt-manage-empty">Loading statuses...</p>
+              </div>
+              <div class="vt-manage-add-form">
+                <input type="text" id="vtNewStatusName" placeholder="New status name..." maxlength="255">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-size:11px;color:#6b7280;flex-shrink:0;">Color:</span>
+                  <div id="vtNewStatusColorPresets" style="display:flex;gap:5px;align-items:center;">
+                    <div class="vt-color-dot active" style="background:#f59e0b;" title="Orange"></div>
+                    <div class="vt-color-dot" style="background:#10b981;" title="Green"></div>
+                    <div class="vt-color-dot" style="background:#ef4444;" title="Red"></div>
+                    <div class="vt-color-dot" style="background:#3b82f6;" title="Blue"></div>
+                    <div class="vt-color-dot" style="background:#8b5cf6;" title="Purple"></div>
+                    <div class="vt-color-dot" style="background:#6b7280;" title="Gray"></div>
+                  </div>
+                </div>
+                <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddStatusBtn">
+                  <i class='bx bx-plus'></i> Add Status
+                </button>
               </div>
             </div>
-            <button type="button" class="Violations-btn-primary vt-manage-add-btn" id="vtAddLevelBtn">
-              <i class='bx bx-plus'></i> Add Level
-            </button>
           </div>
         </div>
       </div>
@@ -787,6 +830,68 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
     </div>
   </div>
+
+  <!-- ========== QR SCANNER MODAL ========== -->
+  <div id="QRScannerModal" class="qr-scanner-modal" aria-modal="true" role="dialog" aria-label="Scan QR Code">
+    <!-- Full dark overlay -->
+    <div class="qr-scanner-backdrop" id="qrScannerBackdrop"></div>
+
+    <div class="qr-scanner-sheet">
+      <!-- Header bar -->
+      <div class="qr-scanner-header">
+        <div class="qr-scanner-header-left">
+          <div class="qr-scanner-icon-wrap">
+            <i class='bx bx-qr-scan'></i>
+          </div>
+          <div>
+            <h3 class="qr-scanner-title">Scan Student QR</h3>
+            <p class="qr-scanner-subtitle">Point the camera at the student's QR code</p>
+          </div>
+        </div>
+        <button type="button" class="qr-scanner-close-btn" id="qrScannerCloseBtn" title="Close scanner">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+
+      <!-- Camera viewport -->
+      <div class="qr-viewport-wrap">
+        <!-- The actual camera feed is rendered here by html5-qrcode -->
+        <div id="qrReaderView"></div>
+
+        <!-- Animated scan frame overlay -->
+        <div class="qr-scan-frame" id="qrScanFrame">
+          <span class="qr-corner tl"></span>
+          <span class="qr-corner tr"></span>
+          <span class="qr-corner bl"></span>
+          <span class="qr-corner br"></span>
+          <div class="qr-scan-line" id="qrScanLine"></div>
+        </div>
+      </div>
+
+      <!-- Status + torch row -->
+      <div class="qr-scanner-footer">
+        <div class="qr-status-pill" id="qrScanStatus">
+          <i class='bx bx-loader-alt bx-spin' id="qrStatusIcon"></i>
+          <span id="qrStatusText">Starting camera…</span>
+        </div>
+        <button type="button" class="qr-torch-btn" id="qrTorchBtn" title="Toggle flashlight" style="display:none;">
+          <i class='bx bx-bulb'></i>
+        </button>
+      </div>
+
+      <!-- Manual fallback -->
+      <div class="qr-manual-fallback">
+        <p>Can't scan? Enter the student ID manually:</p>
+        <div class="qr-manual-row">
+          <input type="text" id="qrManualInput" class="qr-manual-input" placeholder="e.g. 2023-0001" autocomplete="off">
+          <button type="button" id="qrManualConfirmBtn" class="qr-manual-confirm-btn">
+            <i class='bx bx-check'></i> Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ========== END QR SCANNER MODAL ========== -->
 
 </main>
 

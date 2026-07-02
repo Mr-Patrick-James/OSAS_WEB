@@ -923,6 +923,30 @@ function initViolationsModule() {
             return 'bx-error-circle';
         }
 
+        let vtManageViewMode = 'levels'; // 'levels' or 'statuses'
+        
+        function toggleManageView() {
+            const levelsView = document.getElementById('vtManageLevelsView');
+            const statusesView = document.getElementById('vtManageStatusesView');
+            const toggleBtn = document.getElementById('vtToggleManageViewBtn');
+            
+            if (!levelsView || !statusesView || !toggleBtn) return;
+            
+            if (vtManageViewMode === 'levels') {
+                vtManageViewMode = 'statuses';
+                levelsView.style.display = 'none';
+                statusesView.style.display = 'block';
+                toggleBtn.style.color = '#d4af37'; // Highlight when active
+                renderManageStatusesList();
+            } else {
+                vtManageViewMode = 'levels';
+                statusesView.style.display = 'none';
+                levelsView.style.display = 'block';
+                toggleBtn.style.color = '#6b7280';
+                renderManageLevelsList(selectedManageTypeId);
+            }
+        }
+        
         async function openViolationTypesManageModal() {
             if (!navigator.onLine) {
                 showNotification("Please check your internet connection. Internet requires to manage violation types and levels.", 'error');
@@ -934,9 +958,36 @@ function initViolationsModule() {
             document.body.style.overflow = 'hidden';
 
             await loadViolationTypes(true);
+            await loadViolationStatuses(true);
             selectedManageTypeId = violationTypes.length > 0 ? violationTypes[0].id : null;
+            
+            // Reset view mode to levels
+            vtManageViewMode = 'levels';
+            const levelsView = document.getElementById('vtManageLevelsView');
+            const statusesView = document.getElementById('vtManageStatusesView');
+            const toggleBtn = document.getElementById('vtToggleManageViewBtn');
+            if (levelsView) levelsView.style.display = 'block';
+            if (statusesView) statusesView.style.display = 'none';
+            if (toggleBtn) toggleBtn.style.color = '#6b7280';
+            
+            // Initialize status color presets and add button
+            initNewStatusColorPresets();
+            const addStatusBtn = document.getElementById('vtAddStatusBtn');
+            if (addStatusBtn) {
+                addStatusBtn.onclick = addViolationStatus;
+            }
+            
+            // Initialize level color presets
+            initNewLevelColorPresets();
+            
+            // Attach toggle button listener
+            if (toggleBtn) {
+                toggleBtn.onclick = toggleManageView;
+            }
+            
             renderManageTypesList();
             renderManageLevelsList(selectedManageTypeId);
+            renderManageStatusesList();
         }
 
         function updateAddLevelStatusDropdown() {
@@ -1274,6 +1325,28 @@ function initViolationsModule() {
             }
         };
 
+        function updateViolationsSanctions() {
+            // Update all violations in the local array with the latest sanction info from violationTypes
+            violations = violations.map(v => {
+                // Find the corresponding violation type and level in violationTypes
+                const type = violationTypes.find(t => t.id == v.violationType);
+                if (type && type.levels) {
+                    const level = type.levels.find(l => l.id == v.violationLevel);
+                    if (level) {
+                        return {
+                            ...v,
+                            sanctionName: level.sanction_name || null,
+                            sanctionDescription: level.sanction_description || null
+                        };
+                    }
+                }
+                return v;
+            });
+            
+            // Update the window cache as well
+            _cache.violations = violations;
+        }
+
         async function saveAllLevels() {
             if (!selectedManageTypeId) return;
 
@@ -1324,7 +1397,20 @@ function initViolationsModule() {
 
                 showNotification('All levels updated successfully', 'success');
                 await loadViolationTypes(true);
+                // Update sanctions on violations
+                updateViolationsSanctions();
+                // Re-render violations list
+                if (typeof renderViolations === 'function') renderViolations();
+                // Update details modal if open
+                if (detailsModal && detailsModal.dataset.viewingId) {
+                    openDetailsModal(parseInt(detailsModal.dataset.viewingId));
+                }
                 renderManageLevelsList(selectedManageTypeId);
+                
+                // Real-time update: Refresh dashboard if instance exists
+                if (window.dashboardDataInstance && typeof window.dashboardDataInstance.loadAllData === 'function') {
+                    window.dashboardDataInstance.loadAllData().catch(console.error);
+                }
             } catch (error) {
                 showNotification(error.message || 'Failed to save all levels', 'error');
             } finally {
@@ -1354,8 +1440,19 @@ function initViolationsModule() {
                 if (data.status !== 'success') throw new Error(data.message || 'Failed to update level');
                 showNotification('Level updated successfully', 'success');
                 await loadViolationTypes(true);
+                // Update sanctions on violations
+                updateViolationsSanctions();
                 renderManageLevelsList(typeId);
                 if (typeof renderViolations === 'function') renderViolations();
+                // Update details modal if open
+                if (detailsModal && detailsModal.dataset.viewingId) {
+                    openDetailsModal(parseInt(detailsModal.dataset.viewingId));
+                }
+
+                // Real-time update: Refresh dashboard if instance exists
+                if (window.dashboardDataInstance && typeof window.dashboardDataInstance.loadAllData === 'function') {
+                    window.dashboardDataInstance.loadAllData().catch(console.error);
+                }
             } catch (error) {
                 showNotification(error.message || 'Failed to update level', 'error');
             } finally {
@@ -1674,45 +1771,66 @@ function initViolationsModule() {
                     const highest = history[history.length - 1];
                     const levelName  = highest.violationLevelLabel || 'Recorded';
                     const totalCount = history.length;
-                    const status     = (highest.status || 'warning').toLowerCase();
-                    const bg = status === 'permitted'    ? '#10b981'
-                             : status === 'disciplinary' ? '#ef4444'
-                             : status === 'resolved'     ? '#3b82f6'
-                             : '#f59e0b';
-                    const textColor = status === 'warning' ? '#7c2d12' : '#fff';
                     const isPending  = String(highest.id).startsWith('TEMP-');
+
+                    // Use levelColor (the color set on the violation level) for the pill badge.
+                    // Fall back to statusColor (from violation_statuses table) if levelColor absent,
+                    // then fall back to sensible defaults by status.
+                    const pillHex = highest.levelColor || highest.statusColor || (() => {
+                        const s = (highest.status || 'warning').toLowerCase();
+                        if (s === 'permitted')    return '#10b981';
+                        if (s === 'disciplinary') return '#ef4444';
+                        if (s === 'resolved')     return '#10b981';
+                        return '#f59e0b';
+                    })();
+
+                    // Parse hex → transparent badge style matching all other badges
+                    const _ph = pillHex.replace('#','');
+                    const _pr = parseInt(_ph.substring(0,2),16)||128;
+                    const _pg = parseInt(_ph.substring(2,4),16)||128;
+                    const _pb = parseInt(_ph.substring(4,6),16)||128;
+                    const pillBg     = `rgba(${_pr},${_pg},${_pb},0.18)`;
+                    const pillBorder = `rgba(${_pr},${_pg},${_pb},0.35)`;
+                    const pillText   = `rgb(${Math.round(_pr*0.45)},${Math.round(_pg*0.45)},${Math.round(_pb*0.45)})`;
 
                     const badgeWrap = document.createElement('div');
                     badgeWrap.className = 'violation-type-badge-overlay';
                     badgeWrap.style.cssText = `
-                        position:absolute; top:6px; right:6px;
+                        position:absolute; top:-8px; right:-6px;
                         display:flex; flex-direction:column; align-items:flex-end;
                         gap:3px; z-index:10; pointer-events:auto;
                     `;
 
                     const pill = document.createElement('div');
                     pill.style.cssText = `
-                        display:inline-flex; align-items:center; gap:4px;
-                        padding:2px 5px 2px 7px; border-radius:20px;
-                        font-size:9px; font-weight:700; line-height:1.5;
-                        white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.25);
-                        background:${bg}; color:${textColor};
+                        display:inline-flex; align-items:center; gap:5px;
+                        padding:4px 6px 4px 9px; border-radius:100px;
+                        font-size:10px; font-weight:700; line-height:1;
+                        white-space:nowrap; letter-spacing:0.3px;
+                        font-family:'Space Grotesk', 'Inter', sans-serif;
+                        box-shadow: 0 2px 8px rgba(${_pr},${_pg},${_pb},0.35), 0 1px 3px rgba(0,0,0,0.12);
+                        background: linear-gradient(135deg, rgba(${_pr},${_pg},${_pb},0.22) 0%, rgba(${_pr},${_pg},${_pb},0.12) 100%);
+                        color:${pillText};
+                        border: 1.5px solid rgba(${_pr},${_pg},${_pb},0.4);
+                        backdrop-filter: blur(4px);
+                        -webkit-backdrop-filter: blur(4px);
                     `;
                     pill.innerHTML = `
-                        <span style="letter-spacing:.3px;text-transform:uppercase;">
-                            ${escapeHtml(levelName)}${totalCount > 1 ? ` (${totalCount})` : ''}
-                        </span>
+                        <span style="font-size:9px;opacity:0.7;margin-right:1px;">●</span>
+                        <span>${escapeHtml(levelName)}${totalCount > 1 ? `<span style="opacity:0.65;font-size:8px;margin-left:3px;">${totalCount}×</span>` : ''}</span>
                         ${!isPending ? `<button type="button"
                             data-remove-vid="${highest.id}"
                             data-remove-level="${escapeHtml(levelName)}"
-                            title="Remove ${escapeHtml(levelName)} — steps back to ${totalCount > 1 ? history[history.length - 2]?.violationLevelLabel || 'previous' : 'no offense'}"
+                            title="Remove ${escapeHtml(levelName)}"
                             style="
                                 display:inline-flex;align-items:center;justify-content:center;
-                                width:14px;height:14px;border-radius:50%;
-                                background:rgba(0,0,0,.2);border:none;cursor:pointer;
-                                padding:0;flex-shrink:0;color:inherit;font-size:9px;
-                                font-weight:900;line-height:1;
-                            ">✕</button>` : ''}
+                                width:15px;height:15px;border-radius:50%;
+                                background:rgba(${_pr},${_pg},${_pb},0.25);
+                                border:1px solid rgba(${_pr},${_pg},${_pb},0.3);
+                                cursor:pointer; padding:0; flex-shrink:0;
+                                color:${pillText}; font-size:8px; font-weight:900;
+                                line-height:1; transition:background 0.15s;
+                            ">✕</button>` : `<span style="opacity:0.5;font-size:8px;">⏳</span>`}
                     `;
 
                     pill.addEventListener('click', e => e.stopPropagation());
@@ -2345,6 +2463,36 @@ function initViolationsModule() {
             if (lowerLevel.includes('5th offense') || lowerLevel.startsWith('warning 3') ||
                 lowerLevel === 'disciplinary' || lowerLevel.includes('disciplinary')) return 'disciplinary';
             return 'default';
+        }
+
+        /**
+         * Returns an inline style string for a level badge using the stored color.
+         * Matches the transparent badge style used by other badges (20% bg, dark text, 30% border).
+         * Falls back gracefully if no custom color is set.
+         */
+        function getLevelBadgeStyle(v) {
+            const color = v.levelColor;
+            if (!color) return '';
+
+            // Parse hex color to RGB for rgba() usage
+            let r = 128, g = 128, b = 128;
+            const hex = color.replace('#', '');
+            if (hex.length === 6) {
+                r = parseInt(hex.substring(0, 2), 16);
+                g = parseInt(hex.substring(2, 4), 16);
+                b = parseInt(hex.substring(4, 6), 16);
+            } else if (hex.length === 3) {
+                r = parseInt(hex[0] + hex[0], 16);
+                g = parseInt(hex[1] + hex[1], 16);
+                b = parseInt(hex[2] + hex[2], 16);
+            }
+
+            // Darken the color for text (multiply by ~0.6 for readability)
+            const tr = Math.round(r * 0.45);
+            const tg = Math.round(g * 0.45);
+            const tb = Math.round(b * 0.45);
+
+            return `background:rgba(${r},${g},${b},0.18);color:rgb(${tr},${tg},${tb});border-color:rgba(${r},${g},${b},0.35);`;
         }
 
         function getDepartmentAcronym(dept) {
@@ -3236,6 +3384,7 @@ function initViolationsModule() {
                 const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
                 const typeClass   = getViolationTypeClass(v.violationTypeLabel);
                 const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                const levelStyle  = getLevelBadgeStyle(v);
                 const deptClass   = getDepartmentClass(v.department);
                 const statusClass = getStatusClass(displayStatus);
 
@@ -3258,7 +3407,7 @@ function initViolationsModule() {
                         <span class="violation-type-badge ${typeClass}">${v.violationTypeLabel}</span>
                     </td>
                     <td class="violation-level" data-label="Offense Level">
-                        <span class="violation-level-badge ${levelClass}">${v.violationLevelLabel}</span>
+                        <span class="violation-level-badge ${levelClass}" style="${levelStyle}">${v.violationLevelLabel}</span>
                     </td>
                     <td class="violation-dept" data-label="Department">
                         <span class="dept-badge ${deptClass}" title="${v.department}">${getDepartmentAcronym(v.department)}</span>
@@ -3308,6 +3457,7 @@ function initViolationsModule() {
                         const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
                         const typeClass   = getViolationTypeClass(v.violationTypeLabel);
                         const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                        const levelStyle  = getLevelBadgeStyle(v);
                         const deptClass   = getDepartmentClass(v.department);
                         const statusClass = getStatusClass(displayStatus);
                         return `
@@ -3330,7 +3480,7 @@ function initViolationsModule() {
                                     </div>
                                     <div class="violation-card-meta-row">
                                         <span class="violation-card-meta-label">Level</span>
-                                        <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 6px;">${v.violationLevelLabel}</span>
+                                        <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 6px;${levelStyle}">${v.violationLevelLabel}</span>
                                     </div>
                                     <div class="violation-card-meta-row">
                                         <span class="violation-card-meta-label">Dept</span>
@@ -3379,6 +3529,7 @@ function initViolationsModule() {
                         const { displayStatus, displayStatusLabel } = getDisplayStatus(v);
                         const typeClass   = getViolationTypeClass(v.violationTypeLabel);
                         const levelClass  = getViolationLevelClass(v.violationLevelLabel || '');
+                        const levelStyle  = getLevelBadgeStyle(v);
                         const deptClass   = getDepartmentClass(v.department);
                         const statusClass = getStatusClass(displayStatus);
                         return `
@@ -3405,7 +3556,7 @@ function initViolationsModule() {
                             </div>
                             <div class="violation-list-badges">
                                 <span class="violation-type-badge ${typeClass}" style="font-size:9px;padding:2px 7px;">${v.violationTypeLabel}</span>
-                                <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;">${v.violationLevelLabel}</span>
+                                <span class="violation-level-badge ${levelClass}" style="font-size:9px;padding:2px 7px;${levelStyle}">${v.violationLevelLabel}</span>
                                 <span class="dept-badge ${deptClass}" style="font-size:9px;padding:2px 7px;" title="${v.department}">${v.section || 'N/A'}</span>
                                 ${v.sanctionName
                                     ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
@@ -3916,7 +4067,8 @@ function initViolationsModule() {
             renderList('detailViolationLevel', studentViolations, v => {
                 const level = v.violationLevelLabel || '-';
                 const badgeClass = level !== '-' ? `badge ${getViolationLevelClass(level)}` : '';
-                return `<span class="${badgeClass}">${level}</span>`;
+                const inlineStyle = level !== '-' ? getLevelBadgeStyle(v) : '';
+                return `<span class="${badgeClass}" style="${inlineStyle}">${level}</span>`;
             });
 
             // Dates
@@ -4210,6 +4362,9 @@ function initViolationsModule() {
             console.log('Closing record modal');
             recordModal.classList.remove('active');
             document.body.style.overflow = 'auto';
+
+            // Stop QR scanner if running
+            stopQRScannerOnModalClose();
             
             // Reset form if exists
             const form = document.getElementById('ViolationRecordForm');
@@ -4486,6 +4641,207 @@ function initViolationsModule() {
                 }
             }
         }
+
+        // ========== QR SCANNER MODAL ==========
+        let _html5QrScanner = null;
+        let _qrTorchOn = false;
+
+        function openQRScannerModal() {
+            const modal = document.getElementById('QRScannerModal');
+            if (!modal) return;
+
+            // Make sure html5-qrcode library is available
+            if (typeof Html5Qrcode === 'undefined') {
+                showNotification('QR scanner library not loaded. Please check your internet connection.', 'error');
+                return;
+            }
+
+            // Enable transitions on first open — this prevents the flash-on-load
+            // caused by CSS transitions firing during initial page render.
+            if (!modal.classList.contains('qr-scanner-modal--ready')) {
+                // Force a reflow so the browser registers the initial transform/opacity
+                // before we add the transition class and active class.
+                modal.getBoundingClientRect();
+                modal.classList.add('qr-scanner-modal--ready');
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setQRStatus('loading', 'Starting camera…');
+
+            // Small delay so the modal transition completes before the camera boots
+            setTimeout(() => startQRCamera(), 300);
+        }
+
+        function closeQRScannerModal() {
+            stopQRCamera();
+            const modal = document.getElementById('QRScannerModal');
+            if (modal) modal.classList.remove('active');
+            document.body.style.overflow = '';
+            _qrTorchOn = false;
+            const torchBtn = document.getElementById('qrTorchBtn');
+            if (torchBtn) { torchBtn.classList.remove('active'); torchBtn.style.display = 'none'; }
+            const manualInput = document.getElementById('qrManualInput');
+            if (manualInput) manualInput.value = '';
+        }
+
+        function setQRStatus(state, text) {
+            const pill   = document.getElementById('qrScanStatus');
+            const icon   = document.getElementById('qrStatusIcon');
+            const label  = document.getElementById('qrStatusText');
+            const frame  = document.getElementById('qrScanFrame');
+            if (!pill) return;
+
+            pill.className = 'qr-status-pill ' + state; // idle | loading | success | error
+            if (label) label.textContent = text;
+
+            if (icon) {
+                icon.className = state === 'loading'
+                    ? 'bx bx-loader-alt bx-spin'
+                    : state === 'success'
+                        ? 'bx bx-check-circle'
+                        : state === 'error'
+                            ? 'bx bx-error-circle'
+                            : 'bx bx-scan';
+            }
+
+            if (frame) {
+                frame.classList.toggle('success', state === 'success');
+                frame.classList.toggle('error',   state === 'error');
+            }
+        }
+
+        async function startQRCamera() {
+            // Clear any previous instance
+            if (_html5QrScanner) {
+                try { await _html5QrScanner.stop(); } catch (_) {}
+                try { _html5QrScanner.clear(); }     catch (_) {}
+                _html5QrScanner = null;
+            }
+
+            // Wipe the container so html5-qrcode can re-render cleanly
+            const viewEl = document.getElementById('qrReaderView');
+            if (viewEl) viewEl.innerHTML = '';
+
+            _html5QrScanner = new Html5Qrcode('qrReaderView', { verbose: false });
+
+            let cameras;
+            try {
+                cameras = await Html5Qrcode.getCameras();
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : String(err);
+                if (/permission/i.test(msg)) {
+                    setQRStatus('error', 'Camera permission denied');
+                    showNotification('Please allow camera access and try again.', 'error');
+                } else {
+                    setQRStatus('error', 'No camera found');
+                    showNotification('No camera found on this device.', 'error');
+                }
+                return;
+            }
+
+            if (!cameras || cameras.length === 0) {
+                setQRStatus('error', 'No camera found on this device');
+                return;
+            }
+
+            // Prefer back / environment camera
+            const cam = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[cameras.length - 1];
+
+            const config = {
+                fps: 12,
+                // qrbox as a function: scan region is 60% of the smaller dimension
+                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                    const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.6);
+                    return { width: edge, height: edge };
+                },
+                aspectRatio: 1.0,
+                disableFlip: false,
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+            };
+
+            try {
+                await _html5QrScanner.start(
+                    cam.id,
+                    config,
+                    (decodedText) => onQRDecoded(decodedText),
+                    () => {} // per-frame error — ignore
+                );
+
+                setQRStatus('idle', 'Align QR code inside the frame');
+
+                // Show torch button if supported
+                const torchBtn = document.getElementById('qrTorchBtn');
+                if (torchBtn && _html5QrScanner.getRunningTrackCameraCapabilities) {
+                    try {
+                        const caps = _html5QrScanner.getRunningTrackCameraCapabilities();
+                        if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
+                            torchBtn.style.display = 'flex';
+                        }
+                    } catch (_) {}
+                }
+
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : String(err);
+                console.error('QR camera start error:', err);
+                setQRStatus('error', 'Could not start camera');
+                showNotification('Could not start QR scanner: ' + msg, 'error');
+            }
+        }
+
+        function stopQRCamera() {
+            if (_html5QrScanner) {
+                _html5QrScanner.stop().catch(() => {}).finally(() => {
+                    try { _html5QrScanner.clear(); } catch (_) {}
+                    _html5QrScanner = null;
+                    const viewEl = document.getElementById('qrReaderView');
+                    if (viewEl) viewEl.innerHTML = '';
+                });
+            }
+        }
+
+        function onQRDecoded(text) {
+            const trimmed = text.trim();
+
+            // Flash success state on the frame
+            setQRStatus('success', '✅ QR Scanned!');
+
+            // Brief success pause so the user sees the green frame, then close
+            setTimeout(() => {
+                closeQRScannerModal();
+
+                // Populate search field in the violation modal
+                const searchInput = document.getElementById('studentSearch');
+                if (searchInput) searchInput.value = trimmed;
+
+                // Trigger the existing student search
+                handleStudentSearch().catch(err => console.error('QR student search error:', err));
+            }, 700);
+        }
+
+        // torch toggle
+        function toggleQRTorch() {
+            if (!_html5QrScanner) return;
+            try {
+                const caps = _html5QrScanner.getRunningTrackCameraCapabilities();
+                if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
+                    _qrTorchOn = !_qrTorchOn;
+                    caps.torchFeature().apply(_qrTorchOn);
+                    const btn = document.getElementById('qrTorchBtn');
+                    if (btn) btn.classList.toggle('active', _qrTorchOn);
+                }
+            } catch (err) {
+                console.warn('Torch toggle failed:', err);
+            }
+        }
+
+        // Alias used by closeRecordModal
+        function stopQRScannerOnModalClose() {
+            closeQRScannerModal();
+        }
+        // Legacy alias so nothing else breaks
+        function startQRScanner() { openQRScannerModal(); }
+        function stopQRScanner()  { closeQRScannerModal(); }
 
         // ========== EVENT LISTENERS ==========
         
@@ -5690,6 +6046,73 @@ function initViolationsModule() {
                 });
             }
         }
+
+        // 8. QR SCANNER BUTTON
+        const qrScanStudentBtn = document.getElementById('qrScanStudentBtn');
+        if (qrScanStudentBtn) {
+            qrScanStudentBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openQRScannerModal();
+            });
+        }
+
+        // QR modal close button
+        const qrScannerCloseBtn = document.getElementById('qrScannerCloseBtn');
+        if (qrScannerCloseBtn) {
+            qrScannerCloseBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeQRScannerModal();
+            });
+        }
+
+        // QR modal backdrop click — close
+        const qrScannerBackdrop = document.getElementById('qrScannerBackdrop');
+        if (qrScannerBackdrop) {
+            qrScannerBackdrop.addEventListener('click', () => closeQRScannerModal());
+        }
+
+        // Torch button
+        const qrTorchBtn = document.getElementById('qrTorchBtn');
+        if (qrTorchBtn) {
+            qrTorchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleQRTorch();
+            });
+        }
+
+        // Manual input confirm
+        const qrManualConfirmBtn = document.getElementById('qrManualConfirmBtn');
+        if (qrManualConfirmBtn) {
+            qrManualConfirmBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const manualInput = document.getElementById('qrManualInput');
+                const val = manualInput ? manualInput.value.trim() : '';
+                if (!val) return;
+                onQRDecoded(val);
+            });
+        }
+
+        // Manual input — Enter key
+        const qrManualInputEl = document.getElementById('qrManualInput');
+        if (qrManualInputEl) {
+            qrManualInputEl.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = qrManualInputEl.value.trim();
+                    if (val) onQRDecoded(val);
+                }
+            });
+        }
+
+        // Close QR modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const qrModal = document.getElementById('QRScannerModal');
+                if (qrModal && qrModal.classList.contains('active')) {
+                    closeQRScannerModal();
+                }
+            }
+        });
 
         // 9. VIOLATION TYPE SELECTION
         const violationTypeCards = document.querySelectorAll('.violation-type-card');

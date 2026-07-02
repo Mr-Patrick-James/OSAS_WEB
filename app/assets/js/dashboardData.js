@@ -39,6 +39,33 @@ class DashboardData {
         };
         // Flag to prevent multiple chart updates
         this.chartsUpdating = false;
+        this.pollingInterval = null;
+    }
+
+    /**
+     * Start periodic polling for real-time updates
+     */
+    startPolling(intervalMs = 30000) {
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+        
+        console.log(`📡 Dashboard polling started (${intervalMs}ms)`);
+        this.pollingInterval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                console.log('🔄 Polling dashboard data...');
+                this.loadAllData().catch(console.error);
+            }
+        }, intervalMs);
+    }
+
+    /**
+     * Stop periodic polling
+     */
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('📡 Dashboard polling stopped');
+        }
     }
 
     /**
@@ -96,7 +123,8 @@ class DashboardData {
                                     dateReported: violationDate,
                                     studentImage: v.avatar || '',
                                     avatar: v.avatar || '',
-                                    status: v.status || 'pending'
+                                    status: v.status || 'pending',
+                                    sanction_name: v.sanctionName || v.sanction_name || null
                                 };
                             });
                             
@@ -834,15 +862,35 @@ class DashboardData {
             const date = violation.violationDate || violation.violation_date || violation.dateReported || 'N/A';
             const violationType = violation.violation_type || violation.violationType || violation.notes || violation.remarks || 'N/A';
             const status = (violation.status || 'pending').toLowerCase();
+            const sanction = violation.sanction_name;
             const avatar = violation.studentImage || violation.avatar || '../app/assets/img/default.png';
 
-            const statusClass = status === 'permitted' ? 'permitted' :
-                               (status === 'completed' || status === 'resolved') ? 'completed' :
-                               status === 'warning' ? 'process' : 'pending';
-            const statusText = status === 'completed' || status === 'resolved' ? 'Resolved' :
-                              status === 'warning' ? 'Warning' :
-                              status === 'permitted' ? 'Permitted' :
-                              status === 'disciplinary' ? 'Disciplinary Action' : 'Pending';
+            // Determine status class
+            let statusClass = 'pending';
+            if (status === 'permitted') statusClass = 'permitted';
+            else if (status === 'completed' || status === 'resolved') statusClass = 'completed';
+            else if (status === 'warning') statusClass = 'process';
+            else if (status === 'disciplinary') statusClass = 'pending';
+            
+            // Determine status text - prioritize sanction_name if not resolved
+            let statusText = 'Pending';
+            if (status === 'completed' || status === 'resolved') {
+                statusText = 'Resolved';
+                statusClass = 'completed';
+            } else if (sanction) {
+                statusText = sanction;
+                // If it's a sanction, usually it's in progress/warning state
+                statusClass = 'process';
+            } else if (status === 'warning') {
+                statusText = 'Warning';
+                statusClass = 'process';
+            } else if (status === 'permitted') {
+                statusText = 'Permitted';
+                statusClass = 'permitted';
+            } else if (status === 'disciplinary') {
+                statusText = 'Disciplinary Action';
+                statusClass = 'pending';
+            }
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -1341,7 +1389,9 @@ function initDashboardData() {
         if (dashcontent && mainContent && mainContent.innerHTML.trim() !== '') {
             clearInterval(checkInterval);
             console.log('✅ Dashboard content found, loading data...');
-            dashboardDataInstance.loadAllData().catch(error => {
+            dashboardDataInstance.loadAllData().then(() => {
+                dashboardDataInstance.startPolling(20000); // Poll every 20s
+            }).catch(error => {
                 console.error('❌ Error loading dashboard data:', error);
                 window.initDashboardDataAttempted = false; // Allow retry on error
             });

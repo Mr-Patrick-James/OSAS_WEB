@@ -60,6 +60,61 @@ class AuthController extends Controller {
                             [$studentIdCode]
                         );
                         if (!empty($student)) $studentId = $student[0]['id'];
+                        
+                        // Mark that this is a fresh login (not a refresh)
+                        $_SESSION['fresh_login'] = true;
+                        
+                        // Now send push notifications for latest 5 violations (only once per login)
+                        if (!isset($_SESSION['login_push_sent'])) {
+                            try {
+                                require_once __DIR__ . '/../models/ViolationModel.php';
+                                require_once __DIR__ . '/../services/PushNotificationService.php';
+                                
+                                $violationModel = new ViolationModel();
+                                // Get all violations (active + archived) for the student
+                                $violations = $violationModel->query(
+                                    "SELECT v.*, vt.name as violation_type_name 
+                                     FROM violations v
+                                     LEFT JOIN violation_types vt ON v.violation_type_id = vt.id
+                                     WHERE BINARY v.student_id = ? 
+                                     ORDER BY v.created_at DESC
+                                     LIMIT 5",
+                                    [$studentIdCode]
+                                );
+                                
+                                if (!empty($violations)) {
+                                    $pushService = new PushNotificationService();
+                                    if ($pushService->isEnabled()) {
+                                        // Send each violation as a push notification
+                                        foreach ($violations as $index => $violation) {
+                                            $typeName = $violation['violation_type_name'] ?? 'Violation';
+                                            $dateStr = date('M j, Y', strtotime($violation['violation_date'] ?? $violation['created_at']));
+                                            $title = 'Violation Recorded';
+                                            $body = $typeName . ' - ' . $dateStr;
+                                            
+                                            $pushService->notifyStudent(
+                                                $studentIdCode,
+                                                $title,
+                                                $body,
+                                                ['page' => 'user-page/my_violations']
+                                            );
+                                            
+                                            // Add small delay between notifications
+                                            if ($index < count($violations) - 1) {
+                                                usleep(100000); // 0.1 seconds
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Mark that we've sent the push notifications for this login
+                                $_SESSION['login_push_sent'] = true;
+                                
+                            } catch (Exception $e) {
+                                error_log("Error sending login push notifications: " . $e->getMessage());
+                            }
+                        }
+                        
                     } catch (Exception $e) {
                         error_log("Error fetching student database ID: " . $e->getMessage());
                     }

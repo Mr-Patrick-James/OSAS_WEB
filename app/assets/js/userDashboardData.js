@@ -25,6 +25,33 @@ class UserDashboardData {
         this.violations = [];
         this.announcements = [];
         this.dashcontents = [];
+        this.pollingInterval = null;
+    }
+
+    /**
+     * Start periodic polling for real-time updates
+     */
+    startPolling(intervalMs = 30000) {
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+        
+        console.log(`📡 User Dashboard polling started (${intervalMs}ms)`);
+        this.pollingInterval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                console.log('🔄 Polling user dashboard data...');
+                this.loadAllData().catch(console.error);
+            }
+        }, intervalMs);
+    }
+
+    /**
+     * Stop periodic polling
+     */
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('📡 User Dashboard polling stopped');
+        }
     }
 
     /**
@@ -387,6 +414,7 @@ class UserDashboardData {
             const typeLabel = v.violationTypeLabel || v.violation_type_name || v.violation_type || v.type || 'Unknown';
             const date = new Date(v.date || v.created_at || v.violation_date)
                 .toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            const isResolved = (v.status || '').toLowerCase() === 'resolved';
 
             let badgeClass, badgeText;
             if (sanctionName) {
@@ -411,6 +439,7 @@ class UserDashboardData {
                         <div class="sd-violation-item__meta">
                             <span class="sd-violation-item__date"><i class='bx bx-calendar'></i> ${date}</span>
                             <span class="sd-badge ${badgeClass}">${badgeText}</span>
+                            ${isResolved ? `<span class="sd-badge sd-badge--resolved">Resolved</span>` : ''}
                         </div>
                     </div>
                     <div class="sd-violation-item__action">
@@ -442,7 +471,8 @@ class UserDashboardData {
                 description: v.sanctionDescription || '',
                 type: v.violationTypeLabel || v.violation_type_name || '',
                 level: v.violationLevelLabel || v.violation_level_name || '',
-                date: v.dateReported || v.date || v.created_at || ''
+                date: v.dateReported || v.date || v.created_at || '',
+                status: v.status || ''
             });
         });
 
@@ -454,20 +484,25 @@ class UserDashboardData {
             return;
         }
 
-        container.innerHTML = sanctions.map(s => `
+        container.innerHTML = sanctions.map(s => {
+            const isResolved = (s.status || '').toLowerCase() === 'resolved';
+            return `
             <div style="background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                     <i class='bx bx-shield-quarter' style="font-size:16px;color:#92650a;flex-shrink:0;"></i>
                     <strong style="font-size:13px;color:#92650a;">${this.escapeHtml(s.name)}</strong>
-                    ${s.type ? `<span style="font-size:11px;color:#6b7280;margin-left:auto;">for ${this.escapeHtml(s.type)}</span>` : ''}
+                    <span class="sd-badge ${isResolved ? 'sd-badge--resolved' : 'sd-badge--pending'}" style="margin-left:auto;">
+                        ${isResolved ? 'Resolved' : 'Pending'}
+                    </span>
                 </div>
                 ${s.level ? `<div style="font-size:11px;color:#6b7280;margin-bottom:4px;"><i class='bx bx-chevron-right' style="vertical-align:middle;"></i> ${this.escapeHtml(s.level)}</div>` : ''}
+                ${s.type ? `<div style="font-size:11px;color:#6b7280;margin-bottom:4px;"><i class='bx bx-error-circle' style="vertical-align:middle;"></i> for ${this.escapeHtml(s.type)}</div>` : ''}
                 ${s.description
                     ? `<p style="font-size:12px;color:#374151;margin:0;line-height:1.6;">${this.escapeHtml(s.description)}</p>`
                     : `<p style="font-size:12px;color:#9ca3af;margin:0;font-style:italic;">No description provided.</p>`
                 }
             </div>
-        `).join('');
+        `}).join('');
     }
 
     updateAnnouncementsDisplay() {
@@ -608,6 +643,59 @@ class UserDashboardData {
         // Otherwise, format it nicely
         return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
+
+    async showLatestViolationsNotifications(force) {
+        if (Notification.permission !== 'granted') return;
+        if (!force) return;
+        
+        const key = 'eosas_viol_batch_shown';
+        if (localStorage.getItem(key)) return;
+
+        const allViolations = this.allViolations || this.violations || [];
+        if (!allViolations.length) {
+            await this.showViolationViaServiceWorker('E-OSAS', 'No violations recorded for you.', 'eosas-empty-viol');
+            localStorage.setItem(key, '1');
+            return;
+        }
+
+        const sorted = [...allViolations].sort((a, b) => new Date(b.date || b.created_at || b.violation_date) - new Date(a.date || a.created_at || a.violation_date)).slice(0, 5);
+
+        for (let i = 0; i < sorted.length; i++) {
+            const v = sorted[i];
+            const typeLabel = v.violationTypeLabel || v.violation_type_name || v.violation_type || v.type || 'Unknown violation';
+            const sanction = v.sanctionName ? `Sanction: ${v.sanctionName}` : 'Pending review';
+            await this.showViolationViaServiceWorker(
+                'New violation recorded',
+                `${typeLabel} — ${sanction}`,
+                'violation-' + (v.id || v.violation_id),
+                { type: 'violation', id: v.id || v.violation_id, page: 'user-page/my_violations' }
+            );
+            if (i < sorted.length - 1) await new Promise(r => setTimeout(r, 450));
+        }
+
+        localStorage.setItem(key, '1');
+    }
+
+    async showViolationViaServiceWorker(title, body, tag, data) {
+        if (Notification.permission !== 'granted') return;
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const root = USER_API_BASE.replace(/\/api\/$/, '');
+            const iconUrl = root + '/app/assets/img/default.png';
+            await reg.showNotification(title, {
+                body: body.substring(0, 200),
+                icon: iconUrl,
+                badge: iconUrl,
+                tag: tag || 'eosas-viol',
+                data: data || { type: 'violation', page: 'user-page/my_violations' },
+                renotify: true
+            });
+        } catch (e) {
+            const root = USER_API_BASE.replace(/\/api\/$/, '');
+            const iconUrl = root + '/app/assets/img/default.png';
+            new Notification(title, { body, icon: iconUrl });
+        }
+    }
 }
 
 // Auto-load when DOM is ready
@@ -620,7 +708,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Only load if we're on dashboard page
         const mainContent = document.getElementById('main-content');
         if (mainContent && (mainContent.innerHTML.includes('My Dashboard') || mainContent.innerHTML.includes('sd-violations-list') || mainContent.innerHTML.includes('student-dash'))) {
-            window.userDashboardData.loadAllData();
+            window.userDashboardData.loadAllData().then(() => {
+                window.userDashboardData.startPolling(20000); // Poll every 20s
+                window.userDashboardData.showLatestViolationsNotifications(true);
+            });
         }
     }, 100);
 });
@@ -630,5 +721,14 @@ window.initializeUserDashboard = function() {
     if (!window.userDashboardData) {
         window.userDashboardData = new UserDashboardData();
     }
-    window.userDashboardData.loadAllData();
+    window.userDashboardData.loadAllData().then(() => {
+        window.userDashboardData.startPolling(20000); // Poll every 20s
+        window.userDashboardData.showLatestViolationsNotifications(true);
+    });
+};
+
+window.showLatestViolationsNotifications = (force) => {
+    if (window.userDashboardData) {
+        window.userDashboardData.showLatestViolationsNotifications(force);
+    }
 };
