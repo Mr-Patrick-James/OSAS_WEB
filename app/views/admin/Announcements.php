@@ -1,7 +1,10 @@
 <?php
 require_once __DIR__ . '/../../core/View.php';
+$_role = $_SESSION['role'] ?? '';
+$_canManage = in_array($_role, ['admin', 'OSAS Staff']);
 ?>
 <link rel="stylesheet" href="<?= View::asset('styles/announcements.css') ?>">
+<script>window.ANNOUNCEMENT_CAN_MANAGE = <?= $_canManage ? 'true' : 'false' ?>;</script>
 <main id="announcements-page" class="admin-side">
     <!-- Header Card -->
     <div class="announcements-header-card">
@@ -17,20 +20,34 @@ require_once __DIR__ . '/../../core/View.php';
             </div>
             <div class="announcement-actions">
                 <div class="announcement-btn-group">
+                    <?php if ($_canManage): ?>
                     <button class="btn-export" onclick="exportAnnouncements()">
                         <i class='bx bx-download'></i>
                         <span>Export</span>
                     </button>
+                    <?php else: ?>
+                    <button class="btn-export" disabled title="Only Admin and OSAS Staff can export" style="opacity:.45;cursor:not-allowed;">
+                        <i class='bx bx-download'></i>
+                        <span>Export</span>
+                    </button>
+                    <?php endif; ?>
                     <button class="btn-refresh" onclick="loadAnnouncements()">
                         <i class='bx bx-refresh'></i>
                         <span>Refresh</span>
                     </button>
                 </div>
                 <div class="announcement-btn-group">
+                    <?php if ($_canManage): ?>
                     <button class="btn-add-announcement" onclick="openAddAnnouncementModal()">
                         <i class='bx bx-plus'></i>
                         <span>Add Announcement</span>
                     </button>
+                    <?php else: ?>
+                    <button class="btn-add-announcement" disabled title="Only Admin and OSAS Staff can add announcements" style="opacity:.45;cursor:not-allowed;">
+                        <i class='bx bx-plus'></i>
+                        <span>Add Announcement</span>
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

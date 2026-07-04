@@ -4,6 +4,26 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Only admin gets full notification functionality
+    const role = (document.cookie.split(';').find(c => c.trim().startsWith('role=')) || '').split('=')[1]?.trim();
+    if (role !== 'admin') {
+        // Keep bell visible but show a toast when clicked
+        const notifBadge = document.getElementById('notifBadge');
+        if (notifBadge) notifBadge.style.display = 'none';
+
+        const notifBtn = document.getElementById('notifBtn');
+        if (notifBtn) {
+            notifBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showNotification(
+                    'Only administrators can receive system notifications.',
+                    'info',
+                    'Notifications Restricted'
+                );
+            });
+        }
+        return;
+    }
     initAdminNotifications();
 });
 

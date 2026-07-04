@@ -157,10 +157,16 @@
             const statusText = announcement.status === 'active' ? 'Active' : 'Archived';
             const createdDate = formatDate(announcement.created_at);
             const msg = announcement.message || '';
+        const canManage = window.ANNOUNCEMENT_CAN_MANAGE === true;
             const actionBtns = announcement.status === 'archived'
-                ? `<button type="button" class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore"><i class='bx bx-undo'></i></button>`
-                : `<button type="button" class="action-btn edit" onclick="editAnnouncement(${announcement.id})" title="Edit"><i class='bx bx-edit'></i></button>
-                   <button type="button" class="action-btn archive" onclick="archiveAnnouncement(${announcement.id})" title="Archive"><i class='bx bx-archive'></i></button>`;
+                ? (canManage
+                    ? `<button type="button" class="action-btn restore" onclick="restoreAnnouncement(${announcement.id})" title="Restore"><i class='bx bx-undo'></i></button>`
+                    : `<button type="button" class="action-btn restore" disabled title="Only Admin and OSAS Staff can restore" style="opacity:.4;cursor:not-allowed;"><i class='bx bx-undo'></i></button>`)
+                : (canManage
+                    ? `<button type="button" class="action-btn edit" onclick="editAnnouncement(${announcement.id})" title="Edit"><i class='bx bx-edit'></i></button>
+                   <button type="button" class="action-btn archive" onclick="archiveAnnouncement(${announcement.id})" title="Archive"><i class='bx bx-archive'></i></button>`
+                    : `<button type="button" class="action-btn edit" disabled title="Only Admin and OSAS Staff can edit" style="opacity:.4;cursor:not-allowed;"><i class='bx bx-edit'></i></button>
+                   <button type="button" class="action-btn archive" disabled title="Only Admin and OSAS Staff can archive" style="opacity:.4;cursor:not-allowed;"><i class='bx bx-archive'></i></button>`);
 
             tableHtml += `
                 <tr>
@@ -283,6 +289,10 @@
     }
 
     function openAddAnnouncementModal() {
+        if (!window.ANNOUNCEMENT_CAN_MANAGE) {
+            notify('Only Admin and OSAS Staff can add announcements.', 'error');
+            return;
+        }
         const modal = document.getElementById('announcementModal');
         if (!modal) return;
 
@@ -321,6 +331,10 @@
     }
 
     async function editAnnouncement(id) {
+        if (!window.ANNOUNCEMENT_CAN_MANAGE) {
+            notify('Only Admin and OSAS Staff can edit announcements.', 'error');
+            return;
+        }
         const announcement = await fetchAnnouncementById(id);
         if (!announcement) {
             notify('Announcement not found', 'error');
@@ -507,6 +521,10 @@
     }
 
     async function exportAnnouncements() {
+        if (!window.ANNOUNCEMENT_CAN_MANAGE) {
+            notify('Only Admin and OSAS Staff can export announcements.', 'error');
+            return;
+        }
         try {
             notify('Preparing export...', 'info');
             const searchEl = document.getElementById('announcementSearch');

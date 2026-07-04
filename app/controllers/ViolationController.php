@@ -234,12 +234,21 @@ class ViolationController extends Controller
             }
         }
 
-        if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
+        // Role-based access control for fetching violations
+        $reportedByFilter = '';
+        $role = $_SESSION['role'] ?? '';
+
+        if ($role === 'user') {
+            // Regular students only see their own violations
             $studentId = $_SESSION['student_id_code'] ?? '';
             if (empty($studentId)) {
                 $this->error('Student ID not found. Please login again.', '', 401);
             }
+        } elseif (in_array($role, ['Officer', 'CSC Officer'])) {
+            // Officers and CSC Officers only see violations they recorded
+            $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
         }
+        // admin, OSAS Staff, Faculty Member → no filter, see all violations
 
         try {
             $violations = $this->model->getAllWithStudentInfo(
@@ -248,7 +257,9 @@ class ViolationController extends Controller
                 $studentId,
                 $dateFrom,
                 $dateTo,
-                $isArchived
+                $isArchived,
+                null,
+                $reportedByFilter
             );
 
             $this->json([
@@ -1173,6 +1184,9 @@ class ViolationController extends Controller
      */
     private function get_pending_slip_requests() {
         $this->requireAdmin();
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Only Administrators can view slip requests.', 403);
+        }
         try {
             $requests = $this->model->getSlipRequests();
             $this->json(['status' => 'success', 'data' => $requests]);
@@ -1186,6 +1200,9 @@ class ViolationController extends Controller
      */
     private function approve_slip() {
         $this->requireAdmin();
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Only Administrators can approve slip requests.', 403);
+        }
         $requestId = $this->getPost('request_id', $this->getGet('request_id', ''));
         if (empty($requestId)) $this->error('Request ID required');
 
@@ -1226,6 +1243,9 @@ class ViolationController extends Controller
      */
     private function deny_slip() {
         $this->requireAdmin();
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Only Administrators can deny slip requests.', 403);
+        }
         $requestId = $this->getPost('request_id', $this->getGet('request_id', ''));
         if (empty($requestId)) $this->error('Request ID required');
 

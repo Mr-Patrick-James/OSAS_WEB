@@ -303,6 +303,15 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             letter-spacing: 0.02em;
         }
 
+        .hero-badge-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gold-light);
+            flex-shrink: 0;
+        }
+
         .hero-title {
             font-size: clamp(2rem, 5vw, 3.8rem);
             font-weight: 800;
@@ -414,8 +423,15 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .marquee-divider {
-            color: var(--gold);
-            opacity: 0.3;
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--gold);
+            opacity: 0.4;
+            vertical-align: middle;
+            margin: 0 0.2rem;
+            font-size: 0; /* hide any leftover text */
         }
 
         /* ===== FEATURES BENTO ===== */
@@ -945,7 +961,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <div class="hero-container">
         <div class="hero-content fade-up">
             <div class="hero-badge">
-                ✦ Official Student Portal — Colegio de Naujan
+                <span class="hero-badge-dot"></span> Official Student Portal — Colegio de Naujan
             </div>
 
             <h1 class="hero-title">
@@ -983,23 +999,23 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 <!-- MARQUEE -->
 <div class="marquee">
     <div class="marquee-content">
-        <span class="marquee-item">Student Records <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Violation Tracking <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Announcements <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Reports & Statistics <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Department Management <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">AI Assistant <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Role-Based Access <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Digital Clearance <span class="marquee-divider">✦</span></span>
+        <span class="marquee-item">Student Records <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Violation Tracking <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Announcements <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Reports & Statistics <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Department Management <span class="marquee-divider"></span></span>
+        <span class="marquee-item">AI Assistant <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Role-Based Access <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Digital Clearance <span class="marquee-divider"></span></span>
         <!-- Duplicate for seamless loop -->
-        <span class="marquee-item">Student Records <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Violation Tracking <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Announcements <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Reports & Analytics <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Department Management <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">AI Assistant <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Role-Based Access <span class="marquee-divider">✦</span></span>
-        <span class="marquee-item">Digital Clearance <span class="marquee-divider">✦</span></span>
+        <span class="marquee-item">Student Records <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Violation Tracking <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Announcements <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Reports & Analytics <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Department Management <span class="marquee-divider"></span></span>
+        <span class="marquee-item">AI Assistant <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Role-Based Access <span class="marquee-divider"></span></span>
+        <span class="marquee-item">Digital Clearance <span class="marquee-divider"></span></span>
     </div>
 </div>
 

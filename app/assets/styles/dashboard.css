@@ -1329,3 +1329,42 @@ body.dark .modern-alert-content h2 { color: white; }
   }
 
 }
+
+/* ── Restricted Nav Items (non-admin / non-OSAS Staff) ── */
+.nav-disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+/* Keep pointer-events on the <a> blocked but allow the tooltip to show via title */
+li.nav-restricted > a.nav-disabled {
+  pointer-events: auto !important; /* keep for title tooltip */
+  cursor: not-allowed !important;
+}
+
+li.nav-restricted > a.nav-disabled:hover {
+  color: var(--dark) !important; /* suppress gold hover */
+}
+
+/* Lock icon inside the nav item */
+.nav-lock-icon {
+  margin-left: auto;
+  font-size: 14px !important;
+  min-width: unset !important;
+  max-width: unset !important;
+  color: var(--dark-grey) !important;
+  opacity: 0.7;
+}
+
+/* Top-nav disabled links */
+.nav-menu .nav-restricted .nav-link.nav-disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  pointer-events: auto !important;
+}
+
+.nav-menu .nav-restricted .nav-link.nav-disabled:hover {
+  color: inherit !important;
+  background: none !important;
+}

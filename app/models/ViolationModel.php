@@ -43,7 +43,7 @@ class ViolationModel extends Model {
     /**
      * Get all violations with student info
      */
-    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '', $isArchived = 0, $specificId = null) {
+    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '', $isArchived = 0, $specificId = null, $reportedByFilter = '') {
         // Check if violations table exists
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
@@ -212,6 +212,12 @@ class ViolationModel extends Model {
         if (!empty($dateTo)) {
             $query .= " AND v.violation_date <= ?";
             $params[] = $dateTo;
+            $types .= "s";
+        }
+
+        if (!empty($reportedByFilter)) {
+            $query .= " AND v.reported_by = ?";
+            $params[] = $reportedByFilter;
             $types .= "s";
         }
 
@@ -966,15 +972,26 @@ class ViolationModel extends Model {
     /**
      * Count total violations
      */
-    public function countViolations($studentId = null) {
+    public function countViolations($studentId = null, $reportedBy = null) {
         $query = "SELECT COUNT(*) as count FROM violations v";
         $params = [];
         $types = "";
-        
+        $conditions = [];
+
         if ($studentId) {
-            $query .= " WHERE BINARY v.student_id = BINARY ?";
+            $conditions[] = "BINARY v.student_id = BINARY ?";
             $params[] = $studentId;
-            $types = "s";
+            $types .= "s";
+        }
+
+        if ($reportedBy) {
+            $conditions[] = "v.reported_by = ?";
+            $params[] = $reportedBy;
+            $types .= "s";
+        }
+
+        if (!empty($conditions)) {
+            $query .= " WHERE " . implode(" AND ", $conditions);
         }
         
         if (!empty($params)) {
@@ -998,12 +1015,22 @@ class ViolationModel extends Model {
     /**
      * Count unique violators
      */
-    public function countViolators($studentId = null) {
+    public function countViolators($studentId = null, $reportedBy = null) {
         if ($studentId) {
             return $this->countViolations($studentId) > 0 ? 1 : 0;
         }
-        
+
         $query = "SELECT COUNT(DISTINCT student_id) as count FROM violations WHERE student_id IS NOT NULL AND student_id != ''";
+        if ($reportedBy) {
+            $stmt = $this->conn->prepare($query . " AND reported_by = ?");
+            $stmt->bind_param("s", $reportedBy);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+            return (int)$row['count'];
+        }
+
         $result = $this->conn->query($query);
         if ($result) {
             $row = $result->fetch_assoc();
@@ -1015,7 +1042,7 @@ class ViolationModel extends Model {
     /**
      * Count penalties (disciplinary actions)
      */
-    public function countPenalties($studentId = null) {
+    public function countPenalties($studentId = null, $reportedBy = null) {
         $query = "SELECT COUNT(*) as count FROM violations v WHERE v.status = 'disciplinary'";
         $params = [];
         $types = "";
@@ -1023,7 +1050,13 @@ class ViolationModel extends Model {
         if ($studentId) {
             $query .= " AND BINARY v.student_id = BINARY ?";
             $params[] = $studentId;
-            $types = "s";
+            $types .= "s";
+        }
+
+        if ($reportedBy) {
+            $query .= " AND v.reported_by = ?";
+            $params[] = $reportedBy;
+            $types .= "s";
         }
         
         if (!empty($params)) {
@@ -1047,7 +1080,7 @@ class ViolationModel extends Model {
     /**
      * Get recent violations
      */
-    public function getRecent($limit = 10, $studentId = null) {
+    public function getRecent($limit = 10, $studentId = null, $reportedBy = null) {
         $query = "
             SELECT v.id,
                    v.case_id,
@@ -1075,11 +1108,22 @@ class ViolationModel extends Model {
         
         $params = [];
         $types = "";
-        
+        $conditions = [];
+
         if ($studentId) {
-            $query .= " WHERE BINARY v.student_id = BINARY ?";
+            $conditions[] = "BINARY v.student_id = BINARY ?";
             $params[] = $studentId;
-            $types = "s";
+            $types .= "s";
+        }
+
+        if ($reportedBy) {
+            $conditions[] = "v.reported_by = ?";
+            $params[] = $reportedBy;
+            $types .= "s";
+        }
+
+        if (!empty($conditions)) {
+            $query .= " WHERE " . implode(" AND ", $conditions);
         }
         
         $query .= " ORDER BY v.created_at DESC LIMIT ?";
@@ -1129,7 +1173,7 @@ class ViolationModel extends Model {
     /**
      * Get top violators
      */
-    public function getTopViolators($limit = 5, $studentId = null) {
+    public function getTopViolators($limit = 5, $studentId = null, $reportedBy = null) {
         $query = "
             SELECT 
                 v.student_id,
@@ -1143,11 +1187,22 @@ class ViolationModel extends Model {
         
         $params = [];
         $types = "";
-        
+        $conditions = [];
+
         if ($studentId) {
-            $query .= " WHERE BINARY v.student_id = BINARY ?";
+            $conditions[] = "BINARY v.student_id = BINARY ?";
             $params[] = $studentId;
-            $types = "s";
+            $types .= "s";
+        }
+
+        if ($reportedBy) {
+            $conditions[] = "v.reported_by = ?";
+            $params[] = $reportedBy;
+            $types .= "s";
+        }
+
+        if (!empty($conditions)) {
+            $query .= " WHERE " . implode(" AND ", $conditions);
         }
         
         $query .= " GROUP BY v.student_id, s.first_name, s.last_name, s.avatar ORDER BY violation_count DESC LIMIT ?";

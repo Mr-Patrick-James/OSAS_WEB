@@ -19,10 +19,16 @@ require_once __DIR__ . '/../app/models/ViolationModel.php';
 // Get student ID if user is logged in as 'user' role
 $userRole = $_SESSION['role'] ?? null;
 $studentId = null;
+$reportedByFilter = null;
+
 if ($userRole === 'user') {
     // Prefer student_id_code (the actual student ID string) over student_id (database ID)
     $studentId = $_SESSION['student_id_code'] ?? $_SESSION['student_id'] ?? null;
+} elseif (in_array($userRole, ['Officer', 'CSC Officer'])) {
+    // Officers and CSC Officers only see stats for violations they recorded
+    $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? null;
 }
+// admin, OSAS Staff, Faculty Member → no filter
 
 try {
     // Instantiate models
@@ -43,17 +49,17 @@ try {
     $sectionsCount = $sectionModel->countActive();
     
     // ViolationModel methods we added
-    $violationsCount = $violationModel->countViolations($studentId);
-    $violatorsCount = $violationModel->countViolators($studentId);
-    $penaltiesCount = $violationModel->countPenalties($studentId);
+    $violationsCount = $violationModel->countViolations($studentId, $reportedByFilter);
+    $violatorsCount = $violationModel->countViolators($studentId, $reportedByFilter);
+    $penaltiesCount = $violationModel->countPenalties($studentId, $reportedByFilter);
     
     // 2. Get recent violations
     // We added getRecent to ViolationModel
-    $recentViolations = $violationModel->getRecent(10, $studentId);
+    $recentViolations = $violationModel->getRecent(10, $studentId, $reportedByFilter);
     
     // 3. Get top violators
     // We added getTopViolators to ViolationModel
-    $topViolators = $violationModel->getTopViolators(5, $studentId);
+    $topViolators = $violationModel->getTopViolators(5, $studentId, $reportedByFilter);
     
     // Format response
     $response = [

@@ -7,6 +7,12 @@ if (!file_exists(__DIR__ . '/../../assets/img/user.jpg')) {
 }
 $username = $_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Admin');
 $role = $_SESSION['role'] ?? 'admin';
+
+// Only admin and OSAS Staff can access these restricted pages
+$canAccessRestricted = in_array($role, ['admin', 'OSAS Staff']);
+
+// Announcements are accessible to all staff roles
+$canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member']);
 ?>
 <!-- SIDEBAR -->
 <section id="sidebar">
@@ -34,23 +40,47 @@ $role = $_SESSION['role'] ?? 'admin';
         <span class="text">Dashboard</span>
       </a>
     </li>
-    <li>
-      <a href="#" data-page="admin_page/Department">
-        <i class='bx bxs-building'></i>
-        <span class="text">Department</span>
-      </a>
+    <li<?= !$canAccessRestricted ? ' class="nav-restricted"' : '' ?>>
+      <?php if ($canAccessRestricted): ?>
+        <a href="#" data-page="admin_page/Department">
+          <i class='bx bxs-building'></i>
+          <span class="text">Department</span>
+        </a>
+      <?php else: ?>
+        <a href="#" class="nav-disabled" title="Access restricted to Admin and OSAS Staff only" onclick="return false;">
+          <i class='bx bxs-building'></i>
+          <span class="text">Department</span>
+          <i class='bx bxs-lock-alt nav-lock-icon'></i>
+        </a>
+      <?php endif; ?>
     </li>
-    <li>
-      <a href="#" data-page="admin_page/Sections">
-        <i class='bx bxs-layer'></i>
-        <span class="text">Sections</span>
-      </a>
+    <li<?= !$canAccessRestricted ? ' class="nav-restricted"' : '' ?>>
+      <?php if ($canAccessRestricted): ?>
+        <a href="#" data-page="admin_page/Sections">
+          <i class='bx bxs-layer'></i>
+          <span class="text">Sections</span>
+        </a>
+      <?php else: ?>
+        <a href="#" class="nav-disabled" title="Access restricted to Admin and OSAS Staff only" onclick="return false;">
+          <i class='bx bxs-layer'></i>
+          <span class="text">Sections</span>
+          <i class='bx bxs-lock-alt nav-lock-icon'></i>
+        </a>
+      <?php endif; ?>
     </li>
-    <li>
-      <a href="#" data-page="admin_page/Students">
-        <i class='bx bxs-group'></i>
-        <span class="text">Students</span>
-      </a>
+    <li<?= !$canAccessRestricted ? ' class="nav-restricted"' : '' ?>>
+      <?php if ($canAccessRestricted): ?>
+        <a href="#" data-page="admin_page/Students">
+          <i class='bx bxs-group'></i>
+          <span class="text">Students</span>
+        </a>
+      <?php else: ?>
+        <a href="#" class="nav-disabled" title="Access restricted to Admin and OSAS Staff only" onclick="return false;">
+          <i class='bx bxs-group'></i>
+          <span class="text">Students</span>
+          <i class='bx bxs-lock-alt nav-lock-icon'></i>
+        </a>
+      <?php endif; ?>
     </li>
     <li>
       <a href="#" data-page="admin_page/Violations">
@@ -58,17 +88,33 @@ $role = $_SESSION['role'] ?? 'admin';
         <span class="text">Violations</span>
       </a>
     </li>
-    <li>
-      <a href="#" data-page="admin_page/Reports">
-        <i class='bx bxs-file'></i>
-        <span class="text">Reports</span>
-      </a>
+    <li<?= !$canAccessRestricted ? ' class="nav-restricted"' : '' ?>>
+      <?php if ($canAccessRestricted): ?>
+        <a href="#" data-page="admin_page/Reports">
+          <i class='bx bxs-file'></i>
+          <span class="text">Reports</span>
+        </a>
+      <?php else: ?>
+        <a href="#" class="nav-disabled" title="Access restricted to Admin and OSAS Staff only" onclick="return false;">
+          <i class='bx bxs-file'></i>
+          <span class="text">Reports</span>
+          <i class='bx bxs-lock-alt nav-lock-icon'></i>
+        </a>
+      <?php endif; ?>
     </li>
-    <li>
-      <a href="#" data-page="admin_page/Announcements">
-        <i class='bx bxs-megaphone'></i>
-        <span class="text">Announcements</span>
-      </a>
+    <li<?= !$canAccessAnnouncements ? ' class="nav-restricted"' : '' ?>>
+      <?php if ($canAccessAnnouncements): ?>
+        <a href="#" data-page="admin_page/Announcements">
+          <i class='bx bxs-megaphone'></i>
+          <span class="text">Announcements</span>
+        </a>
+      <?php else: ?>
+        <a href="#" class="nav-disabled" title="Access restricted" onclick="return false;">
+          <i class='bx bxs-megaphone'></i>
+          <span class="text">Announcements</span>
+          <i class='bx bxs-lock-alt nav-lock-icon'></i>
+        </a>
+      <?php endif; ?>
     </li>
   </ul>
   <!-- Logout Fixed at Bottom -->
