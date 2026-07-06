@@ -165,7 +165,7 @@ function fetchAndUpdateTopnavAvatar() {
             if (data.status === 'success' && data.data && data.data.profile && data.data.profile.profile_picture) {
                 const avatarPath = resolvePath(data.data.profile.profile_picture);
                 
-                // Update topnav pill avatar
+                // 1. Update topnav pill avatar
                 const tnInitials = document.querySelector('.tn-avatar-ring .tn-avatar-initials');
                 if (tnInitials && tnInitials.style.display !== 'none') {
                     const tnImg = document.createElement('img');
@@ -177,7 +177,7 @@ function fetchAndUpdateTopnavAvatar() {
                     tnInitials.parentNode.insertBefore(tnImg, tnInitials);
                 }
 
-                // Update dropdown avatar
+                // 2. Update dropdown avatar
                 const ddInitials = document.querySelector('.tn-dropdown-header .tn-dropdown-avatar-initials');
                 if (ddInitials && ddInitials.style.display !== 'none') {
                     const ddImg = document.createElement('img');
@@ -187,6 +187,21 @@ function fetchAndUpdateTopnavAvatar() {
                     ddImg.onerror = function() { this.remove(); if(ddInitials) ddInitials.style.display='flex'; };
                     ddInitials.style.display = 'none';
                     ddInitials.parentNode.insertBefore(ddImg, ddInitials);
+                }
+
+                // 3. Update mobile sidebar profile avatar (.msb-avatar-wrap)
+                const msbInitials = document.querySelector('.msb-avatar-wrap .msb-avatar-initials');
+                if (msbInitials) {
+                    const msbImg = document.createElement('img');
+                    msbImg.src = avatarPath + '?t=' + Date.now();
+                    msbImg.alt = 'Profile';
+                    msbImg.className = 'msb-avatar-img';
+                    msbImg.onerror = function() {
+                        this.remove();
+                        if (msbInitials) msbInitials.style.display = 'flex';
+                    };
+                    msbInitials.style.display = 'none';
+                    msbInitials.parentNode.insertBefore(msbImg, msbInitials);
                 }
 
                 // Also update localStorage so next load is instant
@@ -246,6 +261,12 @@ window.executeLogout = function() {
     if (typeof showNotification === 'function') {
         showNotification('You have been logged out successfully.', 'success', 'Goodbye!', 2500);
     }
+
+    // Clear chat history for this user from localStorage
+    try {
+        const uid = window.OSAS_USER_ID || 'guest';
+        localStorage.removeItem('osas_chat_history_' + uid);
+    } catch(e) {}
 
     // Clear all client-side storage
     localStorage.removeItem('userSession');
@@ -2414,7 +2435,7 @@ function initializeEventListeners() {
         }, 100);
     });
 
-    const settingsTriggers = document.querySelectorAll('.nav-settings, .user-dropdown .settings-link, .tn-user-dropdown .settings-link');
+    const settingsTriggers = document.querySelectorAll('.nav-settings, .user-dropdown .settings-link, .tn-user-dropdown .settings-link, #mobileTopnavSettingsBtn');
     if (settingsTriggers.length > 0) {
         settingsTriggers.forEach(function (trigger) {
             trigger.addEventListener('click', function (e) {

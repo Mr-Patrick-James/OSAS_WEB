@@ -12,7 +12,114 @@ class Chatbot {
         this.contextLastFetched = null; // Timestamp of last fetch
         this.contextCacheTime = 5 * 60 * 1000; // Cache for 5 minutes
         this.apiBase = this.getAPIBasePath();
+        this.historyOpen = false;
+        this.currentSessionId = this.generateSessionId();
         this.init();
+    }
+
+    // ─── Chat History Helpers ─────────────────────────────────────────────────
+
+    generateSessionId() {
+        const d = new Date();
+        // Group by calendar day: YYYY-MM-DD + random 6-char suffix
+        const day = d.toISOString().split('T')[0];
+        const rand = Math.random().toString(36).slice(2, 8);
+        return `${day}_${rand}`;
+    }
+
+    getHistoryStorageKey() {
+        // Namespace by user ID so each user only sees their own history
+        const uid = window.OSAS_USER_ID || 'guest';
+        return `osas_chat_history_${uid}`;
+    }
+
+    /**
+     * Load all chat sessions from localStorage.
+     * Returns: { [sessionId]: { date, messages: [{role, content, time}] } }
+     */
+    loadAllSessions() {
+        try {
+            const raw = localStorage.getItem(this.getHistoryStorageKey());
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    /**
+     * Save current session's messages to localStorage.
+     */
+    saveCurrentSession() {
+        if (this.conversationHistory.length === 0) return;
+        try {
+            const all = this.loadAllSessions();
+            const existing = all[this.currentSessionId] || { date: new Date().toISOString().split('T')[0], messages: [] };
+            existing.messages = this.conversationHistory.map((m, i) => ({
+                role: m.role,
+                content: m.content,
+                time: m.time || new Date().toISOString()
+            }));
+            all[this.currentSessionId] = existing;
+
+            // Prune: keep only last 30 sessions
+            const keys = Object.keys(all).sort().reverse();
+            if (keys.length > 30) {
+                keys.slice(30).forEach(k => delete all[k]);
+            }
+
+            localStorage.setItem(this.getHistoryStorageKey(), JSON.stringify(all));
+        } catch (e) {
+            console.warn('Could not save chat history:', e);
+        }
+    }
+
+    /**
+     * Group sessions by relative date label.
+     */
+    groupSessionsByDate(sessions) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+        const groups = {};
+        Object.entries(sessions)
+            .sort(([a], [b]) => b.localeCompare(a)) // newest first
+            .forEach(([id, session]) => {
+                const d = new Date(session.date + 'T00:00:00');
+                let label;
+                if (d >= today) {
+                    label = 'Today';
+                } else if (d >= yesterday) {
+                    label = 'Yesterday';
+                } else {
+                    const diffDays = Math.floor((today - d) / 86400000);
+                    if (diffDays <= 6) {
+                        label = `${diffDays} days ago`;
+                    } else if (diffDays <= 13) {
+                        label = 'Last week';
+                    } else if (diffDays <= 30) {
+                        label = `${Math.ceil(diffDays/7)} weeks ago`;
+                    } else {
+                        label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                    }
+                }
+                if (!groups[label]) groups[label] = [];
+                groups[label].push({ id, ...session });
+            });
+        return groups;
+    }
+
+    /**
+     * Get first user message as session title.
+     */
+    getSessionTitle(session) {
+        const firstUser = (session.messages || []).find(m => m.role === 'user');
+        if (firstUser && firstUser.content) {
+            return firstUser.content.length > 45
+                ? firstUser.content.substring(0, 45) + '…'
+                : firstUser.content;
+        }
+        return 'Chat session';
     }
 
     getAPIBasePath() {
@@ -564,8 +671,31 @@ HOW-TO FOR ADMINS:
         const chatbotPanel = document.createElement('div');
         chatbotPanel.id = 'chatbot-panel';
         chatbotPanel.innerHTML = `
+            <!-- HISTORY SIDEBAR -->
+            <div class="cb-history-sidebar" id="cb-history-sidebar">
+                <div class="cb-history-header">
+                    <span class="cb-history-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Chat History
+                    </span>
+                    <button class="cb-history-close-btn" id="cb-history-close" aria-label="Close history">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <button class="cb-history-new-btn" id="cb-history-new">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New Conversation
+                </button>
+                <div class="cb-history-list" id="cb-history-list">
+                    <div class="cb-history-empty">No previous chats yet.</div>
+                </div>
+            </div>
+
             <!-- HEADER -->
             <div class="cb-header">
+                <button class="cb-history-btn" id="cb-history-toggle" aria-label="Chat history" title="Chat History">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </button>
                 <div class="cb-header-avatar">
                     <img src="${botImgPath}" alt="OSAS Bot" class="cb-avatar-img">
                     <span class="cb-online-dot"></span>
@@ -605,6 +735,199 @@ HOW-TO FOR ADMINS:
             </div>
         `;
         document.body.appendChild(chatbotPanel);
+    }
+
+    // ─── History Sidebar Methods ──────────────────────────────────────────────
+
+    toggleHistory() {
+        if (this.historyOpen) {
+            this.closeHistory();
+        } else {
+            this.openHistory();
+        }
+    }
+
+    openHistory() {
+        this.historyOpen = true;
+        const sidebar = document.getElementById('cb-history-sidebar');
+        if (sidebar) {
+            this.renderHistoryList();
+            sidebar.classList.add('open');
+        }
+        const btn = document.getElementById('cb-history-toggle');
+        if (btn) btn.classList.add('active');
+    }
+
+    closeHistory() {
+        this.historyOpen = false;
+        const sidebar = document.getElementById('cb-history-sidebar');
+        if (sidebar) sidebar.classList.remove('open');
+        const btn = document.getElementById('cb-history-toggle');
+        if (btn) btn.classList.remove('active');
+    }
+
+    renderHistoryList() {
+        const listEl = document.getElementById('cb-history-list');
+        if (!listEl) return;
+
+        const all = this.loadAllSessions();
+        const sessionKeys = Object.keys(all);
+
+        if (sessionKeys.length === 0) {
+            listEl.innerHTML = '<div class="cb-history-empty">No previous chats yet.<br>Start chatting to save history!</div>';
+            return;
+        }
+
+        const groups = this.groupSessionsByDate(all);
+        listEl.innerHTML = '';
+
+        Object.entries(groups).forEach(([label, sessions]) => {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'cb-history-group';
+
+            const labelEl = document.createElement('div');
+            labelEl.className = 'cb-history-group-label';
+            labelEl.textContent = label;
+            groupEl.appendChild(labelEl);
+
+            sessions.forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'cb-history-item';
+                if (session.id === this.currentSessionId) {
+                    item.classList.add('current');
+                }
+
+                const title = this.getSessionTitle(session);
+                const msgCount = (session.messages || []).filter(m => m.role === 'user').length;
+
+                item.innerHTML = `
+                    <div class="cb-history-item-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="cb-history-item-body">
+                        <div class="cb-history-item-title">${this.escapeHtml(title)}</div>
+                        <div class="cb-history-item-meta">${msgCount} message${msgCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    ${session.id !== this.currentSessionId ? `<button class="cb-history-delete-btn" data-session-id="${session.id}" title="Delete" aria-label="Delete session">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="11" height="11"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>` : '<span class="cb-history-current-badge">Current</span>'}
+                `;
+
+                // Restore session on click
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.cb-history-delete-btn')) return;
+                    if (session.id !== this.currentSessionId) {
+                        this.restoreSession(session);
+                    }
+                    this.closeHistory();
+                });
+
+                // Delete session
+                const deleteBtn = item.querySelector('.cb-history-delete-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.deleteSession(session.id);
+                    });
+                }
+
+                groupEl.appendChild(item);
+            });
+
+            listEl.appendChild(groupEl);
+        });
+    }
+
+    restoreSession(session) {
+        const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+        const container = document.getElementById('chatbot-messages');
+        if (!container) return;
+
+        // Clear current chat
+        container.innerHTML = '';
+        this.conversationHistory = [];
+
+        // Add a "viewing history" banner
+        const bannerRow = document.createElement('div');
+        bannerRow.className = 'cb-history-banner';
+        bannerRow.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Viewing chat from <strong>${new Date(session.date + 'T00:00:00').toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' })}</strong>
+            <button class="cb-history-back-btn" id="cb-history-back">← New chat</button>
+        `;
+        container.appendChild(bannerRow);
+
+        // Replay messages
+        (session.messages || []).forEach(msg => {
+            const row = document.createElement('div');
+            row.className = `cb-msg-row ${msg.role === 'user' ? 'cb-user-row' : 'cb-bot-row'}`;
+            const formatted = this.formatMessageContent(msg.content);
+            if (msg.role === 'user') {
+                row.innerHTML = `<div class="cb-bubble cb-user-bubble"><div class="cb-bubble-text">${formatted}</div></div>`;
+            } else {
+                row.innerHTML = `<img src="${botImgPath}" alt="" class="cb-bubble-avatar"><div class="cb-bubble cb-bot-bubble"><div class="cb-bubble-text">${formatted}</div></div>`;
+            }
+            container.appendChild(row);
+        });
+
+        container.scrollTop = container.scrollHeight;
+
+        // Disable input while viewing history
+        const input = document.getElementById('chatbot-input');
+        const sendBtn = document.getElementById('chatbot-send');
+        if (input) { input.disabled = true; input.placeholder = 'Viewing history — click "New chat" to resume'; }
+        if (sendBtn) sendBtn.disabled = true;
+
+        // Back button — start fresh
+        const backBtn = document.getElementById('cb-history-back');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => this.startNewConversation());
+        }
+    }
+
+    deleteSession(sessionId) {
+        try {
+            const all = this.loadAllSessions();
+            delete all[sessionId];
+            localStorage.setItem(this.getHistoryStorageKey(), JSON.stringify(all));
+            this.renderHistoryList();
+        } catch (e) {
+            console.warn('Could not delete session:', e);
+        }
+    }
+
+    startNewConversation() {
+        const botImgPath = this.apiBase.replace('/api/', '/app/assets/img/bot.png');
+        const currentPath = window.location.pathname;
+        const isUser = currentPath.includes('/user_dashboard.php') || currentPath.includes('/user/');
+        const welcomeText = isUser
+            ? `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or how to use the student portal.</p>`
+            : `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, departments, or how to use the system.</p>`;
+
+        // Save current before resetting
+        this.saveCurrentSession();
+
+        // Reset state
+        this.currentSessionId = this.generateSessionId();
+        this.conversationHistory = [];
+
+        const container = document.getElementById('chatbot-messages');
+        if (container) {
+            container.innerHTML = `
+                <div class="cb-msg-row cb-bot-row">
+                    <img src="${botImgPath}" alt="" class="cb-bubble-avatar">
+                    <div class="cb-bubble cb-bot-bubble">${welcomeText}</div>
+                </div>
+            `;
+        }
+
+        // Re-enable input
+        const input = document.getElementById('chatbot-input');
+        const sendBtn = document.getElementById('chatbot-send');
+        if (input) { input.disabled = false; input.placeholder = 'Write a reply…'; input.focus(); }
+        if (sendBtn) sendBtn.disabled = false;
+
+        this.closeHistory();
     }
 
     createPromptSelectorModal() {
@@ -808,6 +1131,28 @@ HOW-TO FOR ADMINS:
             }
         });
 
+        // History toggle button
+        const historyToggle = document.getElementById('cb-history-toggle');
+        if (historyToggle) historyToggle.addEventListener('click', () => this.toggleHistory());
+
+        // History close button
+        const historyClose = document.getElementById('cb-history-close');
+        if (historyClose) historyClose.addEventListener('click', () => this.closeHistory());
+
+        // New conversation button
+        const historyNew = document.getElementById('cb-history-new');
+        if (historyNew) historyNew.addEventListener('click', () => this.startNewConversation());
+
+        // Close history on outside click within the panel
+        const panel = document.getElementById('chatbot-panel');
+        if (panel) {
+            panel.addEventListener('click', (e) => {
+                if (this.historyOpen && !e.target.closest('#cb-history-sidebar') && !e.target.closest('#cb-history-toggle')) {
+                    this.closeHistory();
+                }
+            });
+        }
+
         // Prompt selector modal (kept for compatibility)
         const promptSelectorClose = document.getElementById('prompt-selector-close');
         if (promptSelectorClose) promptSelectorClose.addEventListener('click', () => this.closePromptSelector());
@@ -831,7 +1176,7 @@ HOW-TO FOR ADMINS:
         let startX, startY, startLeft, startTop;
 
         const onStart = (e) => {
-            if (e.target.closest('#chatbot-close')) return;
+            if (e.target.closest('#chatbot-close') || e.target.closest('#cb-history-toggle')) return;
             if (!panel.classList.contains('open')) return;
             dragging = true;
             const touch = e.touches ? e.touches[0] : e;
@@ -922,7 +1267,8 @@ HOW-TO FOR ADMINS:
         // Add to conversation history
         this.conversationHistory.push({
             role: 'user',
-            content: message
+            content: message,
+            time: new Date().toISOString()
         });
 
         // Show loading
@@ -992,8 +1338,12 @@ HOW-TO FOR ADMINS:
             // Add to conversation history
             this.conversationHistory.push({
                 role: 'assistant',
-                content: responseText
+                content: responseText,
+                time: new Date().toISOString()
             });
+
+            // Persist to localStorage
+            this.saveCurrentSession();
 
         } catch (error) {
             console.error('Chatbot error:', error);

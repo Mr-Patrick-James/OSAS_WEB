@@ -80,6 +80,7 @@ $notificationCount = 1; // Can be dynamic later
   <script src="<?= View::asset('js/violation.js') ?>"></script>
   <script src="<?= View::asset('js/reports.js') ?>"></script>
   <script src="<?= View::asset('js/announcement.js') ?>"></script>
+  <script>window.OSAS_USER_ID = <?= json_encode((string)($_SESSION['user_id'] ?? 'guest')) ?>;</script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <script src="<?= View::asset('js/pwa.js') ?>"></script>
   <?php View::partial('notif_modal'); ?>

@@ -519,7 +519,7 @@ function fetchAndUpdateUserTopnavAvatar() {
       if (data.status === 'success' && data.data && data.data.profile && data.data.profile.profile_picture) {
         const avatarPath = resolveUserPath(data.data.profile.profile_picture) + '?t=' + Date.now();
 
-        // Update user topnav avatar: swap initials for image
+        // 1. Update topnav right-corner avatar: swap initials for image
         const initials = document.querySelector('.user-avatar-ring .user-avatar-initials');
         if (initials && initials.style.display !== 'none') {
           const img = document.createElement('img');
@@ -529,6 +529,22 @@ function fetchAndUpdateUserTopnavAvatar() {
           img.onerror = function() { this.remove(); if(initials) initials.style.display='flex'; };
           initials.style.display = 'none';
           initials.parentNode.insertBefore(img, initials);
+        }
+
+        // 2. Update mobile sidebar profile avatar (.msb-avatar-wrap)
+        const msbInitials = document.querySelector('.msb-avatar-wrap .msb-avatar-initials');
+        if (msbInitials) {
+          // Replace initials span with actual image
+          const msbImg = document.createElement('img');
+          msbImg.src = avatarPath;
+          msbImg.alt = 'Profile';
+          msbImg.className = 'msb-avatar-img';
+          msbImg.onerror = function() {
+            this.remove();
+            if (msbInitials) msbInitials.style.display = 'flex';
+          };
+          msbInitials.style.display = 'none';
+          msbInitials.parentNode.insertBefore(msbImg, msbInitials);
         }
 
         // Also update localStorage so next load is instant
@@ -578,6 +594,12 @@ window.executeLogout = function() {
     console.log('👋 Logging out...');
     
     try {
+      // Clear chat history for this user from localStorage
+      try {
+        const uid = window.OSAS_USER_ID || 'guest';
+        localStorage.removeItem('osas_chat_history_' + uid);
+      } catch(e) {}
+
       // Clear all client-side storage first
       localStorage.removeItem('userSession');
       sessionStorage.removeItem('userSession');

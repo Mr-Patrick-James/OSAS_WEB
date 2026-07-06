@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../core/View.php';
 
 $username = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Admin';
@@ -30,11 +30,125 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
     $hasProfilePic = true;
 }
 ?>
+<!-- Mobile Sidebar Overlay -->
+<div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+
+<!-- Mobile Nav Sidebar -->
+<aside class="mobile-nav-sidebar" id="mobileNavSidebar">
+  <div class="mobile-sidebar-header">
+    <div class="mobile-sidebar-brand">
+      <img src="<?= View::asset('img/default.png') ?>" alt="E-OSAS" class="mobile-sidebar-logo">
+      <span class="mobile-sidebar-title">E-OSAS</span>
+    </div>
+    <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close sidebar">
+      <i class='bx bx-x'></i>
+    </button>
+  </div>
+
+  <!-- Mobile Sidebar — Profile Section (mobile only) -->
+  <div class="mobile-sidebar-profile">
+    <div class="msb-avatar-wrap">
+      <?php if ($hasProfilePic): ?>
+        <img src="<?= $userImage ?>" alt="Profile" class="msb-avatar-img"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <span class="msb-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+      <?php else: ?>
+        <span class="msb-avatar-initials"><?= htmlspecialchars($initials) ?></span>
+      <?php endif; ?>
+    </div>
+    <div class="msb-user-name"><?= htmlspecialchars($username) ?></div>
+    <div class="msb-user-role"><?= htmlspecialchars(ucfirst($role)) ?></div>
+  </div>
+
+  <ul class="mobile-sidebar-menu" id="mobileSidebarMenu">
+    <li class="mobile-sidebar-item active" data-page="admin_page/dashcontent">
+      <a href="#" data-page="admin_page/dashcontent">
+        <i class='bx bxs-dashboard'></i><span>Dashboard</span>
+      </a>
+    </li>
+    <?php if ($canAccessRestricted): ?>
+    <li class="mobile-sidebar-item" data-page="admin_page/Department">
+      <a href="#" data-page="admin_page/Department">
+        <i class='bx bxs-building'></i><span>Department</span>
+      </a>
+    </li>
+    <li class="mobile-sidebar-item" data-page="admin_page/Sections">
+      <a href="#" data-page="admin_page/Sections">
+        <i class='bx bxs-layer'></i><span>Sections</span>
+      </a>
+    </li>
+    <li class="mobile-sidebar-item" data-page="admin_page/Students">
+      <a href="#" data-page="admin_page/Students">
+        <i class='bx bxs-group'></i><span>Students</span>
+      </a>
+    </li>
+    <?php else: ?>
+    <li class="mobile-sidebar-item nav-restricted">
+      <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
+        <i class='bx bxs-building'></i><span>Department</span>
+        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
+      </a>
+    </li>
+    <li class="mobile-sidebar-item nav-restricted">
+      <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
+        <i class='bx bxs-layer'></i><span>Sections</span>
+        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
+      </a>
+    </li>
+    <li class="mobile-sidebar-item nav-restricted">
+      <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
+        <i class='bx bxs-group'></i><span>Students</span>
+        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
+      </a>
+    </li>
+    <?php endif; ?>
+    <li class="mobile-sidebar-item" data-page="admin_page/Violations">
+      <a href="#" data-page="admin_page/Violations">
+        <i class='bx bxs-shield-x'></i><span>Violations</span>
+      </a>
+    </li>
+    <?php if ($canAccessRestricted): ?>
+    <li class="mobile-sidebar-item" data-page="admin_page/Reports">
+      <a href="#" data-page="admin_page/Reports">
+        <i class='bx bxs-file'></i><span>Reports</span>
+      </a>
+    </li>
+    <?php else: ?>
+    <li class="mobile-sidebar-item nav-restricted">
+      <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
+        <i class='bx bxs-file'></i><span>Reports</span>
+        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
+      </a>
+    </li>
+    <?php endif; ?>
+    <?php if ($canAccessAnnouncements): ?>
+    <li class="mobile-sidebar-item" data-page="admin_page/Announcements">
+      <a href="#" data-page="admin_page/Announcements">
+        <i class='bx bxs-megaphone'></i><span>Announcements</span>
+      </a>
+    </li>
+    <?php else: ?>
+    <li class="mobile-sidebar-item nav-restricted">
+      <a href="#" class="nav-disabled" onclick="return false;" title="Restricted">
+        <i class='bx bxs-megaphone'></i><span>Announcements</span>
+        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
+      </a>
+    </li>
+    <?php endif; ?>
+    <div class="mobile-sidebar-divider"></div>
+    <li class="mobile-sidebar-item">
+      <a href="#" onclick="logout(); return false;">
+        <i class='bx bx-log-out' style="color: #ef4444;"></i><span style="color: #ef4444;">Sign Out</span>
+      </a>
+    </li>
+  </ul>
+</aside>
+
 <!-- TOP NAVIGATION -->
 <nav class="top-nav">
 
-  <!-- Brand -->
-  <div class="nav-brand">
+  <!-- Brand — click to toggle mobile sidebar -->
+  <div class="nav-brand" id="mobileMenuToggle" role="button" aria-label="Open navigation menu">
     <img src="<?= View::asset('img/default.png') ?>" alt="E-OSAS" class="nav-logo">
     <span class="nav-title">E-OSAS</span>
   </div>
@@ -188,23 +302,89 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
       </div>
     </div>
 
+    <!-- Mobile-only settings gear button (shown when user pill is hidden) -->
+    <button class="mobile-topnav-settings-btn settings-link" id="mobileTopnavSettingsBtn" aria-label="Settings" title="Settings">
+      <i class='bx bxs-cog'></i>
+    </button>
+
   </div>
 </nav>
 <!-- /TOP NAVIGATION -->
 
 <script>
 (function () {
+  /* ── User pill dropdown ── */
   var pill     = document.getElementById('tnUserPill');
   var dropdown = document.getElementById('tnUserDropdown');
-  if (!pill || !dropdown) return;
-  pill.addEventListener('click', function (e) {
-    e.stopPropagation();
-    dropdown.classList.toggle('show');
-    pill.classList.toggle('open');
+  if (pill && dropdown) {
+    pill.addEventListener('click', function (e) {
+      e.stopPropagation();
+      dropdown.classList.toggle('show');
+      pill.classList.toggle('open');
+    });
+    document.addEventListener('click', function () {
+      dropdown.classList.remove('show');
+      pill.classList.remove('open');
+    });
+  }
+
+  /* ── Mobile Sidebar Toggle ── */
+  var toggle  = document.getElementById('mobileMenuToggle');
+  var sidebar = document.getElementById('mobileNavSidebar');
+  var overlay = document.getElementById('mobileSidebarOverlay');
+  var closeBtn = document.getElementById('mobileSidebarClose');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  /* Only activate toggle on mobile (≤768px) */
+  if (toggle) toggle.addEventListener('click', function() {
+    if (window.innerWidth <= 768) openSidebar();
   });
-  document.addEventListener('click', function () {
-    dropdown.classList.remove('show');
-    pill.classList.remove('open');
+  if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+  if (overlay)  overlay.addEventListener('click',  closeSidebar);
+
+  /* Close sidebar if screen is resized to desktop */
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) closeSidebar();
+  });
+
+  /* Close sidebar when a nav link is clicked and load the page */
+  var sidebarLinks = document.querySelectorAll('#mobileSidebarMenu a[data-page]');
+  sidebarLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var page = this.getAttribute('data-page');
+      closeSidebar();
+      /* Sync active state */
+      document.querySelectorAll('#mobileSidebarMenu .mobile-sidebar-item').forEach(function(item) {
+        item.classList.remove('active');
+      });
+      this.closest('.mobile-sidebar-item').classList.add('active');
+      /* Navigate — loadContent is defined in dashboard.js */
+      if (page && typeof loadContent === 'function') {
+        loadContent(page);
+      }
+    });
+  });
+
+  /* Sync mobile sidebar active state with desktop nav */
+  document.addEventListener('pageChanged', function(e) {
+    var page = e.detail && e.detail.page;
+    if (!page) return;
+    document.querySelectorAll('#mobileSidebarMenu .mobile-sidebar-item').forEach(function(item) {
+      var itemPage = item.getAttribute('data-page');
+      item.classList.toggle('active', itemPage === page);
+    });
   });
 })();
 </script>
