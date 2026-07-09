@@ -239,6 +239,13 @@
             localStorage.setItem('readAnnouncements', JSON.stringify(state.readIds));
         }
 
+        const readNotifications = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+        const notifId = 'a-' + id;
+        if (!readNotifications.includes(notifId)) {
+            readNotifications.push(notifId);
+            localStorage.setItem('read_notifications', JSON.stringify(readNotifications));
+        }
+
         // Update all views (table row, list item, grid card)
         document.querySelectorAll(`[data-id="${id}"]`).forEach(el => {
             el.classList.remove('unread');
@@ -331,6 +338,15 @@
             if (markBtn) markBtn.remove();
         });
         localStorage.setItem('readAnnouncements', JSON.stringify(state.readIds));
+
+        const readNotifications = JSON.parse(localStorage.getItem('read_notifications') || '[]');
+        state.readIds.forEach(id => {
+            const notifId = 'a-' + id;
+            if (!readNotifications.includes(notifId)) {
+                readNotifications.push(notifId);
+            }
+        });
+        localStorage.setItem('read_notifications', JSON.stringify(readNotifications));
     };
     window.refreshAnnouncements = () => loadAnnouncements(state.pagination.current);
     window.viewAnnouncement = viewAnnouncement;

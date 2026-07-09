@@ -550,9 +550,16 @@ body.dark {
   display: none;
 }
 
-/* Toggles row — desktop: these are already inline in the flex row */
+/* Toggles row — desktop: flex row with filter btn pushed to the right */
 .Violations-toggles-row {
-  display: contents;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Violations-toggles-row .Violations-filter-btn {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .Violations-date-filter {
@@ -3868,7 +3875,7 @@ body.dark {
     margin-bottom: 8px;
   }
 
-  /* ── Mobile filter bar: search + toggle on one row ── */
+  /* ── Mobile filter bar: search only, full width ── */
   .Violations-mobile-filter-bar {
     display: flex;
     align-items: center;
@@ -3982,10 +3989,7 @@ body.dark {
     padding: 0 10px;
   }
 
-  /* Hide the old standalone filter button — replaced by the toggle */
-  .Violations-filter-btn {
-    display: none;
-  }
+  /* Filter button is now a view-btn inside the toggle group */
 
   .Violations-search-box {
     width: 100% !important;
@@ -4011,6 +4015,12 @@ body.dark {
     align-items: center;
     gap: 8px;
     width: 100%;
+  }
+
+  .Violations-toggles-row .Violations-filter-toggle-btn {
+    flex: 0 0 auto;
+    padding: 0 10px;
+    margin-left: auto;
   }
 
   /* Both toggle groups split the row 50/50 */
@@ -5948,6 +5958,101 @@ body.dark .vt-manage-item-delete:hover {
     transition: none !important;
     animation: none !important;
     animation-duration: 0s !important;
+  }
+
+  .Violations-search-box input,
+  .Violations-filter-toggle-btn,
+  .Violations-filter-select,
+  .Violations-date-filter,
+  .Violations-view-toggle {
+    height: 40px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .Violations-search-box input {
+    padding: 0 12px 0 38px !important;
+  }
+
+  .Violations-filter-select {
+    padding: 0 32px 0 10px;
+  }
+
+  .Violations-toggles-row .Violations-view-toggle {
+    gap: 3px;
+    padding: 3px;
+  }
+
+  .Violations-toggles-row .Violations-view-btn {
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    border-radius: 6px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    font-size: 13px;
+  }
+
+  .Violations-toggles-row .Violations-view-btn i {
+    line-height: 1;
+  }
+
+  .Violations-toggles-row > .Violations-view-toggle:not(#displayModeToggle) {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .Violations-toggles-row > .Violations-view-toggle:not(#displayModeToggle) .Violations-view-btn {
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    border-radius: 7px;
+    font-size: 14px;
+  }
+
+  #displayModeToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 3px;
+  }
+
+  #displayModeToggle .Violations-display-btn {
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    border-radius: 6px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  #displayModeToggle .Violations-display-btn i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
   }
 }
 

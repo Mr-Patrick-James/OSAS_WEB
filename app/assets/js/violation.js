@@ -543,8 +543,56 @@ function initViolationsModule() {
                 if (showLoading) showLoadingOverlay('Loading students...');
                 console.log('🔄 Loading students data...');
 
-                // Add timestamp to prevent caching
-                const response = await fetch(API_BASE + 'students.php?action=get&filter=active&page=1&limit=1000&t=' + new Date().getTime());
+                // ── OFFLINE: pull from SW Cache API (same canonical key the SW stores) ──
+                if (!navigator.onLine) {
+                    console.log('📡 OFFLINE: Loading students from SW cache...');
+                    let list = [];
+
+                    // Check window cache first (fastest)
+                    if (_cache.students && _cache.students.length > 0) {
+                        list = _cache.students;
+                        console.log(`✅ [offline] Students from window cache: ${list.length}`);
+                    } else if ('caches' in window) {
+                        // Try the SW Cache API using the canonical students key
+                        const cacheNames = await caches.keys();
+                        const apiCacheName = cacheNames.find(n => n.startsWith('osas-api-'));
+                        if (apiCacheName) {
+                            const cache = await caches.open(apiCacheName);
+                            // Use the exact canonical key the SW stores (no timestamp)
+                            const canonicalKey = API_BASE + 'students.php?action=get&filter=active&page=1&limit=1000';
+                            let cached = await cache.match(new Request(canonicalKey));
+                            if (!cached) {
+                                // Scan for any students.php entry
+                                const keys = await cache.keys();
+                                for (const k of keys) {
+                                    if (k.url.includes('students.php')) { cached = await cache.match(k); break; }
+                                }
+                            }
+                            if (cached) {
+                                const data = await cached.json();
+                                list = data.data?.students || data.students || data.data || [];
+                                if (!Array.isArray(list)) list = [];
+                                console.log(`✅ [offline] Students from SW cache: ${list.length}`);
+                            }
+                        }
+                    }
+
+                    if (list.length === 0) {
+                        console.warn('⚠️ [offline] No cached students found for violation search');
+                        showNotification('No cached student data available offline. Connect to load students.', 'warning', 6000);
+                        students = [];
+                        return [];
+                    }
+
+                    students = normalizeStudents(list);
+                    _cache.students = students;
+                    return students;
+                }
+
+                // ── ONLINE: fetch without timestamp so SW can cache the response ──
+                // Do NOT append &t= here — the SW needs to match the URL to its
+                // canonical cache key (students.php?action=get&filter=active&page=1&limit=1000).
+                const response = await fetch(API_BASE + 'students.php?action=get&filter=active&page=1&limit=1000');
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     console.error('Students API Error Response:', errorText);
@@ -573,29 +621,7 @@ function initViolationsModule() {
                     }
                 }
 
-                students = Array.isArray(list) ? list : [];
-
-                // Normalize all student objects to camelCase so field access is consistent
-                // regardless of whether the API returned raw snake_case or already-mapped fields
-                students = students.map(student => {
-                    const firstName  = student.firstName  || student.first_name  || '';
-                    const lastName   = student.lastName   || student.last_name   || '';
-                    const middleName = student.middleName || student.middle_name || '';
-                    const fullName   = `${firstName} ${lastName}`.trim();
-                    return {
-                        ...student,
-                        // Guarantee camelCase fields are always present
-                        studentId:  student.studentId  || student.student_id  || '',
-                        firstName,
-                        lastName,
-                        middleName,
-                        department: student.department  || student.department_name || 'N/A',
-                        section:    student.section     || student.section_code    || student.section_name || 'N/A',
-                        yearlevel:  student.yearlevel   || student.year_level      || 'N/A',
-                        contact:    student.contact     || student.contact_number  || student.phone || 'N/A',
-                        avatar:     getImageUrl(student.avatar, fullName)
-                    };
-                });
+                students = normalizeStudents(Array.isArray(list) ? list : []);
 
                 // Sync to window cache so next page visit and concurrent searches use fresh data
                 _cache.students = students;
@@ -605,8 +631,13 @@ function initViolationsModule() {
                 console.error('❌ Error loading students:', error);
                 console.error('Error details:', error.stack);
 
-                // Check if it's a network error
-                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                // Offline mid-request? Try the cache as a last resort
+                if (!navigator.onLine || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    if (_cache.students && _cache.students.length > 0) {
+                        console.log('🔁 Network failed — using window cache as fallback');
+                        students = _cache.students;
+                        return students;
+                    }
                     showNotification('Students API not available. Student search may not work properly.', 'warning', 8000);
                 } else {
                     showNotification('Failed to load students data: ' + error.message, 'error');
@@ -618,6 +649,31 @@ function initViolationsModule() {
             } finally {
                 if (showLoading) hideLoadingOverlay();
             }
+        }
+
+        /**
+         * Normalize a raw student list to camelCase so field access is consistent
+         * regardless of whether the API returned snake_case or already-mapped fields.
+         */
+        function normalizeStudents(list) {
+            return list.map(student => {
+                const firstName  = student.firstName  || student.first_name  || '';
+                const lastName   = student.lastName   || student.last_name   || '';
+                const middleName = student.middleName || student.middle_name || '';
+                const fullName   = `${firstName} ${lastName}`.trim();
+                return {
+                    ...student,
+                    studentId:  student.studentId  || student.student_id  || '',
+                    firstName,
+                    lastName,
+                    middleName,
+                    department: student.department  || student.department_name || 'N/A',
+                    section:    student.section     || student.section_code    || student.section_name || 'N/A',
+                    yearlevel:  student.yearlevel   || student.year_level      || 'N/A',
+                    contact:    student.contact     || student.contact_number  || student.phone || 'N/A',
+                    avatar:     getImageUrl(student.avatar, fullName)
+                };
+            });
         }
 
         // Refresh data function

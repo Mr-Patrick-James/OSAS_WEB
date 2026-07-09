@@ -5,6 +5,8 @@
 /* ========================================= */
 :root {
   --border: #DDDDDD;
+  --dept-view-btn-size: 28px; /* desktop default */
+  --dept-view-btn-font-size: 16px;
 }
 
 body.dark {
@@ -292,14 +294,14 @@ body.dark {
 }
 
 .sections-stat-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--gold), #ffcc33);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 19px;
   color: var(--dark);
   flex-shrink: 0;
 }
@@ -972,6 +974,7 @@ body.dark {
 }
 
 @media (max-width: 768px) {
+  :root { --dept-view-btn-size: 18px; --dept-view-btn-font-size: 12px; }
   .sections-head-title {
     flex-direction: column;
     align-items: flex-start;
@@ -1039,22 +1042,42 @@ body.dark {
     left: 12px;
   }
 
+  /* Force two-line header: search row then filters row */
+  .sections-table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .sections-header-left { width: 100%; }
+
+  .sections-header-right { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+
+  .sections-search-box { width: 100%; }
+
+  /* Match view-toggle container to select height and make compact */
   .sect-view-toggle {
-    width: auto;
     height: 38px;
     display: flex;
-    gap: 4px;
-    padding: 3px;
+    gap: 6px;
+    align-items: center;
+    padding: 4px;
     background: var(--grey);
-    border: 1.5px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: 8px;
+    flex: 0 0 auto;
   }
 
   .sect-view-btn {
-    width: 32px !important;
-    height: 30px !important;
+    width: var(--dept-view-btn-size) !important;
+    height: var(--dept-view-btn-size) !important;
+    border-radius: 6px;
     flex: none;
-    font-size: 15px;
+    font-size: var(--dept-view-btn-font-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
   }
 
   .sections-filter-group {
@@ -1062,23 +1085,23 @@ body.dark {
     display: flex;
     align-items: center;
     gap: 8px;
+    justify-content: space-between;
   }
 
   .sections-filter-select {
     flex: 1;
+    min-width: 0;
     height: 38px;
     font-size: 12px;
-    min-width: 0;
+  }
+
+  .sect-view-toggle {
+    flex: 0 0 auto;
   }
 
   .sections-filter-btn {
-    width: 38px !important;
-    height: 38px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    flex-shrink: 0;
+    /* Hide non-functional filter button on mobile */
+    display: none !important;
   }
 
   .sections-table-container {
@@ -1541,5 +1564,48 @@ body.dark {
     transition: none !important;
     animation: none !important;
     animation-duration: 0s !important;
+  }
+
+  .sections-search-box input,
+  .sections-filter-select,
+  .sect-view-toggle {
+    height: 40px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .sections-search-box input {
+    padding: 0 12px 0 36px;
+  }
+
+  .sections-filter-select {
+    padding: 0 32px 0 10px;
+  }
+
+  .sect-view-toggle {
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .sect-view-btn {
+    width: 28px !important;
+    min-width: 28px;
+    max-width: 28px;
+    height: 28px !important;
+    min-height: 28px;
+    padding: 0;
+    margin: 0;
+    border-radius: 7px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    line-height: 1;
+    font-size: 14px !important;
+  }
+
+  .sect-view-btn i {
+    font-size: 14px;
+    line-height: 1;
   }
 }

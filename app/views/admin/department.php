@@ -15,6 +15,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
   <title>Departments | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/department.css') ?>?v=<?= time() ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/stats-scroll.css') ?>">
 </head>
 
 <body>

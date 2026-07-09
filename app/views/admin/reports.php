@@ -200,6 +200,12 @@ require_once __DIR__ . '/../../core/View.php';
             <i class='bx bx-list-ul'></i>
           </button>
         </div>
+
+        <button id="btnOpenFilterModal" class="Reports-btn outline small Reports-filter-mobile-btn" style="padding:6px 12px;font-size:11px;border-radius:6px;height:auto;line-height:1.4;flex-shrink:0;">
+          <i class='bx bx-filter-alt' style="font-size:14px;"></i>
+          <span>Filter</span>
+          <span class="filter-active-dot" id="filterActiveDot" style="display:none;"></span>
+        </button>
       </div>
     </div>
 
@@ -593,6 +599,123 @@ require_once __DIR__ . '/../../core/View.php';
             <span style="margin-left: 8px;">Export as Word (.docx)</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER MODAL (mobile) -->
+  <div id="ReportsFilterModal" class="Reports-modal Reports-filter-modal-wrap">
+    <div class="Reports-modal-overlay" id="FilterModalOverlay"></div>
+    <div class="Reports-modal-container Reports-filter-modal-panel">
+      <div class="Reports-modal-header">
+        <div class="header-icon" style="width:36px;height:36px;border-radius:9px;background:rgba(212,175,55,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class='bx bx-filter-alt' style="font-size:18px;color:#d4af37;"></i>
+        </div>
+        <div class="header-text" style="flex:1;">
+          <h2 style="margin:0;font-size:1rem;font-weight:700;">Report Filters</h2>
+          <p style="margin:3px 0 0;font-size:0.73rem;color:#6b7280;">Narrow down the report data</p>
+        </div>
+        <button class="Reports-close-btn" id="closeFilterModal">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+
+      <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:calc(80vh - 120px);">
+        <div class="filter-modal-group">
+          <label for="FM_Department">Department</label>
+          <select id="FM_Department" class="Reports-filter-select">
+            <option value="all">All Departments</option>
+            <option value="BSIS">BS Information System</option>
+            <option value="BSBA">BS Business Administration</option>
+            <option value="BEED">Bachelor of Elementary Education</option>
+            <option value="BSIT">BS Information Technology</option>
+            <option value="BSIS-1">BSIT (BSIS-1)</option>
+            <option value="BSCS">BS Computer Science</option>
+            <option value="WFT">Welding & Fabrication Tech</option>
+            <option value="BTVTED">BTVTED</option>
+            <option value="CHS">Computer Hardware Servicing</option>
+          </select>
+        </div>
+
+        <div class="filter-modal-group">
+          <label for="FM_Section">Section</label>
+          <select id="FM_Section" class="Reports-filter-select">
+            <option value="all">All Sections</option>
+            <option value="BSIS-1">BSIS-1</option>
+            <option value="BSIS-2">BSIS-2</option>
+            <option value="WFT-1">WFT-1</option>
+            <option value="WFT-2">WFT-2</option>
+            <option value="BTVTED-3">BTVTED-3</option>
+            <option value="CHS-1">CHS-1</option>
+          </select>
+        </div>
+
+        <div class="filter-modal-group">
+          <label for="FM_Status">Status</label>
+          <select id="FM_Status" class="Reports-filter-select">
+            <option value="all">All Status</option>
+            <option value="permitted">Permitted</option>
+            <option value="warning">Warning</option>
+            <option value="disciplinary">Disciplinary</option>
+          </select>
+        </div>
+
+        <div class="filter-modal-group">
+          <label for="FM_TimePeriod">Time Period</label>
+          <select id="FM_TimePeriod" class="Reports-filter-select">
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="this_week">This Week</option>
+            <option value="this_month">This Month</option>
+            <option value="this_year">This Year</option>
+            <option value="last_7_days">Last 7 Days</option>
+            <option value="last_30_days">Last 30 Days</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+
+        <div class="filter-modal-group" id="FM_DateRangeGroup" style="display:none;">
+          <label>Date Range</label>
+          <div class="date-range-inputs">
+            <div class="date-input">
+              <i class='bx bx-calendar'></i>
+              <input type="date" id="FM_StartDate">
+            </div>
+            <span class="date-separator">to</span>
+            <div class="date-input">
+              <i class='bx bx-calendar'></i>
+              <input type="date" id="FM_EndDate">
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-modal-group">
+          <label for="FM_ViolationType">Violation Type</label>
+          <select id="FM_ViolationType" class="Reports-filter-select">
+            <option value="all">All Types</option>
+          </select>
+        </div>
+
+        <div class="filter-modal-group">
+          <label for="FM_SortBy">Sort By</label>
+          <select id="FM_SortBy" class="Reports-filter-select">
+            <option value="total_desc">Total Violations (High to Low)</option>
+            <option value="total_asc">Total Violations (Low to High)</option>
+            <option value="name_asc">Name (A to Z)</option>
+            <option value="name_desc">Name (Z to A)</option>
+            <option value="dept_asc">Department (A to Z)</option>
+            <option value="section_asc">Section (A to Z)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px;border-top:1px solid var(--border,#eee);display:flex;gap:8px;">
+        <button id="FM_ResetBtn" class="Reports-btn outline small" style="flex:1;">
+          <i class='bx bx-reset'></i> Reset
+        </button>
+        <button id="FM_ApplyBtn" class="Reports-btn primary small" style="flex:2;">
+          <i class='bx bx-check'></i> Apply Filters
+        </button>
       </div>
     </div>
   </div>

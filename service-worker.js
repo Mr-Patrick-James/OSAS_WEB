@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-06-28-viol-notifs';
+const BUILD_DATE = '2026-07-09-nav-fix';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -99,17 +99,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Static assets — cache first
+  // Static assets — Stale-While-Revalidate
   event.respondWith(
     caches.match(req).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(res => {
+      const fetchPromise = fetch(req).then(res => {
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(c => c.put(req, clone));
         }
         return res;
       }).catch(() => null);
+      
+      // Return cached immediately if available, otherwise wait for network
+      return cached || fetchPromise;
     })
   );
 });

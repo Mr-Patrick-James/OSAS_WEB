@@ -4,6 +4,8 @@
 :root {
   /* Keep your existing variables */
   --border: #DDDDDD; /* Add this line */
+  --dept-view-btn-size: 28px;
+  --dept-view-btn-font-size: 16px;
 }
 
 body.dark {
@@ -620,14 +622,30 @@ body.dark {
 
 .Reports-header-right {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.Reports-search-row {
+  width: 100%;
 }
 
 .Reports-search-box {
   position: relative;
-  width: 220px;
+  flex: 1;
+  min-width: 0;
+}
+
+.Reports-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Reports-controls-row .Reports-filter-mobile-btn {
+  margin-left: auto;
 }
 
 .Reports-search-box i {
@@ -666,8 +684,8 @@ body.dark {
 }
 
 .Reports-view-btn {
-  width: 30px;
-  height: 30px;
+  width: var(--dept-view-btn-size);
+  height: var(--dept-view-btn-size);
   border-radius: 6px;
   border: none;
   background: transparent;
@@ -676,7 +694,7 @@ body.dark {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--dept-view-btn-font-size);
   transition: all 0.2s ease;
 }
 
@@ -690,6 +708,57 @@ body.dark {
   color: var(--gold);
   border: 1.5px solid var(--gold);
   box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2);
+}
+
+/* Mobile: force three-line header - title | search+view | filters */
+@media (max-width: 768px) {
+  :root { --dept-view-btn-size: 24px; --dept-view-btn-font-size: 13px; }
+  .Reports-table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .Reports-header-left { width: 100%; }
+  .Reports-header-right { width: 100%; display:flex; flex-direction:row; align-items:center; gap:8px; flex-wrap:nowrap; }
+
+  .Reports-search-box { flex: 1; min-width: 0; width: auto; }
+  .Reports-search-box input { height: 40px; }
+
+  .Reports-view-options {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+
+  .Reports-view-btn {
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    border-radius: 6px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    font-size: 13px;
+  }
+
+  .Reports-view-btn i {
+    line-height: 1;
+  }
+
+  /* Filters row */
+  .Reports-filter-select { min-width: 120px; height: 40px; }
+  .Reports-filter-select, .Reports-filter-actions { display:flex; gap:8px; align-items:center; overflow-x:auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* Report Footer and Signature */
@@ -2812,4 +2881,139 @@ input[type="checkbox"]:checked + .toggle-label::after {
     animation: none !important;
     animation-duration: 0s !important;
   }
+}
+
+/* =========================================================
+   FILTER BUTTON (mobile) + FILTER MODAL
+   ========================================================= */
+
+/* Filter button — always visible, sits in the search row */
+.Reports-filter-mobile-btn {
+  display: inline-flex;
+  position: relative;
+}
+
+/* Active-filters dot indicator on the button */
+.filter-active-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold, #D4AF37);
+  border: 1.5px solid #fff;
+  pointer-events: none;
+}
+
+body.dark .filter-active-dot { border-color: #1a1a1a; }
+
+/* Show button & hide the inline filter card on mobile */
+@media (max-width: 768px) {
+  .Reports-filter-mobile-btn {
+    display: inline-flex !important;
+  }
+
+  .Reports-filter-card {
+    display: none !important;
+  }
+
+  .Reports-search-box input,
+  .Reports-filter-select,
+  .Reports-view-options {
+    height: 40px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .Reports-search-box input {
+    padding: 0 12px 0 36px;
+  }
+
+  .Reports-filter-select {
+    padding: 0 32px 0 10px;
+  }
+
+  .Reports-view-options {
+    gap: 3px !important;
+    padding: 3px !important;
+    border-radius: 9px !important;
+  }
+
+  .Reports-view-btn {
+    width: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    border-radius: 6px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .Reports-view-btn i {
+    line-height: 1 !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ── Filter Modal wrapper ── */
+.Reports-filter-modal-wrap .Reports-modal-container.Reports-filter-modal-panel {
+  max-width: 420px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  /* ensure it sits centered over the overlay */
+  position: relative;
+  z-index: 2001;
+  margin: auto;
+}
+
+/* On very small screens slide it up from the bottom */
+@media (max-width: 480px) {
+  .Reports-filter-modal-wrap.Reports-modal.active {
+    align-items: flex-end;
+  }
+
+  .Reports-filter-modal-wrap .Reports-modal-container.Reports-filter-modal-panel {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 88vh;
+    margin: 0;
+    animation: slideUpPanel 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes slideUpPanel {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}
+
+/* Groups inside the filter modal */
+.filter-modal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-modal-group label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--dark-grey, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.filter-modal-group .Reports-filter-select {
+  width: 100%;
 }

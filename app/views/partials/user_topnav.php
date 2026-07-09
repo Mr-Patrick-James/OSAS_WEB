@@ -13,19 +13,15 @@ if (isset($student) && $student) {
     if (!empty($fullName)) {
         $username = $fullName;
     }
-    // Check for avatar (ignore generated ui-avatars URLs and default.png)
+    // Check for avatar
     if (!empty($student['avatar'])) {
         $avatar = $student['avatar'];
-        $isGenerated = (strpos($avatar, 'ui-avatars.com') !== false);
-        $isDefault = (strpos($avatar, 'default.png') !== false);
-        if (!$isGenerated && !$isDefault) {
-            if (filter_var($avatar, FILTER_VALIDATE_URL)) {
-                $userImage = $avatar;
-            } else {
-                $userImage = View::asset($avatar);
-            }
-            $hasProfilePic = true;
+        if (filter_var($avatar, FILTER_VALIDATE_URL)) {
+            $userImage = $avatar;
+        } else {
+            $userImage = View::asset($avatar);
         }
+        $hasProfilePic = true;
     }
 }
 
@@ -67,8 +63,7 @@ if (count($nameParts) > 1) {
     <div class="msb-avatar-wrap">
       <?php if ($hasProfilePic): ?>
         <img src="<?= $userImage ?>" alt="Profile" class="msb-avatar-img"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        <span class="msb-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+             onerror="this.outerHTML='<span class=\'msb-avatar-initials\'><?= htmlspecialchars($initials) ?></span>';">
       <?php else: ?>
         <span class="msb-avatar-initials"><?= htmlspecialchars($initials) ?></span>
       <?php endif; ?>
@@ -106,6 +101,7 @@ if (count($nameParts) > 1) {
 <nav class="top-nav">
   <!-- Logo Section — click to open mobile sidebar -->
   <div class="nav-brand" id="mobileMenuToggle" role="button" aria-label="Open navigation menu">
+    <i class='bx bx-menu mobile-menu-icon'></i>
     <img src="<?= View::asset('img/default.png') ?>" alt="Osas Logo" class="nav-logo">
     <span class="nav-title" title="Office of Student Affairs and Services">E-Osas</span>
     <span class="nav-title-compact" title="Office of Student Affairs and Services">OSAS</span>
@@ -203,10 +199,45 @@ if (count($nameParts) > 1) {
         </a>
       </div>
     </div>
-    <!-- Mobile-only settings gear button -->
-    <button class="mobile-topnav-settings-btn settings-link" id="mobileTopnavSettingsBtn" aria-label="Settings" title="Settings">
-      <i class='bx bxs-cog'></i>
-    </button>
+    <!-- Mobile-only profile avatar button (top-right on mobile) -->
+    <div class="mobile-profile-btn" id="mobileProfileBtn" role="button" aria-label="Profile menu">
+      <div class="mpb-ring">
+        <?php if ($hasProfilePic): ?>
+          <img src="<?= $userImage ?>" alt="Profile" class="mpb-img"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="mpb-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+        <?php else: ?>
+          <span class="mpb-initials"><?= htmlspecialchars($initials) ?></span>
+        <?php endif; ?>
+      </div>
+
+      <!-- Mini dropdown -->
+      <div class="mpb-dropdown" id="mobileProfileDropdown">
+        <div class="mpb-dropdown-header">
+          <div class="mpb-hd-ring">
+            <?php if ($hasProfilePic): ?>
+              <img src="<?= $userImage ?>" alt="Profile" class="mpb-hd-img"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+              <span class="mpb-hd-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+            <?php else: ?>
+              <span class="mpb-hd-initials"><?= htmlspecialchars($initials) ?></span>
+            <?php endif; ?>
+          </div>
+          <div class="mpb-hd-info">
+            <div class="mpb-hd-name"><?= htmlspecialchars($username) ?></div>
+            <div class="mpb-hd-role"><?= htmlspecialchars(ucfirst($role)) ?></div>
+          </div>
+        </div>
+        <div class="mpb-dropdown-divider"></div>
+        <a href="#" class="mpb-dropdown-item settings-link">
+          <i class='bx bx-cog'></i> Settings
+        </a>
+        <div class="mpb-dropdown-divider"></div>
+        <a href="#" class="mpb-dropdown-item mpb-logout" onclick="logout(); return false;">
+          <i class='bx bx-log-out'></i> Logout
+        </a>
+      </div>
+    </div>
 
   </div>
 </nav>
@@ -214,16 +245,17 @@ if (count($nameParts) > 1) {
 
 <script>
 (function() {
-  /* ── User avatar dropdown ── */
-  var avatar = document.querySelector('.user-avatar');
-  var dropdown = document.querySelector('.user-dropdown');
-  if (avatar && dropdown) {
-    avatar.addEventListener('click', function(e) {
+
+  /* ── Mobile Profile Button Dropdown ── */
+  var mobileProfileBtn = document.getElementById('mobileProfileBtn');
+  if (mobileProfileBtn) {
+    mobileProfileBtn.addEventListener('click', function(e) {
+      if (e.target.closest('.mpb-dropdown')) return; // let dropdown items bubble normally
       e.stopPropagation();
-      dropdown.classList.toggle('show');
+      mobileProfileBtn.classList.toggle('open');
     });
     document.addEventListener('click', function() {
-      dropdown.classList.remove('show');
+      mobileProfileBtn.classList.remove('open');
     });
   }
 

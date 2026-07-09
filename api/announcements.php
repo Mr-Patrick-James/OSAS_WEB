@@ -4,13 +4,16 @@
  * Routes to MVC Controller
  */
 
+// Capture ALL output immediately to prevent anything from breaking JSON
+ob_start();
+
 // Error handling - set first
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Clear any previous output
-while (ob_get_level() > 0) {
+// Clear any previous output (though we just started ob, so just in case)
+while (ob_get_level() > 1) {
     ob_end_clean();
 }
 

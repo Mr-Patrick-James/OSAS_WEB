@@ -307,6 +307,7 @@ class UserController extends Controller {
 
              if (isset($profilePicture)) {
                 $_SESSION['profile_picture'] = $profilePicture;
+                setcookie('profile_picture', $profilePicture, time() + (30*24*60*60), "/", "", false, false);
             }
             $this->success('Profile updated successfully.', [
                 'username' => $username, 

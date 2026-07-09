@@ -156,13 +156,17 @@ class AnnouncementController extends Controller {
             $id = $this->model->create($data);
 
             try {
+                // Capture any accidental output from the push notification service
+                ob_start();
                 require_once __DIR__ . '/../services/PushNotificationService.php';
                 (new PushNotificationService())->notifyAllStudents(
                     ucfirst($type) . ' announcement: ' . $title,
                     strlen($message) > 120 ? substr($message, 0, 117) . '...' : $message,
                     ['type' => 'announcement', 'id' => (int) $id, 'page' => 'user-page/announcements', 'tag' => 'announcement-' . $id, 'url' => '/']
                 );
+                ob_end_clean();
             } catch (Throwable $e) {
+                ob_end_clean();
                 error_log('Announcement push: ' . $e->getMessage());
             }
 

@@ -747,8 +747,20 @@ HOW-TO FOR ADMINS:
         }
     }
 
-    openHistory() {
+    async openHistory() {
         this.historyOpen = true;
+        
+        // Fetch from DB first, then update localStorage
+        try {
+            const res = await fetch(this.apiBase + 'chatbot_history.php');
+            const data = await res.json();
+            if (data.success && data.sessions) {
+                localStorage.setItem(this.getHistoryStorageKey(), JSON.stringify(data.sessions));
+            }
+        } catch (e) {
+            console.warn('Could not fetch history from DB:', e);
+        }
+
         const sidebar = document.getElementById('cb-history-sidebar');
         if (sidebar) {
             this.renderHistoryList();
@@ -845,14 +857,15 @@ HOW-TO FOR ADMINS:
 
         // Clear current chat
         container.innerHTML = '';
-        this.conversationHistory = [];
+        this.conversationHistory = session.messages ? [...session.messages] : [];
+        this.currentSessionId = session.id;
 
-        // Add a "viewing history" banner
+        // Add a "viewing history" banner -> "Continuing chat from"
         const bannerRow = document.createElement('div');
         bannerRow.className = 'cb-history-banner';
         bannerRow.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Viewing chat from <strong>${new Date(session.date + 'T00:00:00').toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' })}</strong>
+            Continuing chat from <strong>${new Date(session.date + 'T00:00:00').toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' })}</strong>
             <button class="cb-history-back-btn" id="cb-history-back">← New chat</button>
         `;
         container.appendChild(bannerRow);
@@ -872,11 +885,17 @@ HOW-TO FOR ADMINS:
 
         container.scrollTop = container.scrollHeight;
 
-        // Disable input while viewing history
+        // ENABLE input instead of disabling it so they can continue chatting
         const input = document.getElementById('chatbot-input');
         const sendBtn = document.getElementById('chatbot-send');
-        if (input) { input.disabled = true; input.placeholder = 'Viewing history — click "New chat" to resume'; }
-        if (sendBtn) sendBtn.disabled = true;
+        if (input) { 
+            input.disabled = false; 
+            input.placeholder = 'Write a reply…'; 
+            input.focus(); 
+        }
+        if (sendBtn) {
+            sendBtn.disabled = false;
+        }
 
         // Back button — start fresh
         const backBtn = document.getElementById('cb-history-back');
@@ -885,8 +904,13 @@ HOW-TO FOR ADMINS:
         }
     }
 
-    deleteSession(sessionId) {
+    async deleteSession(sessionId) {
         try {
+            await fetch(this.apiBase + 'chatbot_history.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            });
             const all = this.loadAllSessions();
             delete all[sessionId];
             localStorage.setItem(this.getHistoryStorageKey(), JSON.stringify(all));
@@ -1284,6 +1308,8 @@ HOW-TO FOR ADMINS:
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
+                        session_id: this.currentSessionId,
+                        title: this.getSessionTitle({messages: this.conversationHistory}),
                         message: message,
                         history: this.conversationHistory.slice(-10)
                     })

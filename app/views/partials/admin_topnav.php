@@ -50,8 +50,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
     <div class="msb-avatar-wrap">
       <?php if ($hasProfilePic): ?>
         <img src="<?= $userImage ?>" alt="Profile" class="msb-avatar-img"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-        <span class="msb-avatar-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+             onerror="this.outerHTML='<span class=\'msb-avatar-initials\'><?= htmlspecialchars($initials) ?></span>';">
       <?php else: ?>
         <span class="msb-avatar-initials"><?= htmlspecialchars($initials) ?></span>
       <?php endif; ?>
@@ -61,7 +60,7 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
   </div>
 
   <ul class="mobile-sidebar-menu" id="mobileSidebarMenu">
-    <li class="mobile-sidebar-item active" data-page="admin_page/dashcontent">
+    <li class="mobile-sidebar-item" data-page="admin_page/dashcontent">
       <a href="#" data-page="admin_page/dashcontent">
         <i class='bx bxs-dashboard'></i><span>Dashboard</span>
       </a>
@@ -149,13 +148,14 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
 
   <!-- Brand — click to toggle mobile sidebar -->
   <div class="nav-brand" id="mobileMenuToggle" role="button" aria-label="Open navigation menu">
+    <i class='bx bx-menu mobile-menu-icon'></i>
     <img src="<?= View::asset('img/default.png') ?>" alt="E-OSAS" class="nav-logo">
     <span class="nav-title">E-OSAS</span>
   </div>
 
   <!-- Nav links -->
   <ul class="nav-menu">
-    <li class="nav-item active">
+    <li class="nav-item">
       <a href="#" data-page="admin_page/dashcontent" class="nav-link" title="Dashboard">
         <i class='bx bxs-dashboard'></i><span>Dashboard</span>
       </a>
@@ -302,10 +302,45 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
       </div>
     </div>
 
-    <!-- Mobile-only settings gear button (shown when user pill is hidden) -->
-    <button class="mobile-topnav-settings-btn settings-link" id="mobileTopnavSettingsBtn" aria-label="Settings" title="Settings">
-      <i class='bx bxs-cog'></i>
-    </button>
+    <!-- Mobile-only profile avatar button (top-right on mobile) -->
+    <div class="mobile-profile-btn" id="mobileProfileBtn" role="button" aria-label="Profile menu">
+      <div class="mpb-ring">
+        <?php if ($hasProfilePic): ?>
+          <img src="<?= $userImage ?>" alt="Profile" class="mpb-img"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="mpb-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+        <?php else: ?>
+          <span class="mpb-initials"><?= htmlspecialchars($initials) ?></span>
+        <?php endif; ?>
+      </div>
+
+      <!-- Mini dropdown -->
+      <div class="mpb-dropdown" id="mobileProfileDropdown">
+        <div class="mpb-dropdown-header">
+          <div class="mpb-hd-ring">
+            <?php if ($hasProfilePic): ?>
+              <img src="<?= $userImage ?>" alt="Profile" class="mpb-hd-img"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+              <span class="mpb-hd-initials" style="display:none;"><?= htmlspecialchars($initials) ?></span>
+            <?php else: ?>
+              <span class="mpb-hd-initials"><?= htmlspecialchars($initials) ?></span>
+            <?php endif; ?>
+          </div>
+          <div class="mpb-hd-info">
+            <div class="mpb-hd-name"><?= htmlspecialchars($username) ?></div>
+            <div class="mpb-hd-role"><?= htmlspecialchars(ucfirst($role)) ?></div>
+          </div>
+        </div>
+        <div class="mpb-dropdown-divider"></div>
+        <a href="#" class="mpb-dropdown-item settings-link">
+          <i class='bx bxs-cog'></i> Settings
+        </a>
+        <div class="mpb-dropdown-divider"></div>
+        <a href="#" class="mpb-dropdown-item mpb-logout" onclick="logout(); return false;">
+          <i class='bx bx-log-out'></i> Sign Out
+        </a>
+      </div>
+    </div>
 
   </div>
 </nav>
@@ -313,11 +348,25 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
 
 <script>
 (function () {
+  /* ── Mobile Profile Button Dropdown ── */
+  var mobileProfileBtn = document.getElementById('mobileProfileBtn');
+  if (mobileProfileBtn) {
+    mobileProfileBtn.addEventListener('click', function(e) {
+      if (e.target.closest('.mpb-dropdown')) return; // let dropdown items bubble normally
+      e.stopPropagation();
+      mobileProfileBtn.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+      mobileProfileBtn.classList.remove('open');
+    });
+  }
+
   /* ── User pill dropdown ── */
   var pill     = document.getElementById('tnUserPill');
   var dropdown = document.getElementById('tnUserDropdown');
   if (pill && dropdown) {
     pill.addEventListener('click', function (e) {
+      if (e.target.closest('.tn-user-dropdown')) return; // let dropdown items bubble normally
       e.stopPropagation();
       dropdown.classList.toggle('show');
       pill.classList.toggle('open');

@@ -24,6 +24,7 @@ if ($deptResult && $deptResult->num_rows > 0) {
   <title>Sections | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/section.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/stats-scroll.css') ?>">
 </head>
 
 <body>
@@ -94,11 +95,20 @@ if ($deptResult && $deptResult->num_rows > 0) {
         </div>
 
         <div class="sections-header-right">
+          <!-- Row 1: Search alone -->
           <div class="sections-search-toggle-row">
             <div class="sections-search-box">
               <i class='bx bx-search'></i>
               <input type="text" id="searchSection" placeholder="Search sections...">
             </div>
+          </div>
+
+          <!-- Row 2: Active Only dropdown + View toggle -->
+          <div class="sections-filter-group">
+            <select id="sectionFilterSelect" class="sections-filter-select">
+              <option value="all">All Sections</option>
+              <option value="active" selected>Active Only</option>
+            </select>
 
             <!-- View Toggle -->
             <div class="sect-view-toggle">
@@ -112,17 +122,6 @@ if ($deptResult && $deptResult->num_rows > 0) {
                 <i class='bx bx-list-ul'></i>
               </button>
             </div>
-          </div>
-
-          <div class="sections-filter-group">
-            <select id="sectionFilterSelect" class="sections-filter-select">
-              <option value="all">All Sections</option>
-              <option value="active">Active Only</option>
-            </select>
-
-            <button class="sections-filter-btn" title="More filters">
-              <i class='bx bx-filter-alt'></i>
-            </button>
           </div>
         </div>
       </div>

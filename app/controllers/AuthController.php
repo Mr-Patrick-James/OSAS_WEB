@@ -124,6 +124,9 @@ class AuthController extends Controller {
                 $_SESSION['username']  = $user['username'];
                 $_SESSION['full_name'] = $user['full_name'] ?: $user['username'];
                 $_SESSION['role']      = $user['role'];
+                if (!empty($user['profile_picture'])) {
+                    $_SESSION['profile_picture'] = $user['profile_picture'];
+                }
                 if ($studentIdCode) {
                     $_SESSION['student_id_code'] = $studentIdCode;
                     if ($studentId) $_SESSION['student_id'] = $studentId;
@@ -145,6 +148,9 @@ class AuthController extends Controller {
                 setcookie('username',  $user['username'],                                       $cookieOpts);
                 setcookie('role',      $user['role'],                                           $cookieOpts);
                 setcookie('full_name', $user['full_name'] ?: ($user['username'] ?: 'Admin'),    $cookieOpts);
+                if (!empty($user['profile_picture'])) {
+                    setcookie('profile_picture', $user['profile_picture'], $cookieOpts);
+                }
                 if ($studentIdCode) {
                     setcookie('student_id_code', $studentIdCode, $cookieOpts);
                     if ($studentId) setcookie('student_id', (string)$studentId, $cookieOpts);
@@ -157,6 +163,7 @@ class AuthController extends Controller {
                     'studentId'     => $studentId,
                     'studentIdCode' => $studentIdCode,
                     'expires'       => $expiryTime,
+                    'profile_picture' => $user['profile_picture'] ?? '',
                 ];
 
                 error_log("Login successful for username: " . $username . ", role: " . $user['role']);

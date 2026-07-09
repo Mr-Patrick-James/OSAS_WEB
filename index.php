@@ -48,6 +48,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="app/assets/styles/splash.css">
     <style>
         :root {
             --gold: #D4AF37;
@@ -919,6 +920,41 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 </head>
 <body data-eosas-push="guest">
 
+<!-- ═══════════════════════════════════════════
+     OPENING SPLASH SCREEN
+     ═══════════════════════════════════════════ -->
+<div id="eosas-splash" role="status" aria-label="Loading E-OSAS">
+    <!-- Ripple rings -->
+    <div class="splash-ripple"></div>
+    <div class="splash-ripple"></div>
+    <div class="splash-ripple"></div>
+
+    <!-- Logo -->
+    <div class="splash-logo-wrap">
+        <img src="app/assets/img/default.png" alt="E-OSAS Logo">
+    </div>
+
+    <!-- Brand name -->
+    <div class="splash-brand">
+        <div class="splash-brand-name">E<span>-OSAS</span></div>
+        <div class="splash-brand-sub">Colegio de Naujan</div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="splash-progress-wrap">
+        <div class="splash-progress-bar"></div>
+    </div>
+
+    <!-- Live dot indicator -->
+    <div class="splash-dot">
+        <span class="splash-dot-circle"></span>
+        <span class="splash-dot-label">Loading system</span>
+    </div>
+
+    <!-- Bottom label -->
+    <div class="splash-school">Office of Student Affairs &amp; Services</div>
+</div>
+<script src="app/assets/js/splash.js"></script>
 
 <!-- NAVBAR -->
 <nav class="navbar" id="navbar">

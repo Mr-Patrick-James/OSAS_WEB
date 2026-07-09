@@ -10,6 +10,12 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE
     $_SESSION['user_id'] = $_COOKIE['user_id'];
     $_SESSION['username'] = $_COOKIE['username'] ?? '';
     $_SESSION['role']    = $_COOKIE['role'];
+    if (!empty($_COOKIE['full_name'])) {
+        $_SESSION['full_name'] = $_COOKIE['full_name'];
+    }
+    if (!empty($_COOKIE['profile_picture'])) {
+        $_SESSION['profile_picture'] = $_COOKIE['profile_picture'];
+    }
 }
 
 // No session — redirect to login
@@ -39,6 +45,7 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'O
   <meta name="theme-color" content="#D4AF37">
   <link rel="icon" type="image/png" href="<?= View::asset('img/default.png') ?>">
   <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/splash.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/dashboard.css') ?>?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/topnav.css') ?>?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= View::asset('styles/content-layout.css') ?>">
@@ -51,6 +58,31 @@ if (!in_array($_SESSION['role'] ?? '', ['admin', 'OSAS Staff', 'CSC Officer', 'O
 
 </head>
 <body>
+  <!-- ═══════════════════════════════════════════
+       OPENING SPLASH SCREEN
+       ═══════════════════════════════════════════ -->
+  <div id="eosas-splash" role="status" aria-label="Loading E-OSAS">
+      <div class="splash-ripple"></div>
+      <div class="splash-ripple"></div>
+      <div class="splash-ripple"></div>
+      <div class="splash-logo-wrap">
+          <img src="<?= View::asset('img/default.png') ?>" alt="E-OSAS Logo">
+      </div>
+      <div class="splash-brand">
+          <div class="splash-brand-name">E<span>-OSAS</span></div>
+          <div class="splash-brand-sub">Colegio de Naujan</div>
+      </div>
+      <div class="splash-progress-wrap">
+          <div class="splash-progress-bar"></div>
+      </div>
+      <div class="splash-dot">
+          <span class="splash-dot-circle"></span>
+          <span class="splash-dot-label">Loading system</span>
+      </div>
+      <div class="splash-school">Office of Student Affairs &amp; Services</div>
+  </div>
+  <script src="<?= View::asset('js/splash.js') ?>"></script>
+
   <?php View::partial('admin_topnav'); ?>
 
   <section id="content">

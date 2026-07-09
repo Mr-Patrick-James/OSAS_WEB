@@ -26,13 +26,13 @@ document.addEventListener('DOMContentLoaded', function () {
     syncThemeToggles();
 
     // Load default dashboard content or restore last visited page
-    const lastPage = sessionStorage.getItem('lastPage') || 'admin_page/dashcontent';
+    const lastPage = localStorage.getItem('lastPage') || 'admin_page/dashcontent';
     loadContent(lastPage);
 
 
 
     // Set dashboard as active by default only if no saved page
-    if (!sessionStorage.getItem('lastPage')) {
+    if (!localStorage.getItem('lastPage')) {
         const dashboardLink = document.querySelector('[data-page="admin_page/dashcontent"]');
         if (dashboardLink) {
             dashboardLink.parentElement.classList.add('active');
@@ -69,13 +69,31 @@ function syncThemeToggles() {
  * Update active navigation item based on the current page
  */
 function updateActiveNavItem(page) {
-    if (!allSideMenu) return;
-    
-    allSideMenu.forEach(item => {
-        const itemPage = item.getAttribute('data-page');
-        const li = item.parentElement;
-        
-        if (itemPage === page) {
+    // Desktop sidebar: #sidebar .side-menu li a
+    document.querySelectorAll('#sidebar .side-menu.top li').forEach(li => {
+        const a = li.querySelector('a[data-page]');
+        if (!a) return;
+        if (a.getAttribute('data-page') === page) {
+            li.classList.add('active');
+        } else {
+            li.classList.remove('active');
+        }
+    });
+
+    // Mobile drawer sidebar: .mobile-sidebar-item[data-page]
+    document.querySelectorAll('.mobile-sidebar-item[data-page]').forEach(li => {
+        if (li.getAttribute('data-page') === page) {
+            li.classList.add('active');
+        } else {
+            li.classList.remove('active');
+        }
+    });
+
+    // Top/bottom nav: .nav-item with child a[data-page]
+    document.querySelectorAll('.nav-item').forEach(li => {
+        const a = li.querySelector('a[data-page]');
+        if (!a) return;
+        if (a.getAttribute('data-page') === page) {
             li.classList.add('active');
         } else {
             li.classList.remove('active');
@@ -89,7 +107,6 @@ function updateActiveNavItem(page) {
 function isMainAdmin() {
     const sessionStr = localStorage.getItem('userSession');
     if (!sessionStr) {
-        // Fallback to cookie
         const cookieRole = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
         if (cookieRole) {
             const role = decodeURIComponent(cookieRole.split('=')[1]);
@@ -104,6 +121,22 @@ function isMainAdmin() {
     } catch (e) {
         return false;
     }
+}
+
+// Returns true only for roles that can view Admin/User account tabs
+// CSC Officer and Officer are excluded
+function canViewAccounts() {
+    const restrictedRoles = ['csc officer', 'officer'];
+    const sessionStr = localStorage.getItem('userSession');
+    let role = '';
+    if (sessionStr) {
+        try { role = (JSON.parse(sessionStr).role || '').toLowerCase(); } catch(e) {}
+    }
+    if (!role) {
+        const cookieRole = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+        if (cookieRole) role = decodeURIComponent(cookieRole.split('=')[1]).toLowerCase();
+    }
+    return !restrictedRoles.includes(role);
 }
 
 // Path Resolution Helper — works on AWS root AND local subfolder
@@ -296,8 +329,8 @@ const _CACHE_PAGES = ['admin_page/department', 'admin_page/Sections', 'admin_pag
                       'admin_page/Violations', 'admin_page/Reports', 'admin_page/Announcements'];
 
 function loadContent(page) {
-    // Save current page to sessionStorage for refresh persistence
-    sessionStorage.setItem('lastPage', page);
+    // Save current page to localStorage for refresh persistence
+    localStorage.setItem('lastPage', page);
 
     // Update active navigation item
     updateActiveNavItem(page);
@@ -690,6 +723,7 @@ function createSettingsModal() {
     
     // Check privileges
     const isMain = isMainAdmin();
+    const showAccounts = canViewAccounts();
 
     overlay.innerHTML = `
         <div class="settings-modal admin-settings-modal">
@@ -700,14 +734,16 @@ function createSettingsModal() {
                         <i class='bx bx-id-card'></i>
                         <span>Profile</span>
                     </button>
+                    ${showAccounts ? `
                     <button type="button" class="settings-sidebar-item" data-section="admins">
                         <i class='bx bx-user-circle'></i>
                         <span>Admin accounts</span>
-                    </button>
+                    </button>` : ''}
+                    ${showAccounts ? `
                     <button type="button" class="settings-sidebar-item" data-section="users">
                         <i class='bx bx-group'></i>
                         <span>User Accounts</span>
-                    </button>
+                    </button>` : ''}
                     ${isMain ? `
                     <button type="button" class="settings-sidebar-item" data-section="archive">
                         <i class='bx bx-archive'></i>
@@ -782,6 +818,7 @@ function createSettingsModal() {
                     </form>
                 </div>
                 
+                ${showAccounts ? `
                 <div class="settings-section" data-section="admins">
                     <div class="settings-header-group">
                         <div class="settings-header-text">
@@ -909,6 +946,7 @@ function createSettingsModal() {
                     </div>
                     <div id="settingsUserPagination" class="settings-pagination"></div>
                 </div>
+                ` : ''}
 
                 ${isMain ? `
                 <div class="settings-section" data-section="archive">
@@ -1190,10 +1228,15 @@ function openSettingsModal(initialSection) {
     
     // Validate section access
     const isMain = isMainAdmin();
+    const showAccounts = canViewAccounts();
     let targetSection = initialSection || (isMain ? 'admins' : 'profile');
     
     // If not main admin, only allow 'profile'
     if (!isMain && targetSection !== 'profile') {
+        targetSection = 'profile';
+    }
+    // CSC Officer / Officer cannot access admins or users sections
+    if (!showAccounts && (targetSection === 'admins' || targetSection === 'users')) {
         targetSection = 'profile';
     }
     
@@ -1909,6 +1952,27 @@ function loadModuleScript(moduleName) {
 
 // Initialize all event listeners
 function initializeEventListeners() {
+    // Mobile menu toggle - hamburger button in navbar
+    const mobileMenuToggle = document.querySelector('#content .top-navbar .bx.bx-menu');
+    if (mobileMenuToggle && sidebar) {
+        mobileMenuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('hide');
+        });
+    }
+
+    // Close mobile sidebar when clicking on overlay (outside sidebar)
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hide')) {
+            const isClickInsideSidebar = sidebar.contains(e.target);
+            const isMenuToggle = e.target.closest('.bx.bx-menu') || e.target.closest('.sidebar-menu-toggle');
+            
+            if (!isClickInsideSidebar && !isMenuToggle) {
+                sidebar.classList.add('hide');
+            }
+        }
+    });
+
     // Enhanced navigation functionality (works with both sidebar and top nav)
     allSideMenu.forEach(item => {
         // Skip chatbot buttons - they have their own handlers
@@ -2435,15 +2499,26 @@ function initializeEventListeners() {
         }, 100);
     });
 
-    const settingsTriggers = document.querySelectorAll('.nav-settings, .user-dropdown .settings-link, .tn-user-dropdown .settings-link, #mobileTopnavSettingsBtn');
-    if (settingsTriggers.length > 0) {
-        settingsTriggers.forEach(function (trigger) {
-            trigger.addEventListener('click', function (e) {
-                e.preventDefault();
-                openSettingsModal('admins');
-            });
-        });
-    }
+    // Use event delegation for all settings links (topnav, sidebar, mobile, and dynamic dashboard content)
+    document.addEventListener('click', function(e) {
+        const settingsTrigger = e.target.closest('.nav-settings, .settings-link, #mobileTopnavSettingsBtn');
+        if (settingsTrigger) {
+            e.preventDefault();
+            openSettingsModal('admins');
+            
+            // Close any open dropdowns
+            const tnPill = document.getElementById('tnUserPill');
+            const tnDropdown = document.getElementById('tnUserDropdown');
+            if (tnPill && tnDropdown) {
+                tnPill.classList.remove('open');
+                tnDropdown.classList.remove('show');
+            }
+            const mobileBtn = document.getElementById('mobileProfileBtn');
+            if (mobileBtn) {
+                mobileBtn.classList.remove('open');
+            }
+        }
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', function (e) {
@@ -2471,9 +2546,24 @@ function initializeEventListeners() {
 
 // Enhanced responsive adjustments
 function handleResponsiveAdjustments() {
-    // Sidebar behavior
+    // Sidebar behavior for mobile
     if (window.innerWidth < 768 && sidebar) {
+        // On mobile, always hide sidebar by default (it becomes an overlay)
         sidebar.classList.add('hide');
+        
+        // Ensure content takes full width
+        const content = document.getElementById('content');
+        if (content) {
+            content.style.width = '100%';
+            content.style.left = '0';
+        }
+        
+        const navbar = document.querySelector('#content .top-navbar');
+        if (navbar) {
+            navbar.style.left = '0';
+            navbar.style.width = '100%';
+            navbar.style.maxWidth = '100vw';
+        }
     } else if (window.innerWidth >= 768 && sidebar) {
         // Restore sidebar state on larger screens
         const sidebarHidden = localStorage.getItem('sidebarHidden') === 'true';
@@ -2488,6 +2578,11 @@ function handleResponsiveAdjustments() {
         if (searchForm) {
             searchForm.classList.remove('show');
         }
+    }
+    
+    // Adjust table horizontal scrolling for touch devices
+    if (window.innerWidth < 768) {
+        enableDragScroll('.settings-table-wrapper, table-container, .data-table-wrapper');
     }
 }
 

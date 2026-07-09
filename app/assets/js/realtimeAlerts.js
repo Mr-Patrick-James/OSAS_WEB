@@ -103,17 +103,29 @@
             }
 
             if (latestA && String(latestA.id) !== String(snap.lastAnnouncementId)) {
-                const isNew = !snap.lastAnnouncementId || Number(latestA.id) > Number(snap.lastAnnouncementId);
-                if (isNew) {
-                    notifyUser(
-                        'New Announcement',
-                        latestA.title || 'New campus update posted',
-                        'announcement-' + latestA.id
-                    );
-                    newCount++;
+            const isNew = !snap.lastAnnouncementId || Number(latestA.id) > Number(snap.lastAnnouncementId);
+            if (isNew) {
+                notifyUser(
+                    'New Announcement',
+                    latestA.title || 'New campus update posted',
+                    'announcement-' + latestA.id
+                );
+                newCount++;
+
+                // Refresh user dashboard announcements
+                if (window.userDashboardData && typeof window.userDashboardData.loadAllData === 'function') {
+                    console.log('🔄 Refreshing user dashboard for new announcement');
+                    window.userDashboardData.loadAllData();
                 }
-                snap.lastAnnouncementId = latestA.id;
+
+                // Refresh user announcements page if on it
+                if (window.refreshAnnouncements && typeof window.refreshAnnouncements === 'function') {
+                    console.log('🔄 Refreshing user announcements page');
+                    window.refreshAnnouncements();
+                }
             }
+            snap.lastAnnouncementId = latestA.id;
+        }
 
             saveSnapshot(snap);
 

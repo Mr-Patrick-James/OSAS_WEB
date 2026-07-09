@@ -63,6 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 $message = $input['message'] ?? '';
 $conversation_history = $input['history'] ?? [];
+$session_id = $input['session_id'] ?? null;
+$title = $input['title'] ?? 'New Chat';
 
 if (empty($message)) {
     http_response_code(400);
@@ -297,6 +299,38 @@ try {
     $response = callAIAPI($messages);
     
     if ($response['success']) {
+        // Save to DB
+        if ($user_id && $session_id && isset($conn) && $conn) {
+            try {
+                // Ensure session exists or create it
+                $stmt = $conn->prepare("SELECT id FROM chat_sessions WHERE client_session_id = ? AND user_id = ?");
+                $stmt->bind_param("si", $session_id, $user_id);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                if ($res && $res->num_rows > 0) {
+                    $row = $res->fetch_assoc();
+                    $db_session_id = $row['id'];
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO chat_sessions (user_id, client_session_id, title) VALUES (?, ?, ?)");
+                    $stmt->bind_param("iss", $user_id, $session_id, $title);
+                    $stmt->execute();
+                    $db_session_id = $conn->insert_id;
+                }
+                
+                // Insert user message
+                $stmt = $conn->prepare("INSERT INTO chat_messages (session_id, sender, message) VALUES (?, 'user', ?)");
+                $stmt->bind_param("is", $db_session_id, $message);
+                $stmt->execute();
+                
+                // Insert bot message
+                $stmt = $conn->prepare("INSERT INTO chat_messages (session_id, sender, message) VALUES (?, 'bot', ?)");
+                $stmt->bind_param("is", $db_session_id, $response['message']);
+                $stmt->execute();
+            } catch (Exception $e) {
+                error_log("Failed to save chat to DB: " . $e->getMessage());
+            }
+        }
+
         echo json_encode([
             'success' => true,
             'response' => $response['message'],

@@ -28,6 +28,12 @@
     box-sizing: border-box;
 }
 
+/* Compact view button variables */
+:root {
+    --dept-view-btn-size: 28px;
+    --dept-view-btn-font-size: 16px;
+}
+
 #announcements-page.admin-side .announcements-breadcrumb {
     display: flex;
     align-items: center;
@@ -250,8 +256,8 @@
 }
 
 #announcements-page.admin-side .view-btn {
-    width: 28px;
-    height: 28px;
+    width: var(--dept-view-btn-size);
+    height: var(--dept-view-btn-size);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -260,7 +266,7 @@
     color: #64748b;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: var(--dept-view-btn-font-size);
     transition: all 0.2s;
 }
 
@@ -274,6 +280,79 @@
     color: var(--gold);
     border: 1.5px solid var(--gold);
     box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2);
+}
+
+/* Mobile: make header 2 rows: (1) search full-width, (2) filters + view toggles */
+@media (max-width: 768px) {
+    :root { --dept-view-btn-size: 18px; --dept-view-btn-font-size: 12px; }
+
+    #announcements-page.admin-side .table-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    /* Arrange header-right as a wrapping flex so we can keep search on its own row */
+    #announcements-page.admin-side .header-right {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+    }
+
+    /* Search occupies the full first line */
+    #announcements-page.admin-side .search-group {
+        flex: 1 1 100%;
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Filters + view toggles sit on the second line */
+    #announcements-page.admin-side .filter-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #announcements-page.admin-side .integrated-select {
+        height: 40px;
+        min-width: 120px;
+        flex: 0 0 auto;
+        padding: 0 32px 0 10px;
+        box-sizing: border-box;
+    }
+
+    #announcements-page.admin-side .view-toggles {
+        height: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        padding: 4px;
+        border: 1px solid var(--border, #e2e8f0);
+        flex: 0 0 auto;
+        box-sizing: border-box;
+    }
+
+    #announcements-page.admin-side .view-btn {
+        width: var(--dept-view-btn-size);
+        height: var(--dept-view-btn-size);
+        font-size: var(--dept-view-btn-font-size);
+        padding: 0;
+    }
+
+    #announcements-page.admin-side .header-left { width: 100%; }
+
+    #announcements-page.admin-side .search-group input {
+        height: 40px;
+        min-height: 40px;
+        padding: 0 10px 0 32px;
+        box-sizing: border-box;
+    }
 }
 
 /* Table Body Styles */
@@ -1402,6 +1481,38 @@ body.dark #announcements-page.admin-side .announcement-modal-close:hover {
 
     body.dark #announcements-page.admin-side #announcementsTable td::before {
         color: #64748b;
+    }
+}
+
+@media (max-width: 768px) {
+    #announcements-page.admin-side .view-toggles {
+        height: 40px !important;
+        min-height: 40px !important;
+        gap: 2px !important;
+        padding: 2px !important;
+        border-radius: 9px !important;
+        box-sizing: border-box !important;
+    }
+
+    #announcements-page.admin-side .view-btn {
+        width: 24px !important;
+        min-width: 24px !important;
+        max-width: 24px !important;
+        height: 24px !important;
+        min-height: 24px !important;
+        border-radius: 6px !important;
+        box-sizing: border-box !important;
+        appearance: none;
+        -webkit-appearance: none;
+        padding: 0 !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+        font-size: 12px !important;
+    }
+
+    #announcements-page.admin-side .view-btn i {
+        line-height: 1 !important;
+        font-size: 12px !important;
     }
 }
 

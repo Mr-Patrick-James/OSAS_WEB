@@ -50,8 +50,16 @@ function initializeUserDropdown() {
     if (settingsLink) {
       e.preventDefault();
       openUserSettingsModal();
-      if (userDropdown) {
+      
+      // Close desktop dropdown
+      if (typeof userDropdown !== 'undefined' && userDropdown) {
         userDropdown.classList.remove('show');
+      }
+      
+      // Close mobile dropdown
+      const mobileBtn = document.getElementById('mobileProfileBtn');
+      if (mobileBtn) {
+          mobileBtn.classList.remove('open');
       }
     }
   });
@@ -66,6 +74,7 @@ function initializeNotifications() {
   const notifList = document.getElementById('notificationList');
   const notifBadge = document.querySelector('.notification-badge');
   const markAllReadBtn = document.getElementById('markAllRead');
+  const HIDDEN_NOTIFICATIONS_KEY = 'hidden_notifications';
 
   if (!notifBtn || !notifDropdown) return;
 
@@ -113,6 +122,68 @@ function initializeNotifications() {
     });
   }
 
+  function formatNotificationDate(dateStr) {
+    if (!dateStr) return '';
+    return String(dateStr).replace(' ', 'T');
+  }
+
+  function getHiddenNotifications() {
+    return JSON.parse(localStorage.getItem(HIDDEN_NOTIFICATIONS_KEY) || '[]');
+  }
+
+  function setHiddenNotifications(ids) {
+    localStorage.setItem(HIDDEN_NOTIFICATIONS_KEY, JSON.stringify(ids));
+  }
+
+  function canDeleteNotification(type) {
+    return !['violation', 'violation_resolved'].includes(type);
+  }
+
+  function createAnnouncementNotification(announcement, readNotifs) {
+    const type = String(announcement.type || announcement.category || 'info').toLowerCase();
+    const icon = type === 'urgent' ? 'bxs-megaphone'
+      : type === 'warning' ? 'bxs-bell-ring'
+      : 'bxs-info-circle';
+    const notifId = 'a-' + announcement.id;
+    return {
+      id: notifId,
+      type: 'announcement',
+      title: 'New Announcement',
+      desc: announcement.title || announcement.message || announcement.content || 'New campus update posted',
+      date: announcement.created_at || announcement.updated_at || '',
+      icon: icon,
+      isRead: readNotifs.includes(notifId),
+      rawId: announcement.id
+    };
+  }
+
+  async function fetchAnnouncementsForNotifications() {
+    const apiBase = getAPIBase();
+    const res = await fetch(apiBase + 'announcements.php?action=active&limit=20', { credentials: 'same-origin' });
+    const data = await res.json();
+    const payload = data.data;
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.announcements)) return payload.announcements;
+    if (Array.isArray(data.announcements)) return data.announcements;
+    return [];
+  }
+
+  function openAnnouncementNotification(rawId) {
+    const page = 'user-page/announcements';
+    const openSelectedAnnouncement = () => {
+      if (typeof window.viewAnnouncement === 'function') {
+        window.viewAnnouncement(rawId);
+      }
+    };
+
+    if (typeof window.loadContent === 'function') {
+      window.loadContent(page);
+      setTimeout(openSelectedAnnouncement, 500);
+    } else {
+      window.location.href = page;
+    }
+  }
+
   async function loadNotifications() {
     // Show loading state if empty
     if (notifList.innerHTML.includes('no-notifications')) {
@@ -131,21 +202,35 @@ function initializeNotifications() {
         violations = data.data || data.violations || [];
       }
 
-      // Also fetch slip request statuses
+      let announcements = [];
       let slipRequests = [];
       try {
-        const apiBase = getAPIBase();
-        const slipRes = await fetch(apiBase + 'violations.php?action=my_slip_requests');
-        const slipData = await slipRes.json();
-        if (slipData.status === 'success') {
-          slipRequests = slipData.data || [];
-        }
+        [announcements, slipRequests] = await Promise.all([
+          fetchAnnouncementsForNotifications().catch(e => {
+            console.warn('Could not fetch announcements for notifications:', e);
+            return [];
+          }),
+          (async () => {
+            try {
+              const apiBase = getAPIBase();
+              const slipRes = await fetch(apiBase + 'violations.php?action=my_slip_requests');
+              const slipData = await slipRes.json();
+              if (slipData.status === 'success') {
+                return slipData.data || [];
+              }
+            } catch (e) {
+              console.warn('Could not fetch slip requests:', e);
+            }
+            return [];
+          })()
+        ]);
       } catch (e) {
-        console.warn('Could not fetch slip requests:', e);
+        console.warn('Could not load some notifications:', e);
       }
 
       const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
       const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+      const hiddenNotifs = getHiddenNotifications();
       
       // Build combined notification list
       let allNotifs = [];
@@ -190,6 +275,11 @@ function initializeNotifications() {
         }
       });
 
+      // Add announcements
+      announcements.forEach(a => {
+        allNotifs.push(createAnnouncementNotification(a, readNotifs));
+      });
+
       // Add slip requests (only approved/denied — not pending since they already know they requested)
       slipRequests.filter(sr => sr.status === 'approved' || sr.status === 'denied').forEach(sr => {
         const statusText = sr.status === 'approved' ? 'Entrance Slip Approved ✓' : 'Entrance Slip Denied ✗';
@@ -206,10 +296,12 @@ function initializeNotifications() {
         });
       });
 
+      allNotifs = allNotifs.filter(n => !hiddenNotifs.includes(n.id));
+
       // Sort by date descending
       allNotifs.sort((a, b) => {
-        const dateA = new Date((a.date || '').replace(' ', 'T'));
-        const dateB = new Date((b.date || '').replace(' ', 'T'));
+        const dateA = new Date(formatNotificationDate(a.date));
+        const dateB = new Date(formatNotificationDate(b.date));
         return dateB - dateA;
       });
 
@@ -231,16 +323,19 @@ function initializeNotifications() {
       if (notifBadge) notifBadge.textContent = unseenCount > 0 ? unseenCount : '0';
 
       notifList.innerHTML = recentNotifs.map(n => {
-        const date = new Date((n.date || '').replace(' ', 'T'));
+        const date = new Date(formatNotificationDate(n.date));
         const timeAgo = formatTimeAgo(date);
         const unreadClass = !n.isRead ? 'unread' : '';
         const typeClass = n.type === 'violation' ? 'notif-violation'
           : n.type === 'violation_resolved' ? 'notif-violation-resolved'
+          : n.type === 'announcement' ? 'notif-announcement'
           : (n.type === 'slip_approved' ? 'notif-slip-approved' : 'notif-slip-denied');
         
         let badgeHtml = '';
         if (n.type === 'violation') {
           badgeHtml = '<span class="notif-badge-tag violation"><i class="bx bx-error-alt"></i> Violation</span>';
+        } else if (n.type === 'announcement') {
+          badgeHtml = '<span class="notif-badge-tag announcement" style="background:rgba(212,175,55,0.12);color:#92650a;"><i class="bx bx-megaphone"></i> Announcement</span>';
         } else if (n.type === 'violation_resolved') {
           badgeHtml = '<span class="notif-badge-tag resolved" style="background:rgba(59,130,246,0.12);color:#3b82f6;"><i class="bx bx-check-circle"></i> Resolved</span>';
         } else if (n.type === 'slip_approved') {
@@ -249,19 +344,31 @@ function initializeNotifications() {
           badgeHtml = '<span class="notif-badge-tag denied"><i class="bx bx-x-circle"></i> Denied</span>';
         }
 
+        const deleteButton = canDeleteNotification(n.type)
+          ? `<button class="notif-delete-btn" type="button" data-delete-id="${n.id}" title="Delete notification" aria-label="Delete notification" style="margin-left:auto;border:none;background:transparent;color:#94a3b8;cursor:pointer;padding:4px;border-radius:6px;"><i class='bx bx-trash'></i></button>`
+          : '';
+
         return `
           <div class="notification-item ${unreadClass} ${typeClass}" data-id="${n.id}" data-raw-id="${n.rawId}" data-type="${n.type}">
             <div class="notif-icon">
               <i class='bx ${n.icon}'></i>
             </div>
             <div class="notif-info">
-              <span class="notif-title">${n.title} ${badgeHtml}</span>
+              <span class="notif-title" style="display:flex;align-items:center;gap:8px;">${n.title} ${badgeHtml}${deleteButton}</span>
               <span class="notif-desc">${n.desc}</span>
               <span class="notif-time">${timeAgo}</span>
             </div>
           </div>
         `;
       }).join('');
+
+      notifList.querySelectorAll('.notif-delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          deleteNotification(this.dataset.deleteId);
+        });
+      });
 
       // Add click listeners to items
       notifList.querySelectorAll('.notification-item').forEach(item => {
@@ -278,6 +385,8 @@ function initializeNotifications() {
           // Open violation details for violation type
           if (type === 'violation' && typeof window.viewViolationDetails === 'function') {
             window.viewViolationDetails(rawId);
+          } else if (type === 'announcement') {
+            openAnnouncementNotification(rawId);
           }
         });
       });
@@ -299,6 +408,15 @@ function initializeNotifications() {
       readNotifs.push(String(id));
       localStorage.setItem('read_notifications', JSON.stringify(readNotifs));
     }
+
+    if (String(id).startsWith('a-')) {
+      const readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+      const rawId = parseInt(String(id).replace('a-', ''), 10);
+      if (!Number.isNaN(rawId) && !readAnnouncements.includes(rawId)) {
+        readAnnouncements.push(rawId);
+        localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
+      }
+    }
     
     // Persist violation read status to database (only for violation type)
     if (String(id).startsWith('v-')) {
@@ -315,6 +433,33 @@ function initializeNotifications() {
     if (item) item.classList.remove('unread');
     
     updateBadgeCount();
+  }
+
+  function deleteNotification(id) {
+    const item = notifList.querySelector(`.notification-item[data-id="${id}"]`);
+    if (!item) return;
+
+    const type = item.dataset.type || '';
+    if (!canDeleteNotification(type)) return;
+
+    const hiddenNotifs = getHiddenNotifications();
+    if (!hiddenNotifs.includes(id)) {
+      hiddenNotifs.push(id);
+      setHiddenNotifications(hiddenNotifs);
+    }
+
+    item.remove();
+
+    if (!notifList.querySelector('.notification-item')) {
+      notifList.innerHTML = `
+        <div class="no-notifications">
+          <i class='bx bx-bell-off'></i>
+          <p>No new notifications</p>
+        </div>`;
+    }
+
+    updateBadgeCount();
+    showNotification('Notification removed from your list', 'success');
   }
 
   function markNotificationAsSeen(id) {
@@ -342,6 +487,18 @@ function initializeNotifications() {
 
     localStorage.setItem('read_notifications', JSON.stringify(readNotifs));
     localStorage.setItem('seen_notifications', JSON.stringify(seenNotifs));
+
+    const readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+    items.forEach(item => {
+      const id = item.dataset.id || '';
+      if (id.startsWith('a-')) {
+        const rawId = parseInt(id.replace('a-', ''), 10);
+        if (!Number.isNaN(rawId) && !readAnnouncements.includes(rawId)) {
+          readAnnouncements.push(rawId);
+        }
+      }
+    });
+    localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
     
     // Persist to database
     try {
@@ -357,7 +514,6 @@ function initializeNotifications() {
 
   function updateBadgeCount() {
     const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
-    const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
     const items = notifList.querySelectorAll('.notification-item');
     if (items.length === 0) {
       if (notifBadge) notifBadge.textContent = '0';
@@ -402,18 +558,27 @@ function initializeNotifications() {
     const apiBase = getAPIBase();
     Promise.all([
       fetch(apiBase + 'violations.php', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] })),
-      fetch(apiBase + 'violations.php?action=my_slip_requests', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] }))
-    ]).then(([vData, srData]) => {
+      fetch(apiBase + 'violations.php?action=my_slip_requests', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] })),
+      fetch(apiBase + 'announcements.php?action=active&limit=20', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({ data: [] }))
+    ]).then(([vData, srData, aData]) => {
       const violations = vData.data || vData.violations || [];
       const slipRequests = (srData.data || []).filter(sr => sr.status === 'approved' || sr.status === 'denied');
+      const annPayload = aData.data;
+      const announcements = Array.isArray(annPayload)
+        ? annPayload
+        : (annPayload && Array.isArray(annPayload.announcements) ? annPayload.announcements : (aData.announcements || []));
       const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
       const seenNotifs = JSON.parse(localStorage.getItem('seen_notifications') || '[]');
+      const hiddenNotifs = getHiddenNotifications();
       let unread = 0;
       violations.forEach(v => {
         if (!readNotifs.includes('v-' + v.id) && !seenNotifs.includes('v-' + v.id) && v.is_read != 1) unread++;
       });
+      announcements.forEach(a => {
+        if (!hiddenNotifs.includes('a-' + a.id) && !readNotifs.includes('a-' + a.id) && !seenNotifs.includes('a-' + a.id)) unread++;
+      });
       slipRequests.forEach(sr => {
-        if (!readNotifs.includes('sr-' + sr.id) && !seenNotifs.includes('sr-' + sr.id)) unread++;
+        if (!hiddenNotifs.includes('sr-' + sr.id) && !readNotifs.includes('sr-' + sr.id) && !seenNotifs.includes('sr-' + sr.id)) unread++;
       });
       if (notifBadge) notifBadge.textContent = unread > 0 ? (unread > 9 ? '9+' : unread) : '0';
     }).catch(() => {});

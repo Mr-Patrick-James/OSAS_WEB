@@ -20,6 +20,9 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
 ?>
 <!-- NAVBAR -->
 <nav class="top-navbar">
+  <!-- Mobile Menu Toggle (Hamburger) -->
+  <i class='bx bx-menu' style="display: none;"></i>
+  
   <input type="checkbox" id="switch-mode" hidden>
   <label for="switch-mode" class="switch-mode"></label>
   <input type="checkbox" id="eye-care-toggle" hidden>

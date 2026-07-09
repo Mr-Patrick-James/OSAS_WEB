@@ -10,6 +10,35 @@
     box-sizing: border-box;
 }
 
+/* PWA: Prevent text selection on double-tap */
+#chatbot-button,
+#chatbot-panel,
+.cb-header,
+.cb-close-btn,
+.cb-send-btn,
+.cb-chip,
+.cb-history-btn,
+.cb-history-sidebar,
+.cb-history-item {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Allow text selection in input and message bubbles */
+.cb-input,
+.cb-bubble-text,
+.cb-bubble-text p,
+.cb-bubble-text li {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+}
+
 /* ── Floating trigger button ─────────────────────────────── */
 #chatbot-button {
     position: fixed;

@@ -1,7 +1,10 @@
 <?php
 require_once __DIR__ . '/../../core/View.php';
 $_role = $_SESSION['role'] ?? '';
-$_canManage = in_array($_role, ['admin', 'OSAS Staff']);
+$_normalizedRole = strtolower(trim((string) $_role));
+$_normalizedRoleKey = preg_replace('/[^a-z]/', '', $_normalizedRole);
+$_canManage = in_array($_normalizedRole, ['admin', 'osas staff', 'osass staff', 'osaas staff'], true)
+    || in_array($_normalizedRoleKey, ['admin', 'osasstaff', 'osassstaff', 'osaasstaff'], true);
 ?>
 <link rel="stylesheet" href="<?= View::asset('styles/announcements.css') ?>">
 <script>window.ANNOUNCEMENT_CAN_MANAGE = <?= $_canManage ? 'true' : 'false' ?>;</script>

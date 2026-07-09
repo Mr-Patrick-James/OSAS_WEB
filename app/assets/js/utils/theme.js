@@ -54,7 +54,6 @@ function updateTheme() {
 function updateThemeColor() {
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
   const msThemeColorMeta = document.querySelector('meta[name="msapplication-TileColor"]');
-  const appleStatusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   
   // Primary theme colors - darkest dark mode
   const themeColor = window.darkMode ? '#0F0F0F' : '#D4AF37';
@@ -80,16 +79,7 @@ function updateThemeColor() {
     document.head.appendChild(meta);
   }
   
-  // Update Apple Status Bar (for iOS Safari)
-  const appleStatusBar = window.darkMode ? 'black-translucent' : 'default';
-  if (appleStatusBarMeta) {
-    appleStatusBarMeta.setAttribute('content', appleStatusBar);
-  } else {
-    const meta = document.createElement('meta');
-    meta.name = 'apple-mobile-web-app-status-bar-style';
-    meta.content = appleStatusBar;
-    document.head.appendChild(meta);
-  }
+  // Removed Apple status-bar meta manipulation to avoid exposing phone UI rules
   
   // Update manifest theme color if manifest exists
   updateManifestThemeColor(themeColor);

@@ -74,6 +74,15 @@ body, html {
   user-select: none;
 }
 
+.mobile-menu-icon {
+  display: none;
+  font-size: 1.8rem;
+  color: var(--dark);
+}
+body.dark .mobile-menu-icon {
+  color: var(--gold);
+}
+
 .nav-logo {
   width: 28px;
   height: 28px;
@@ -115,8 +124,11 @@ body, html {
   }
   
   .nav-logo {
-    width: 32px;
-    height: 32px;
+    display: none !important;
+  }
+  
+  .mobile-menu-icon {
+    display: block !important;
   }
 }
 
@@ -2157,8 +2169,228 @@ body.dark .mobile-topnav-settings-btn { background: #2a2a2a; color: #aaa; }
 body.dark .mobile-topnav-settings-btn:hover { background: #333; color: #FFD700; }
 
 @media (max-width: 768px) {
-  /* Show gear settings button on mobile */
-  .mobile-topnav-settings-btn { display: flex !important; }
-  /* Hide full profile pill — profile moves to sidebar */
+  /* Hide the old gear settings button — replaced by profile avatar */
+  .mobile-topnav-settings-btn { display: none !important; }
+  /* Hide full profile pill on mobile */
   .tn-user-pill { display: none !important; }
+  /* Show the mobile profile avatar button */
+  .mobile-profile-btn { display: flex !important; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE PROFILE AVATAR BUTTON  (top-right on mobile)
+   ═══════════════════════════════════════════════════════ */
+
+.mobile-profile-btn {
+  display: none; /* hidden on desktop — shown via media query above */
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.mobile-profile-btn .mpb-ring {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, #FFD700 0%, #ffb347 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.4);
+  transition: box-shadow 0.2s, transform 0.2s;
+  border: none;
+  outline: none;
+  background-clip: padding-box;
+}
+
+.mobile-profile-btn .mpb-ring:hover,
+.mobile-profile-btn.open .mpb-ring {
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3), 0 2px 10px rgba(212, 175, 55, 0.4);
+  transform: scale(1.05);
+}
+
+.mobile-profile-btn .mpb-img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  display: block;
+}
+
+body.dark .mobile-profile-btn .mpb-img { border-color: #1a1a1a; }
+
+.mobile-profile-btn .mpb-initials {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #FFD700;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  font-family: var(--poppins, 'Poppins', sans-serif);
+  letter-spacing: 0.5px;
+  line-height: 1;
+  user-select: none;
+}
+
+body.dark .mobile-profile-btn .mpb-initials { border-color: #1a1a1a; background: #333; color: #FFD700; }
+
+/* Mini dropdown */
+.mobile-profile-btn .mpb-dropdown {
+  position: fixed;
+  top: 60px;
+  right: 10px;
+  width: 220px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.97);
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10003;
+  overflow: hidden;
+  font-family: var(--poppins, 'Poppins', sans-serif);
+}
+
+body.dark .mobile-profile-btn .mpb-dropdown {
+  background: #242424;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+}
+
+.mobile-profile-btn.open .mpb-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.mpb-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,215,0,0.05) 100%);
+  border-bottom: 1px solid rgba(212,175,55,0.2);
+}
+
+body.dark .mpb-dropdown-header {
+  background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, transparent 100%);
+  border-bottom-color: rgba(255,215,0,0.12);
+}
+
+.mpb-dropdown-header .mpb-hd-ring {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, #FFD700 0%, #ffb347 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mpb-dropdown-header .mpb-hd-img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+}
+
+body.dark .mpb-dropdown-header .mpb-hd-img { border-color: #1a1a1a; }
+
+.mpb-dropdown-header .mpb-hd-initials {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #FFD700;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  font-family: var(--poppins, 'Poppins', sans-serif);
+}
+
+body.dark .mpb-dropdown-header .mpb-hd-initials { border-color: #1a1a1a; background: #333; }
+
+.mpb-hd-info { min-width: 0; flex: 1; }
+
+.mpb-hd-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+body.dark .mpb-hd-name { color: #f1f5f9; }
+
+.mpb-hd-role {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #D4AF37;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-top: 2px;
+}
+
+.mpb-dropdown-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0;
+}
+
+body.dark .mpb-dropdown-divider { background: #333; }
+
+.mpb-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s, padding-left 0.15s;
+}
+
+body.dark .mpb-dropdown-item { color: #d0d0d0; }
+
+.mpb-dropdown-item i { font-size: 16px; flex-shrink: 0; }
+
+.mpb-dropdown-item:hover {
+  background: rgba(255,215,0,0.08);
+  color: #D4AF37;
+  padding-left: 18px;
+}
+
+body.dark .mpb-dropdown-item:hover {
+  background: rgba(255,215,0,0.1);
+  color: #FFD700;
+}
+
+.mpb-dropdown-item.mpb-logout { color: #ef4444; }
+
+.mpb-dropdown-item.mpb-logout:hover {
+  background: rgba(239,68,68,0.08);
+  color: #ef4444;
+  padding-left: 18px;
+}
+
+body.dark .mpb-dropdown-item.mpb-logout:hover {
+  background: rgba(239,68,68,0.14);
 }

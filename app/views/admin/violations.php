@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../core/View.php';
   <title>Violations | OSAS System</title>
   <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="<?= View::asset('styles/violation.css') ?>">
+  <link rel="stylesheet" href="<?= View::asset('styles/stats-scroll.css') ?>">
   <!-- html5-qrcode: camera-based QR scanner (no extra install needed) -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
@@ -108,15 +109,12 @@ require_once __DIR__ . '/../../core/View.php';
       </div>
 
       <div class="Violations-header-right">
-        <!-- Mobile: search bar + filter toggle on one row -->
+        <!-- Mobile: search bar on its own row for wider input -->
         <div class="Violations-mobile-filter-bar">
           <div class="Violations-search-box" id="mobileSearchBox">
             <i class='bx bx-search'></i>
             <input type="text" id="searchViolationMobile" placeholder="Search violations...">
           </div>
-          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
-            <i class='bx bx-filter-alt'></i> Filters
-          </button>
         </div>
 
         <!-- Current Month Filters -->
@@ -189,11 +187,7 @@ require_once __DIR__ . '/../../core/View.php';
           </div>
         </div>
 
-        <button class="Violations-filter-btn" title="More filters">
-          <i class='bx bx-filter-alt'></i>
-        </button>
-
-        <!-- Display Mode + View toggles share a row on mobile -->
+        <!-- Display Mode + View toggles + Filter icon share a row -->
         <div class="Violations-toggles-row">
           <!-- Display Mode Toggle: Latest per student vs All records -->
           <div class="Violations-view-toggle" id="displayModeToggle">
@@ -217,6 +211,10 @@ require_once __DIR__ . '/../../core/View.php';
               <i class='bx bx-list-ul'></i>
             </button>
           </div>
+
+          <button class="Violations-filter-toggle-btn" id="violationsFilterToggle" type="button">
+            <i class='bx bx-filter-alt'></i> Filters
+          </button>
         </div>
       </div>
     </div>

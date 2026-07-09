@@ -34,7 +34,7 @@ $canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer',
   </div>
 
   <ul class="side-menu top">
-    <li class="active">
+    <li>
       <a href="#" data-page="admin_page/dashcontent">
         <i class='bx bxs-dashboard'></i>
         <span class="text">Dashboard</span>

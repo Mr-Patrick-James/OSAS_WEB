@@ -6,6 +6,8 @@
 :root {
 
   --border: #DDDDDD;
+  --dept-view-btn-size: 28px;
+  --dept-view-btn-font-size: 16px;
 }
 
 body.dark {
@@ -1357,6 +1359,7 @@ body.dark {
 }
 
 @media (max-width: 768px) {
+  :root { --dept-view-btn-size: 18px; --dept-view-btn-font-size: 12px; }
   .Students-head-title {
     flex-direction: column;
     align-items: flex-start;
@@ -1398,6 +1401,31 @@ body.dark {
   .Students-search-box {
     width: 100% !important;
   }
+  /* Mobile: force three-line header
+     Line 1: title, Line 2: search + view-toggle, Line 3: filters */
+  .Students-table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .Students-header-left { width: 100%; }
+
+  .Students-header-right { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+
+  /* Search + view toggle on second row */
+  .Students-search-toggle-row { display: flex; gap: 8px; align-items: center; width: 100%; }
+  .Students-search-box { width: 100%; }
+  .Students-search-box input { height: 40px; }
+
+  /* Make view-toggle match search height and compact */
+  .Students-view-toggle { height: 40px; display: flex; gap: 6px; align-items: center; padding: 4px; background: var(--grey); border: 1px solid var(--border); border-radius: 8px; }
+  .Students-view-btn { width: var(--dept-view-btn-size) !important; height: var(--dept-view-btn-size) !important; font-size: var(--dept-view-btn-font-size); padding: 0; border-radius: 6px; }
+
+  /* Filters on third row: keep same height as search */
+  .Students-filter-group { display: flex; gap: 8px; align-items: center; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .Students-filter-select { flex: 0 0 auto; min-width: 120px; height: 40px; }
+  .Students-filter-btn { width: 40px; height: 40px; }
 
   .Students-filter-group {
     width: 100%;
@@ -1981,5 +2009,106 @@ body.dark {
     transition: none !important;
     animation: none !important;
     animation-duration: 0s !important;
+  }
+
+  .Students-header-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .Students-search-toggle-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .Students-search-box {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .Students-search-box input,
+  .Students-filter-select,
+  .Students-view-toggle,
+  .Students-filter-btn {
+    height: 40px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .Students-search-box input {
+    padding: 0 12px 0 36px;
+  }
+
+  .Students-view-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .Students-view-btn {
+    width: 28px !important;
+    min-width: 28px;
+    max-width: 28px;
+    height: 28px !important;
+    min-height: 28px;
+    padding: 0;
+    margin: 0;
+    border-radius: 7px;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    line-height: 1;
+    font-size: 14px !important;
+  }
+
+  .Students-view-btn i {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .Students-filter-group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+    grid-template-areas:
+      "status department department"
+      "section section filter";
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .Students-filter-select {
+    width: 100%;
+    min-width: 0;
+    padding: 0 32px 0 10px;
+  }
+
+  #StudentsFilterSelect {
+    grid-area: status;
+  }
+
+  #StudentsDepartmentFilter {
+    grid-area: department;
+  }
+
+  #StudentsSectionFilter {
+    grid-area: section;
+  }
+
+  .Students-filter-btn {
+    grid-area: filter;
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    justify-self: stretch;
   }
 }

@@ -22,3 +22,12 @@ AddType application/json .json
 AddType image/svg+xml .svg
 AddType font/woff .woff
 AddType font/woff2 .woff2
+
+# Do not cache the service worker
+<IfModule mod_headers.c>
+    <Files "service-worker.js">
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </Files>
+</IfModule>

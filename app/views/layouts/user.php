@@ -35,7 +35,9 @@ $notificationCount = 7; // Can be dynamic later
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <title>E-OSAS SYSTEM</title>
   <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>">
@@ -69,11 +71,14 @@ $notificationCount = 7; // Can be dynamic later
   <script src="<?= View::asset('js/utils/offlineDB.js') ?>"></script>
   <script src="<?= View::asset('js/initModules.js') ?>"></script>
   <script src="<?= View::asset('js/user_dashboard.js') ?>"></script>
+  <script src="<?= View::asset('js/userDashboardData.js') ?>"></script>
   <script src="<?= View::asset('js/userViolations.js') ?>"></script>
   <script src="<?= View::asset('js/userAnnouncements.js') ?>"></script>
   <script>window.OSAS_USER_ID = <?= json_encode((string)($_SESSION['user_id'] ?? 'guest')) ?>;</script>
   <script src="<?= View::asset('js/chatbot.js') ?>"></script>
   <script src="<?= View::asset('js/pwa.js') ?>"></script>
+  <script src="<?= View::asset('js/push-notifications.js') ?>"></script>
+  <script src="<?= View::asset('js/realtimeAlerts.js') ?>"></script>
   <?php View::partial('logout_modal'); ?>
 </body>
 

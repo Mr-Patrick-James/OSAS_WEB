@@ -155,6 +155,8 @@ function initReportsModule() {
             if ([...violationTypeFilter.options].some(opt => opt.value === current)) {
                 violationTypeFilter.value = current;
             }
+            // Also sync the modal's FM_ViolationType dropdown
+            if (typeof window.__patchFMVT === 'function') window.__patchFMVT(types);
         }
 
         function updateSortByOptions() {
@@ -1208,6 +1210,167 @@ function initReportsModule() {
                 loadReports(true);
             });
         }
+
+        // ── FILTER MODAL (mobile) ──────────────────────────────────────────
+
+        const filterModal     = document.getElementById('ReportsFilterModal');
+        const filterModalOverlay = document.getElementById('FilterModalOverlay');
+        const btnOpenFilter   = document.getElementById('btnOpenFilterModal');
+        const btnCloseFilter  = document.getElementById('closeFilterModal');
+        const btnFMApply      = document.getElementById('FM_ApplyBtn');
+        const btnFMReset      = document.getElementById('FM_ResetBtn');
+        const filterActiveDot = document.getElementById('filterActiveDot');
+
+        // Mirror selects inside the modal (FM_*) that match the main filter IDs
+        const fmMirrorMap = [
+            ['FM_Department',    'ReportsDepartmentFilter'],
+            ['FM_Section',       'ReportsSectionFilter'],
+            ['FM_Status',        'ReportsStatusFilter'],
+            ['FM_TimePeriod',    'ReportsTimeFilter'],
+            ['FM_ViolationType', 'ReportsViolationTypeFilter'],
+            ['FM_SortBy',        'ReportsSortBy'],
+        ];
+
+        function syncModalFromMain() {
+            fmMirrorMap.forEach(([fmId, mainId]) => {
+                const fmEl   = document.getElementById(fmId);
+                const mainEl = document.getElementById(mainId);
+                if (fmEl && mainEl) fmEl.value = mainEl.value;
+            });
+            // date range
+            const fmStart = document.getElementById('FM_StartDate');
+            const fmEnd   = document.getElementById('FM_EndDate');
+            const mainStart = document.getElementById('ReportsStart');
+            const mainEnd   = document.getElementById('ReportsEnd');
+            if (fmStart && mainStart) fmStart.value = mainStart.value || '';
+            if (fmEnd   && mainEnd)   fmEnd.value   = mainEnd.value   || '';
+            // date range visibility
+            const fmDRG = document.getElementById('FM_DateRangeGroup');
+            const timeFM = document.getElementById('FM_TimePeriod');
+            if (fmDRG && timeFM) fmDRG.style.display = timeFM.value === 'custom' ? '' : 'none';
+        }
+
+        function syncMainFromModal() {
+            fmMirrorMap.forEach(([fmId, mainId]) => {
+                const fmEl   = document.getElementById(fmId);
+                const mainEl = document.getElementById(mainId);
+                if (fmEl && mainEl) mainEl.value = fmEl.value;
+            });
+            // date range
+            const fmStart = document.getElementById('FM_StartDate');
+            const fmEnd   = document.getElementById('FM_EndDate');
+            const mainStart = document.getElementById('ReportsStart');
+            const mainEnd   = document.getElementById('ReportsEnd');
+            if (fmStart && mainStart) mainStart.value = fmStart.value || '';
+            if (fmEnd   && mainEnd)   mainEnd.value   = fmEnd.value   || '';
+            // date range visibility on main
+            if (dateRangeGroup && timeFilter) {
+                dateRangeGroup.style.display = timeFilter.value === 'custom' ? '' : 'none';
+            }
+        }
+
+        function updateFilterActiveDot() {
+            if (!filterActiveDot) return;
+            const hasActive = (
+                (deptFilter   && deptFilter.value   !== 'all') ||
+                (sectionFilter && sectionFilter.value !== 'all') ||
+                (statusFilter  && statusFilter.value  !== 'all') ||
+                (violationTypeFilter && violationTypeFilter.value !== 'all') ||
+                (timeFilter    && timeFilter.value    !== 'all')
+            );
+            filterActiveDot.style.display = hasActive ? 'block' : 'none';
+        }
+
+        // Open filter modal
+        if (btnOpenFilter && filterModal) {
+            btnOpenFilter.addEventListener('click', function() {
+                syncModalFromMain();
+                filterModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        // Close helpers
+        function closeFilterModal() {
+            if (filterModal) filterModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        if (btnCloseFilter) btnCloseFilter.addEventListener('click', closeFilterModal);
+        if (filterModalOverlay) filterModalOverlay.addEventListener('click', closeFilterModal);
+
+        // Toggle date range in modal when time period changes
+        const fmTimePeriod = document.getElementById('FM_TimePeriod');
+        if (fmTimePeriod) {
+            fmTimePeriod.addEventListener('change', function() {
+                const fmDRG = document.getElementById('FM_DateRangeGroup');
+                if (fmDRG) fmDRG.style.display = this.value === 'custom' ? '' : 'none';
+            });
+        }
+
+        // Apply from modal
+        if (btnFMApply) {
+            btnFMApply.addEventListener('click', function() {
+                syncMainFromModal();
+                updateFilterActiveDot();
+                closeFilterModal();
+                currentPage = 1;
+                loadReports(true);
+            });
+        }
+
+        // Reset from modal
+        if (btnFMReset) {
+            btnFMReset.addEventListener('click', function() {
+                const fmIds = ['FM_Department','FM_Section','FM_Status','FM_ViolationType','FM_SortBy'];
+                fmIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = 'all';
+                });
+                const fmTime = document.getElementById('FM_TimePeriod');
+                if (fmTime) { fmTime.value = 'all'; }
+                const fmDRG = document.getElementById('FM_DateRangeGroup');
+                if (fmDRG) fmDRG.style.display = 'none';
+                const fmStart = document.getElementById('FM_StartDate');
+                const fmEnd   = document.getElementById('FM_EndDate');
+                if (fmStart) fmStart.value = '';
+                if (fmEnd)   fmEnd.value   = '';
+                const fmSort = document.getElementById('FM_SortBy');
+                if (fmSort) fmSort.value = 'total_desc';
+                syncMainFromModal();
+                updateFilterActiveDot();
+                closeFilterModal();
+                currentPage = 1;
+                loadReports(true);
+            });
+        }
+
+        // Also update dot whenever main filters change
+        [deptFilter, sectionFilter, statusFilter, violationTypeFilter, timeFilter]
+            .forEach(el => { if (el) el.addEventListener('change', updateFilterActiveDot); });
+
+        // Sync violation types from API into the modal dropdown too
+        const _origSetTypes = setReportViolationTypes;
+        // Patch to also update FM_ViolationType
+        function patchFMViolationTypes(types) {
+            const fmVT = document.getElementById('FM_ViolationType');
+            if (!fmVT) return;
+            const current = fmVT.value;
+            fmVT.innerHTML = '<option value="all">All Types</option>';
+            (types || []).forEach(type => {
+                const opt = document.createElement('option');
+                opt.value = type.id;
+                opt.textContent = type.name;
+                fmVT.appendChild(opt);
+            });
+            if ([...fmVT.options].some(o => o.value === current)) fmVT.value = current;
+        }
+
+        // Override setReportViolationTypes to also update FM select
+        const _origSetReportViolationTypes = setReportViolationTypes;
+        window.__patchFMVT = patchFMViolationTypes; // expose for API callback
+
+        // ── END FILTER MODAL ──────────────────────────────────────────────
 
         // 14. FORM SUBMISSION
         if (generateForm) {

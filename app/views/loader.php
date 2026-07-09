@@ -14,6 +14,11 @@ $isProduction = false;
 ini_set('display_errors', $isProduction ? 0 : 1);
 ini_set('log_errors', 1);
 
+// Ensure session is available for role-based view logic
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Get view path from query parameter
 $viewPath = $_GET['view'] ?? '';
 

@@ -24,7 +24,7 @@ class Controller {
      * Return JSON response
      */
     protected function json($data, $statusCode = 200) {
-        // Clear all output buffers
+        // Clear ALL output buffers completely to remove any accidental output
         while (ob_get_level() > 0) {
             ob_end_clean();
         }

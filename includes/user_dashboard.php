@@ -12,6 +12,12 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE
     $_SESSION['role']             = $_COOKIE['role'];
     $_SESSION['student_id']       = $_COOKIE['student_id'] ?? null;
     $_SESSION['student_id_code']  = $_COOKIE['student_id_code'] ?? null;
+    if (!empty($_COOKIE['full_name'])) {
+        $_SESSION['full_name'] = $_COOKIE['full_name'];
+    }
+    if (!empty($_COOKIE['profile_picture'])) {
+        $_SESSION['profile_picture'] = $_COOKIE['profile_picture'];
+    }
 }
 
 // No session — redirect to login
@@ -83,6 +89,7 @@ if (!$student_id) {
     <link rel="apple-touch-icon" href="<?= View::asset('img/default.png') ?>">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?= View::asset('styles/splash.css') ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/user_dashboard.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/user_topnav.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="<?= View::asset('styles/settings.css') ?>?v=<?= time() ?>">
@@ -93,6 +100,31 @@ if (!$student_id) {
   
 </head>
 <body data-eosas-push="student">
+    <!-- ═══════════════════════════════════════════
+         OPENING SPLASH SCREEN
+         ═══════════════════════════════════════════ -->
+    <div id="eosas-splash" role="status" aria-label="Loading E-OSAS">
+        <div class="splash-ripple"></div>
+        <div class="splash-ripple"></div>
+        <div class="splash-ripple"></div>
+        <div class="splash-logo-wrap">
+            <img src="<?= View::asset('img/default.png') ?>" alt="E-OSAS Logo">
+        </div>
+        <div class="splash-brand">
+            <div class="splash-brand-name">E<span>-OSAS</span></div>
+            <div class="splash-brand-sub">Colegio de Naujan</div>
+        </div>
+        <div class="splash-progress-wrap">
+            <div class="splash-progress-bar"></div>
+        </div>
+        <div class="splash-dot">
+            <span class="splash-dot-circle"></span>
+            <span class="splash-dot-label">Loading system</span>
+        </div>
+        <div class="splash-school">Office of Student Affairs &amp; Services</div>
+    </div>
+    <script src="<?= View::asset('js/splash.js') ?>"></script>
+
     <?php
     require_once __DIR__ . '/../app/models/StudentModel.php';
     $studentModel = new StudentModel();
