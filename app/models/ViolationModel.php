@@ -1040,10 +1040,10 @@ class ViolationModel extends Model {
     }
 
     /**
-     * Count penalties (disciplinary actions)
+     * Count resolved violations
      */
     public function countPenalties($studentId = null, $reportedBy = null) {
-        $query = "SELECT COUNT(*) as count FROM violations v WHERE v.status = 'disciplinary'";
+        $query = "SELECT COUNT(*) as count FROM violations v WHERE v.status = 'resolved'";
         $params = [];
         $types = "";
         

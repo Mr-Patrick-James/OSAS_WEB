@@ -181,6 +181,7 @@ function renderNotifications(notifications) {
 
         const item = document.createElement('div');
         item.className = `notif-item notif-${notif.type}`;
+        item.style.cursor = 'pointer';
         item.innerHTML = `
             <div class="notif-avatar-wrap">${avatarHtml}</div>
             <div class="notif-info">
@@ -190,6 +191,18 @@ function renderNotifications(notifications) {
             </div>
             ${actionBtn}
         `;
+
+        // Clicking anywhere on the card triggers the same action as the button
+        item.addEventListener('click', function(e) {
+            // Don't double-fire if the button itself was clicked
+            if (e.target.closest('.notif-manage-btn')) return;
+            if (notif.type === 'slip_request') {
+                manageSlipRequest(notif.id);
+            } else if (notif.type === 'disciplinary') {
+                manageViolation(notif.studentId);
+            }
+        });
+
         notifList.appendChild(item);
     });
 

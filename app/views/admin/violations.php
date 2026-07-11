@@ -63,10 +63,10 @@ require_once __DIR__ . '/../../core/View.php';
 
     <div class="Violations-stat-card">
       <div class="Violations-stat-icon">
-        <i class='bx bx-shield-quarter'></i>
+        <i class='bx bx-x-circle'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">With Sanction</h3>
+        <h3 class="Violations-stat-title">Expulsion</h3>
         <div class="Violations-stat-value" id="resolvedViolations">0</div>
         <div class="Violations-stat-percentage" id="resolvedViolationsPct">0%</div>
       </div>
@@ -77,7 +77,7 @@ require_once __DIR__ . '/../../core/View.php';
         <i class='bx bx-time-five'></i>
       </div>
       <div class="Violations-stat-content">
-        <h3 class="Violations-stat-title">No Sanction Yet</h3>
+        <h3 class="Violations-stat-title">Resolved</h3>
         <div class="Violations-stat-value" id="pendingViolations">0</div>
         <div class="Violations-stat-percentage" id="pendingViolationsPct">0%</div>
       </div>

@@ -176,10 +176,9 @@ class UserDashboardData {
             (v.status || '').toLowerCase() === 'resolved'
         ).length;
 
-        // Expulsion risk = violations with sanctionName containing 'expulsion' OR highest-level sanctions
-        // For now: violations where status is NOT resolved (still active)
+        // Expulsion = violations where sanctionName contains 'expulsion' (case-insensitive)
         this.stats.activeViolations = this.violations.filter(v =>
-            (v.status || '').toLowerCase() !== 'resolved'
+            v.sanctionName && v.sanctionName.toLowerCase().includes('expulsion')
         ).length;
 
         this.stats.violationTypes = {};

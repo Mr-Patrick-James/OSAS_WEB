@@ -1289,7 +1289,7 @@ class DashboardData {
             ["Violators", String(this.stats.violators || 0)],
             ["Students", String(this.stats.students || 0)],
             ["Departments", String(this.stats.departments || 0)],
-            ["Disciplinary", String(this.stats.penalties || 0)]
+            ["Resolved", String(this.stats.penalties || 0)]
         ];
 
         doc.autoTable({

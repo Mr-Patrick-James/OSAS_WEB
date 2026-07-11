@@ -83,6 +83,17 @@ if ($deptResult && $deptResult->num_rows > 0) {
         </div>
       </div>
 
+      <div class="sections-stat-card">
+        <div class="sections-stat-icon">
+          <i class='bx bx-archive'></i>
+        </div>
+        <div class="sections-stat-content">
+          <h3 class="sections-stat-title">Inactive</h3>
+          <div class="sections-stat-value" id="archivedSections">0</div>
+          <div class="sections-stat-percentage" id="archivedSectionsPct">0%</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Main Content Card -->

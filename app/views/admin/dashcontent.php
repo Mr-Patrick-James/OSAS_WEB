@@ -127,10 +127,10 @@ try {
         <div class="box-blobs"><span></span><span></span><span></span></div>
       </li>
       <li>
-        <i class='bx bxs-error-circle penalty-icon'></i>
+        <i class='bx bxs-check-circle penalty-icon'></i>
         <span class="text">
           <h3 id="penalties-count"><?= $penaltiesCount ?></h3>
-          <p>Disciplinary</p>
+          <p>Resolved</p>
         </span>
         <div class="box-blobs"><span></span><span></span><span></span></div>
       </li>

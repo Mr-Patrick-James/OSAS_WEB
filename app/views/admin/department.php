@@ -83,6 +83,17 @@ require_once __DIR__ . '/../../config/db_connect.php';
         </div>
       </div>
 
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class='bx bx-archive'></i>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-title">Inactive</h3>
+          <div class="stat-value" id="archivedDepartments">0</div>
+          <div class="stat-percentage" id="archivedDepartmentsPct">0%</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Main Content Card -->

@@ -3637,10 +3637,16 @@ function initViolationsModule() {
         function updateStats() {
             const total = violations.length;
 
-            // With sanction = violation has a sanction defined on its level
-            const withSanction = violations.filter(v => v.sanctionName).length;
-            // No sanction yet = sanction not set on the level
-            const noSanction = total - withSanction;
+            // Expulsion = violation whose sanctionName contains "expulsion" (case-insensitive)
+            const expulsionCount = violations.filter(v =>
+                v.sanctionName && v.sanctionName.toLowerCase().includes('expulsion')
+            ).length;
+
+            // Resolved = violation with status === 'resolved'
+            const resolvedCount = violations.filter(v =>
+                (v.status || '').toLowerCase() === 'resolved'
+            ).length;
+
             // This week
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -3652,11 +3658,11 @@ function initViolationsModule() {
             }).length;
 
             const totalEl        = document.getElementById('totalViolations');
-            const resolvedEl     = document.getElementById('resolvedViolations');
-            const pendingEl      = document.getElementById('pendingViolations');
+            const expulsionEl    = document.getElementById('resolvedViolations');   // "Expulsion" card
+            const resolvedEl     = document.getElementById('pendingViolations');    // "Resolved" card
             const disciplinaryEl = document.getElementById('disciplinaryViolations');
-            const resolvedPctEl  = document.getElementById('resolvedViolationsPct');
-            const pendingPctEl   = document.getElementById('pendingViolationsPct');
+            const expulsionPctEl = document.getElementById('resolvedViolationsPct');
+            const resolvedPctEl  = document.getElementById('pendingViolationsPct');
             const disciplinaryPctEl = document.getElementById('disciplinaryViolationsPct');
 
             const _acu = window.animateCountUp || function(el, target) {
@@ -3673,15 +3679,15 @@ function initViolationsModule() {
             };
 
             if (totalEl)        _acu(totalEl, total);
-            if (resolvedEl)     _acu(resolvedEl, withSanction);
-            if (pendingEl)      _acu(pendingEl, noSanction);
+            if (expulsionEl)    _acu(expulsionEl, expulsionCount);
+            if (resolvedEl)     _acu(resolvedEl, resolvedCount);
             if (disciplinaryEl) _acu(disciplinaryEl, thisWeekCount);
 
-            const withSanctionPct = total > 0 ? Math.round((withSanction / total) * 100) : 0;
-            const noSanctionPct   = total > 0 ? Math.round((noSanction   / total) * 100) : 0;
+            const expulsionPct = total > 0 ? Math.round((expulsionCount / total) * 100) : 0;
+            const resolvedPct  = total > 0 ? Math.round((resolvedCount  / total) * 100) : 0;
 
-            if (resolvedPctEl)     resolvedPctEl.textContent = `${withSanctionPct}%`;
-            if (pendingPctEl)      pendingPctEl.textContent  = `${noSanctionPct}%`;
+            if (expulsionPctEl)    expulsionPctEl.textContent = `${expulsionPct}%`;
+            if (resolvedPctEl)     resolvedPctEl.textContent  = `${resolvedPct}%`;
             if (disciplinaryPctEl) disciplinaryPctEl.textContent = `+${thisWeekCount} this week`;
 
             const weekEl = document.getElementById('totalViolationsWeek');

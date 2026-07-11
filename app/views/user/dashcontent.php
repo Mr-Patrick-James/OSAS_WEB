@@ -60,10 +60,10 @@ require_once __DIR__ . '/../../core/View.php';
       <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
     <div class="sd-stat sd-stat--amber">
-      <div class="sd-stat__icon"><i class='bx bxs-error-alt'></i></div>
+      <div class="sd-stat__icon"><i class='bx bx-x-circle'></i></div>
       <div class="sd-stat__body">
         <span class="sd-stat__val" id="statActiveViolations">—</span>
-        <span class="sd-stat__lbl">Expulsion Risk</span>
+        <span class="sd-stat__lbl">Expulsion</span>
       </div>
       <div class="sd-stat__blobs"><span></span><span></span><span></span></div>
     </div>
