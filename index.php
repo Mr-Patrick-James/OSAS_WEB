@@ -1002,9 +1002,9 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             </div>
 
             <h1 class="hero-title">
-                <span class="line">E-OSAS.</span>
-                <span class="line">Office of Student.</span>
-                <span class="line gold-gradient">Affairs and Services.</span>
+                <span class="line">E-OSAS</span>
+                <span class="line">Office of Student</span>
+                <span class="line gold-gradient">Affairs and Services</span>
             </h1>
 
             <p class="hero-subtitle">
@@ -1060,7 +1060,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 <section class="features" id="features">
     <div class="section-header fade-up">
         <span class="section-tag">Capabilities</span>
-        <h2 class="section-title">Built for Modern Student Affairs</h2>
+        <h2 class="section-title">Built for Modern Student Affairs Services</h2>
     </div>
 
     <div class="bento-grid">

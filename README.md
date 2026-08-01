@@ -94,6 +94,66 @@ OSAS_WEB/
 
 ---
 
+## 🚀 AWS / Production Deployment
+
+After every `git pull` or `git reset --hard origin/main` on the server:
+
+```bash
+# Ensure the violation evidence upload folder exists with correct permissions
+mkdir -p /var/www/html/app/assets/img/violations
+sudo chown -R www-data:www-data /var/www/html/app/assets/img/violations
+sudo chmod -R 755 /var/www/html/app/assets/img/violations
+```
+
+> **Note:** The `violations/` folder is tracked via `.gitkeep` but uploaded images are git-ignored. Permissions must be set manually after each fresh deploy or server migration.
+
+---
+
+## ⚠️ Critical: Service Worker `BUILD_DATE` — Do NOT Change Casually
+
+The `service-worker.js` file contains a `BUILD_DATE` constant at the top:
+
+```js
+const BUILD_DATE = '2026-07-30-push-icon-path-fix';
+const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
+const API_CACHE  = 'osas-api-'   + BUILD_DATE;
+```
+
+### What happens when you change it
+
+Changing `BUILD_DATE` causes the browser to treat the service worker as a **new version**. On activation, it **deletes ALL existing caches** (`osas-cache-*` and `osas-api-*`) on every connected device. This means:
+
+- Every user loses their offline-cached violations, students, and page data
+- Any device that goes offline before re-visiting all pages will show **blank/empty data**
+- Both mobile and desktop PWA users are affected
+
+### When you SHOULD change it
+
+Only change `BUILD_DATE` when you make **breaking asset changes** that require all devices to re-download everything:
+- Renaming or moving CSS/JS files
+- Changing asset paths or filenames
+- Major structural changes to cached HTML/PHP pages
+
+### When you should NOT change it
+
+**Never change `BUILD_DATE` for normal code changes**, including:
+- PHP logic fixes and bug patches
+- JavaScript feature additions or bug fixes
+- CSS styling changes
+- API response changes
+- Any server-side only changes
+
+Normal code changes are picked up automatically on next page load via standard HTTP caching — the service worker cache does not need to be invalidated.
+
+### Recovery
+
+If `BUILD_DATE` was changed accidentally and offline mode is broken on user devices, the only recovery is for users to:
+1. Visit the site while online
+2. Browse to the violations and students pages to re-populate the offline cache
+3. Then offline mode will work again
+
+---
+
 ## 🤝 Contribution
 
 We welcome contributions to the E-OSAS ecosystem!
