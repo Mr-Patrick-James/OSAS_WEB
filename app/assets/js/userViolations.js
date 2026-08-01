@@ -138,17 +138,17 @@ let refreshIntervalId = null;
 function startPeriodicRefresh() {
     if (refreshIntervalId) return;
 
-    // Refresh every 30 seconds to get updated violation types and sanctions
+    // Refresh every 5 seconds — matches the admin-side realtime poll interval
     refreshIntervalId = setInterval(async () => {
         try {
             // Reload violation types first to get latest sanction info
             await loadUserViolationTypes();
-            // Reload violations to get any new ones
+            // Reload violations to get any new ones or detect deletions/undos
             await loadUserViolations();
         } catch (e) {
             console.error('Periodic refresh failed:', e);
         }
-    }, 30000); // 30 seconds
+    }, 5000);
 }
 
 function stopPeriodicRefresh() {
@@ -1692,6 +1692,8 @@ window.downloadCSV = downloadCSV;
 window.downloadPDF = downloadPDF;
 window.downloadDOCX = downloadDOCX;
 window.updateViolationStats = updateViolationStats;
+// Expose for realtimeAlerts.js to trigger a refresh on violation add/delete
+window.refreshUserViolations = loadUserViolations;
 
 /*********************************************************
  * DRAG SCROLL — violation-details-grid table
