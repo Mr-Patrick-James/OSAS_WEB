@@ -14,11 +14,32 @@ class ViolationController extends Controller
     public function __construct()
     {
         header('Content-Type: application/json');
-        @session_start();
+        self::startSession();
 
         $this->model = new ViolationModel();
         $this->studentModel = new StudentModel();
         $this->reportModel = new ReportModel();
+
+        // Recovery Logic: Restore session from cookies if session expired
+        if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
+            $_SESSION['user_id']   = $_COOKIE['user_id'];
+            $_SESSION['username']  = $_COOKIE['username'] ?? '';
+            $_SESSION['role']      = $_COOKIE['role'];
+            $_SESSION['full_name'] = $_COOKIE['full_name'] ?? ($_COOKIE['username'] ?? '');
+        }
+
+        // Recovery Logic: If full_name is missing but cookie exists, restore it
+        if (empty($_SESSION['full_name']) && !empty($_COOKIE['full_name'])) {
+            $_SESSION['full_name'] = $_COOKIE['full_name'];
+        }
+
+        // Recovery Logic: If full_name is still empty, fetch from database
+        if (empty($_SESSION['full_name']) && !empty($_SESSION['user_id'])) {
+            $userRes = $this->model->query("SELECT full_name, username FROM users WHERE id = ?", [$_SESSION['user_id']]);
+            if (!empty($userRes)) {
+                $_SESSION['full_name'] = $userRes[0]['full_name'] ?: $userRes[0]['username'];
+            }
+        }
 
         // Recovery Logic: If session is lost but cookies exist, restore student_id_code
         if (isset($_SESSION['role']) && $_SESSION['role'] === 'user' && !isset($_SESSION['student_id_code'])) {
@@ -166,6 +187,21 @@ class ViolationController extends Controller
             return;
         }
 
+        if ($action === 'get_recent') {
+            $this->get_recent_violations();
+            return;
+        }
+
+        if ($action === 'poll_latest') {
+            $this->poll_latest();
+            return;
+        }
+
+        if ($action === 'poll_counts') {
+            $this->poll_counts();
+            return;
+        }
+
         $studentId = $this->getGet('student_id', '');
         $filter    = $this->getGet('filter', 'all');
         $search    = $this->getGet('search', '');
@@ -238,6 +274,11 @@ class ViolationController extends Controller
         $reportedByFilter = '';
         $role = $_SESSION['role'] ?? '';
 
+        // When a specific student_id is requested (e.g. for offense level check in the record modal),
+        // Officers/CSC Officers are allowed to see all violations for that student so the
+        // "next offense" suggestion is based on complete history, not just what they recorded.
+        $forModal = $this->getGet('for_modal', '') === '1';
+
         if ($role === 'user') {
             // Regular students only see their own violations
             $studentId = $_SESSION['student_id_code'] ?? '';
@@ -245,8 +286,26 @@ class ViolationController extends Controller
                 $this->error('Student ID not found. Please login again.', '', 401);
             }
         } elseif (in_array($role, ['Officer', 'CSC Officer'])) {
-            // Officers and CSC Officers only see violations they recorded
-            $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
+            if ($forModal && !empty($studentId)) {
+                // Allow full history fetch for offense-level check — no reported_by filter
+                $reportedByFilter = '';
+            } else {
+                // Normal table view: only show violations they recorded
+                $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
+
+                // If full_name is still empty after session recovery, fall back to DB lookup
+                if (empty($reportedByFilter) && !empty($_SESSION['user_id'])) {
+                    $userRes = $this->model->query("SELECT full_name, username FROM users WHERE id = ?", [$_SESSION['user_id']]);
+                    if (!empty($userRes)) {
+                        $reportedByFilter = $userRes[0]['full_name'] ?: $userRes[0]['username'];
+                    }
+                }
+
+                // Safety: if we still can't identify who this officer is, block access
+                if (empty($reportedByFilter)) {
+                    $this->error('Unable to identify user. Please login again.', '', 401);
+                }
+            }
         }
         // admin, OSAS Staff, Faculty Member → no filter, see all violations
 
@@ -288,12 +347,7 @@ class ViolationController extends Controller
             $this->error('Invalid request method');
         }
 
-        // Restore session from cookies if session expired (handles offline sync after reconnect)
-        if (!isset($_SESSION['user_id']) && isset($_COOKIE['user_id']) && isset($_COOKIE['role'])) {
-            $_SESSION['user_id'] = $_COOKIE['user_id'];
-            $_SESSION['username'] = $_COOKIE['username'] ?? '';
-            $_SESSION['role']    = $_COOKIE['role'];
-        }
+        // Session recovery is handled in the constructor, nothing extra needed here
 
         if (!isset($_SESSION['user_id'])) {
             $this->error('Authentication required', 'Please login first', 401);
@@ -331,20 +385,59 @@ class ViolationController extends Controller
         $attachmentPaths = [];
         if (!empty($_FILES['attachments'])) {
             $uploadDir = __DIR__ . '/../../app/assets/img/violations/';
+
+            // Ensure the directory exists — create it if needed.
+            // On AWS (/var/www/html) the subfolder may not exist yet, so we
+            // create it with 0755 (not 0777) and log any failure so we can debug.
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+                if (!mkdir($uploadDir, 0755, true)) {
+                    error_log('ViolationController: Failed to create upload directory: ' . $uploadDir);
+                }
+            }
+
+            // Make sure the directory is writable (important on AWS www-data)
+            if (!is_writable($uploadDir)) {
+                error_log('ViolationController: Upload directory is not writable: ' . $uploadDir);
             }
 
             foreach ($_FILES['attachments']['tmp_name'] as $key => $tmpName) {
                 if ($_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
                     $originalName = $_FILES['attachments']['name'][$key];
-                    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+                    $extension    = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+                    // If no extension, detect from MIME type
+                    if (empty($extension)) {
+                        $mimeType = mime_content_type($tmpName);
+                        $mimeMap  = [
+                            'image/jpeg'  => 'jpg',
+                            'image/png'   => 'png',
+                            'image/gif'   => 'gif',
+                            'image/webp'  => 'webp',
+                            'image/heic'  => 'heic',
+                            'image/heif'  => 'heif',
+                            'application/pdf' => 'pdf',
+                        ];
+                        $extension = $mimeMap[$mimeType] ?? '';
+                    }
+
+                    // Whitelist allowed image/file extensions for security
+                    // Include heic/heif for iPhone camera captures
+                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'heic', 'heif'];
+                    if (empty($extension) || !in_array($extension, $allowed, true)) {
+                        error_log('ViolationController: Rejected upload with extension: "' . $extension . '" for file: ' . $originalName);
+                        continue;
+                    }
+
                     $newFileName = 'viol_' . time() . '_' . uniqid() . '.' . $extension;
-                    $destPath = $uploadDir . $newFileName;
+                    $destPath    = $uploadDir . $newFileName;
 
                     if (move_uploaded_file($tmpName, $destPath)) {
                         $attachmentPaths[] = 'app/assets/img/violations/' . $newFileName;
+                    } else {
+                        error_log('ViolationController: move_uploaded_file failed for: ' . $originalName . ' → ' . $destPath);
                     }
+                } else {
+                    error_log('ViolationController: Upload error code ' . $_FILES['attachments']['error'][$key] . ' for file index ' . $key);
                 }
             }
         }
@@ -371,19 +464,36 @@ class ViolationController extends Controller
         }
 
         try {
-            // TEMPORARILY COMMENTED OUT: Check if student already has this violation type recorded on the same day
-            /*
-            $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
-                $studentId,
-                $violationType,
-                $violationDate
-            );
-            
-            if ($existingViolation) {
-                $this->error('This violation type has already been recorded for this student today by ' . $existingViolation['reported_by'], ['existing_id' => $existingViolation['id'], 'reported_by' => $existingViolation['reported_by']]);
-                return;
+            // Check if student already has this violation type recorded on the same day
+            // Skip this check if the user confirmed they want to record anyway (force=1)
+            $force = ($input['force'] ?? $_POST['force'] ?? '') === '1';
+            if (!$force) {
+                $existingViolation = $this->model->checkStudentViolationByTypeAndDate(
+                    $studentId,
+                    $violationType,
+                    $violationDate
+                );
+
+                if ($existingViolation) {
+                    // Get student name and violation type name for the warning message
+                    $typeInfo = $this->model->query("SELECT name FROM violation_types WHERE id = ?", [$violationType]);
+                    $studentName = trim(
+                        ($student[0]['first_name'] ?? '') . ' ' .
+                        ($student[0]['middle_name'] ?? '') . ' ' .
+                        ($student[0]['last_name'] ?? '')
+                    );
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'status'             => 'duplicate_day',
+                        'message'            => 'Violation already recorded today',
+                        'existing_id'        => $existingViolation['id'],
+                        'reported_by'        => $existingViolation['reported_by'],
+                        'student_name'       => $studentName,
+                        'violation_type_name'=> $typeInfo[0]['name'] ?? 'this violation type',
+                    ]);
+                    exit;
+                }
             }
-            */
 
             // Check for duplicate violation (Double Submission Check - same exact details)
             $existingId = $this->model->checkDuplicateSubmission(
@@ -401,7 +511,7 @@ class ViolationController extends Controller
             }
 
             // Generate unique case ID with retry mechanism
-            $maxRetries = 3;
+            $maxRetries = 5;
             $caseId = null;
             
             for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
@@ -512,8 +622,9 @@ class ViolationController extends Controller
             }
 
             $this->success('Violation recorded successfully', [
-                'id'      => $id,
-                'case_id' => $caseId
+                'id'          => $id,
+                'case_id'     => $caseId,
+                'attachments' => $attachmentPaths   // return saved paths so JS can show Evidence badge immediately
             ]);
 
         } catch (Exception $e) {
@@ -1190,6 +1301,126 @@ class ViolationController extends Controller
         try {
             $requests = $this->model->getSlipRequests();
             $this->json(['status' => 'success', 'data' => $requests]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Lightweight count-only poll for the admin notification badge.
+     * Returns disciplinary count + pending slip requests + unseen recent violations
+     * in ONE cheap round-trip so the badge can stay up-to-date without the full
+     * fetchNotifications() overhead.
+     */
+    private function poll_counts() {
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', '', 403);
+        }
+
+        try {
+            // 1. Unresolved violations (anything not resolved and not archived)
+            $unresolvedRows = $this->model->query(
+                "SELECT COUNT(*) AS cnt FROM violations WHERE status != 'resolved' AND is_archived = 0",
+                []
+            );
+            $unresolvedCount = (int)($unresolvedRows[0]['cnt'] ?? 0);
+
+            // 2. Pending slip requests
+            $slipRows = $this->model->query(
+                "SELECT COUNT(*) AS cnt FROM slip_requests WHERE status = 'pending'",
+                []
+            );
+            $slipCount = (int)($slipRows[0]['cnt'] ?? 0);
+
+            // 3. Latest violation id for change-detection in violation.js realtime poll
+            $latestRows = $this->model->query(
+                "SELECT id, reported_by FROM violations WHERE is_archived = 0 ORDER BY id DESC LIMIT 1",
+                []
+            );
+            $latestId         = !empty($latestRows) ? (int)$latestRows[0]['id'] : 0;
+            $latestReportedBy = !empty($latestRows) ? ($latestRows[0]['reported_by'] ?? '') : '';
+
+            $this->json([
+                'status'           => 'success',
+                'unresolved_count' => $unresolvedCount,
+                'slip_count'       => $slipCount,
+                'latest_violation_id' => $latestId,
+                'latest_reported_by'  => $latestReportedBy,
+            ]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Returns the latest N violations across all recorders (officers, OSAS staff, etc.).
+     * Excludes violations recorded by the currently logged-in admin so they don't see their own.
+     */
+    private function poll_latest() {
+        // Any authenticated admin-side role can poll
+        $allowedRoles = ['admin', 'OSAS Staff', 'Faculty Member', 'Officer', 'CSC Officer'];
+        if (!in_array($_SESSION['role'] ?? '', $allowedRoles)) {
+            $this->error('Access denied', '', 403);
+        }
+
+        try {
+            // Return just the latest violation row (id + created_at + reported_by + case_id)
+            // cheap query — no JOINs needed
+            $role             = $_SESSION['role'] ?? '';
+            $reportedByFilter = '';
+
+            // Officers/CSC Officers only see their own violations in the table
+            // so we must check their own latest record, not the global latest
+            if (in_array($role, ['Officer', 'CSC Officer'])) {
+                $reportedByFilter = $_SESSION['full_name'] ?? $_SESSION['username'] ?? '';
+            }
+
+            $whereClause = 'WHERE is_archived = 0';
+            $params      = [];
+
+            if (!empty($reportedByFilter)) {
+                $whereClause .= ' AND reported_by = ?';
+                $params[]     = $reportedByFilter;
+            }
+
+            $rows = $this->model->query(
+                "SELECT id, case_id, created_at, reported_by FROM violations {$whereClause} ORDER BY id DESC LIMIT 1",
+                $params
+            );
+
+            // Also get the total count so clients can detect deletions
+            $countRows = $this->model->query(
+                "SELECT COUNT(*) as total FROM violations {$whereClause}",
+                $params
+            );
+
+            $latest = $rows[0] ?? null;
+
+            $this->json([
+                'status' => 'success',
+                'latest_id'         => $latest ? (int)$latest['id']         : 0,
+                'latest_case_id'    => $latest ? $latest['case_id']          : null,
+                'latest_created_at' => $latest ? $latest['created_at']       : null,
+                'latest_reported_by'=> $latest ? $latest['reported_by']      : null,
+                'total_count'       => (int)($countRows[0]['total'] ?? 0),
+            ]);
+        } catch (Exception $e) {
+            $this->error('Server error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get recent violations (own + others) for the admin notification modal.
+     */
+    private function get_recent_violations() {
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->error('Access denied', 'Only Administrators can view recent violations.', 403);
+        }
+        $limit = min(50, max(1, (int)($this->getGet('limit', 10))));
+        // Include ALL violations — own and others — so the modal shows a full picture
+        try {
+            $violations = $this->model->getRecent($limit, null, null, null);
+            $this->json(['status' => 'success', 'data' => $violations, 'count' => count($violations)]);
         } catch (Exception $e) {
             $this->error('Server error: ' . $e->getMessage());
         }

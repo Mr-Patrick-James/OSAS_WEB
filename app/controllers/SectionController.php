@@ -8,7 +8,7 @@ class SectionController extends Controller {
     public function __construct() {
         ob_start();
         header('Content-Type: application/json');
-        @session_start();
+        self::startSession();
         $this->model = new SectionModel();
     }
 

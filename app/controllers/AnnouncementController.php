@@ -17,7 +17,7 @@ class AnnouncementController extends Controller {
         //     header('Content-Type: application/json');
         // }
         
-        @session_start();
+        self::startSession();
         
         try {
             $this->model = new AnnouncementModel();

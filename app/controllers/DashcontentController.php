@@ -10,7 +10,7 @@ class DashcontentController extends Controller {
         ini_set('display_errors', 0);
         ini_set('log_errors', 1);
         
-        @session_start();
+        self::startSession();
         
         try {
             $this->model = new DashcontentModel();

@@ -96,8 +96,20 @@ class PushNotificationService
         $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
         $scheme = $https ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $base = preg_replace('#/api.*$#', '', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+        // Determine the project root path (works for both / and /OSAS_WEB/ installs)
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        // Walk up until we're above /api/, /app/, /includes/ etc.
+        $appDirs = ['api', 'app', 'includes', 'assets', 'public'];
+        $parts   = array_filter(explode('/', $scriptName), 'strlen');
+        $base    = '';
+        foreach ($parts as $part) {
+            if (in_array(strtolower($part), $appDirs, true)) break;
+            $base .= '/' . $part;
+        }
+        // $base is now '' (root install) or '/OSAS_WEB' (subfolder install)
+
         return $scheme . '://' . $host . $base . '/app/assets/img/default.png';
     }
 }

@@ -7,6 +7,9 @@ $role     = $_SESSION['role'] ?? 'admin';
 // Only admin and OSAS Staff can access these restricted pages
 $canAccessRestricted = in_array($role, ['admin', 'OSAS Staff']);
 
+// Dashboard is restricted to admin, OSAS Staff, and Faculty Member
+$canAccessDashboard = in_array($role, ['admin', 'OSAS Staff', 'Faculty Member']);
+
 // Announcements are accessible to all staff roles
 $canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member']);
 
@@ -60,11 +63,20 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
   </div>
 
   <ul class="mobile-sidebar-menu" id="mobileSidebarMenu">
+    <?php if ($canAccessDashboard): ?>
     <li class="mobile-sidebar-item" data-page="admin_page/dashcontent">
       <a href="#" data-page="admin_page/dashcontent">
         <i class='bx bxs-dashboard'></i><span>Dashboard</span>
       </a>
     </li>
+    <?php else: ?>
+    <li class="mobile-sidebar-item nav-restricted">
+      <a href="#" class="nav-disabled" onclick="return false;" title="Access restricted">
+        <i class='bx bxs-dashboard'></i><span>Dashboard</span>
+        <i class='bx bxs-lock-alt' style="margin-left:auto;font-size:0.85rem;opacity:0.5;"></i>
+      </a>
+    </li>
+    <?php endif; ?>
     <?php if ($canAccessRestricted): ?>
     <li class="mobile-sidebar-item" data-page="admin_page/Department">
       <a href="#" data-page="admin_page/Department">
@@ -155,10 +167,17 @@ if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture']))
 
   <!-- Nav links -->
   <ul class="nav-menu">
-    <li class="nav-item">
-      <a href="#" data-page="admin_page/dashcontent" class="nav-link" title="Dashboard">
-        <i class='bx bxs-dashboard'></i><span>Dashboard</span>
-      </a>
+    <li class="nav-item<?= !$canAccessDashboard ? ' nav-restricted' : '' ?>">
+      <?php if ($canAccessDashboard): ?>
+        <a href="#" data-page="admin_page/dashcontent" class="nav-link" title="Dashboard">
+          <i class='bx bxs-dashboard'></i><span>Dashboard</span>
+        </a>
+      <?php else: ?>
+        <a href="#" class="nav-link nav-disabled" title="Access restricted to Admin, OSAS Staff and Faculty only" onclick="return false;">
+          <i class='bx bxs-dashboard'></i><span>Dashboard</span>
+          <i class='bx bxs-lock-alt nav-lock-icon'></i>
+        </a>
+      <?php endif; ?>
     </li>
     <li class="nav-item<?= !$canAccessRestricted ? ' nav-restricted' : '' ?>">
       <?php if ($canAccessRestricted): ?>

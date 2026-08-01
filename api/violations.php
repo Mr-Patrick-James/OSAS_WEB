@@ -33,7 +33,7 @@ try {
                 'create_type', 'update_type', 'delete_type', 'restore_type',
                 'create_level', 'update_level', 'delete_level', 'restore_level',
                 'create_status', 'update_status', 'delete_status', 'restore_status',
-                'mark_as_read', 'mark_all_read'
+                'mark_as_read', 'mark_all_read', 'get_recent_violations'
             ], true)) {
                 $controller->index();
             } else {

@@ -2131,7 +2131,12 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+/* Flatten the nested filters-row so everything sits on one line on desktop */
+.uv-filters-row {
+  display: contents;
 }
 .uv-search {
   position: relative;
@@ -2289,7 +2294,7 @@ body.dark .notification-dropdown { background: var(--surface); border-color: var
     flex: 0 0 auto;
     order: 2;
   }
-  /* Filters row sits below search on its own full-width line */
+  /* Restore filters-row as a real row on mobile */
   .uv-filters-row {
     display: flex;
     gap: 8px;

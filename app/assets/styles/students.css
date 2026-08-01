@@ -210,6 +210,82 @@ body.dark {
   background: var(--grey);
 }
 
+/* ========================================= */
+/*       DELETE ALL TOGGLE GROUP            */
+/* ========================================= */
+.delete-all-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.delete-all-wrapper {
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width 0.3s ease, opacity 0.25s ease;
+}
+
+.delete-all-wrapper.open {
+  max-width: 140px;
+  opacity: 1;
+}
+
+.delete-all-btn {
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  white-space: nowrap;
+}
+
+.delete-all-btn:hover {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
+}
+
+.delete-all-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: var(--light);
+  cursor: pointer;
+  padding: 0;
+  color: #9ca3af;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.delete-all-toggle-btn i {
+  font-size: 15px;
+  transition: transform 0.3s;
+}
+
+.delete-all-toggle-btn.open {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.delete-all-toggle-btn.open i {
+  transform: rotate(180deg);
+}
+
+.delete-all-toggle-btn:hover {
+  background: var(--grey);
+}
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+  .delete-all-toggle-group {
+    display: none;
+  }
+}
+
 #btnImportStudents {
   background: #3b82f6 !important;
   color: #ffffff !important;
@@ -1071,6 +1147,7 @@ body.dark {
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   background: linear-gradient(135deg, rgba(255,215,0,.12) 0%, transparent 100%);
   box-shadow: none;

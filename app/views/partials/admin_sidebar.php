@@ -11,6 +11,9 @@ $role = $_SESSION['role'] ?? 'admin';
 // Only admin and OSAS Staff can access these restricted pages
 $canAccessRestricted = in_array($role, ['admin', 'OSAS Staff']);
 
+// Dashboard is restricted to admin, OSAS Staff, and Faculty Member
+$canAccessDashboard = in_array($role, ['admin', 'OSAS Staff', 'Faculty Member']);
+
 // Announcements are accessible to all staff roles
 $canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer', 'Officer', 'Faculty Member']);
 ?>
@@ -34,11 +37,19 @@ $canAccessAnnouncements = in_array($role, ['admin', 'OSAS Staff', 'CSC Officer',
   </div>
 
   <ul class="side-menu top">
-    <li>
-      <a href="#" data-page="admin_page/dashcontent">
-        <i class='bx bxs-dashboard'></i>
-        <span class="text">Dashboard</span>
-      </a>
+    <li<?= !$canAccessDashboard ? ' class="nav-restricted"' : '' ?>>
+      <?php if ($canAccessDashboard): ?>
+        <a href="#" data-page="admin_page/dashcontent">
+          <i class='bx bxs-dashboard'></i>
+          <span class="text">Dashboard</span>
+        </a>
+      <?php else: ?>
+        <a href="#" class="nav-disabled" title="Access restricted to Admin, OSAS Staff and Faculty only" onclick="return false;">
+          <i class='bx bxs-dashboard'></i>
+          <span class="text">Dashboard</span>
+          <i class='bx bxs-lock-alt nav-lock-icon'></i>
+        </a>
+      <?php endif; ?>
     </li>
     <li<?= !$canAccessRestricted ? ' class="nav-restricted"' : '' ?>>
       <?php if ($canAccessRestricted): ?>

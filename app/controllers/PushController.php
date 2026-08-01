@@ -10,7 +10,7 @@ class PushController extends Controller
 
     public function __construct()
     {
-        @session_start();
+        self::startSession();
         $this->push = new PushNotificationService();
         $this->subs = new PushSubscriptionModel();
     }

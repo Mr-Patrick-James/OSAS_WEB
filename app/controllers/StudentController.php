@@ -11,7 +11,7 @@ class StudentController extends Controller {
         ini_set('display_errors', 0);
         ini_set('log_errors', 1);
         header('Content-Type: application/json');
-        @session_start();
+        self::startSession();
         
         $this->model = new StudentModel();
     }
@@ -284,9 +284,9 @@ class StudentController extends Controller {
 
         try {
             $this->model->deleteAll();
-            $this->success('All students and associated user accounts deleted successfully!');
+            $this->success('All students, sections, and departments have been deleted. You can now import a fresh student list.');
         } catch (Exception $e) {
-            $this->error('Failed to delete all students: ' . $e->getMessage());
+            $this->error('Failed to reset system: ' . $e->getMessage());
         }
     }
 
@@ -344,10 +344,8 @@ class StudentController extends Controller {
         }
 
         try {
-            // Temporarily enable verbose error reporting for debugging
-            error_reporting(E_ALL);
-            ini_set('display_errors', 1);
-
+            set_time_limit(300); // 5 minutes for large imports
+            ini_set('memory_limit', '256M');
             $jsonData = null;
 
             if ($ext === 'csv') {
@@ -377,10 +375,6 @@ class StudentController extends Controller {
         } catch (Exception $e) {
             if (file_exists($filepath)) unlink($filepath);
             $this->error('Import failed: ' . $e->getMessage());
-        } finally {
-            // Restore original error reporting settings
-            ini_set('display_errors', 0);
-            error_reporting(E_ERROR | E_WARNING | E_PARSE);
         }
     }
 
@@ -443,36 +437,85 @@ class StudentController extends Controller {
     private function parseExcelWithPython($filepath) {
         $scriptPath = __DIR__ . '/../../scripts/parse_students_full.py';
         $outputPath = __DIR__ . '/../../scripts/students_data_' . uniqid() . '.json';
-        
+
         if (!file_exists($scriptPath)) {
             throw new Exception('Excel parser script not found at: ' . $scriptPath);
         }
 
-        // Use the absolute path to the Python executable as detected on this system
-        $pythonPath = 'C:\Users\Amiepc\AppData\Local\Programs\Python\Python310\python.exe';
-        
-        // Fallback to 'python' if the absolute path doesn't exist for some reason
-        if (!file_exists($pythonPath)) {
-            $pythonPath = 'python';
+        // Try to find Python executable in common locations
+        $pythonCandidates = [
+            'C:\Users\patri\AppData\Local\Programs\Python\Python312\python.exe',
+            'C:\Users\patri\AppData\Local\Programs\Python\Python311\python.exe',
+            'C:\Users\patri\AppData\Local\Programs\Python\Python310\python.exe',
+            'C:\Users\Amiepc\AppData\Local\Programs\Python\Python312\python.exe',
+            'C:\Users\Amiepc\AppData\Local\Programs\Python\Python311\python.exe',
+            'C:\Users\Amiepc\AppData\Local\Programs\Python\Python310\python.exe',
+            'C:\Python310\python.exe',
+            'C:\Python311\python.exe',
+            'C:\Python312\python.exe',
+            '/usr/bin/python3',
+            '/usr/local/bin/python3',
+            '/usr/bin/python',
+        ];
+
+        $pythonPath = null;
+        foreach ($pythonCandidates as $candidate) {
+            if (file_exists($candidate)) {
+                $pythonPath = $candidate;
+                break;
+            }
         }
 
-        $command = "\"$pythonPath\" \"$scriptPath\" \"$filepath\" \"$outputPath\" 2>&1";
-        $output = [];
+        // Final fallback: try 'python3' then 'python' from PATH
+        if (!$pythonPath) {
+            // Check if python3 exists in PATH
+            $testOut = [];
+            exec('python3 --version 2>&1', $testOut, $code);
+            if ($code === 0) {
+                $pythonPath = 'python3';
+            } else {
+                exec('python --version 2>&1', $testOut, $code);
+                $pythonPath = ($code === 0) ? 'python' : null;
+            }
+        }
+
+        if (!$pythonPath) {
+            throw new Exception('Python is not installed or not found. Please install Python 3 and ensure it is in PATH.');
+        }
+
+        $escapedPython = escapeshellarg($pythonPath);
+        $escapedScript = escapeshellarg($scriptPath);
+        $escapedInput  = escapeshellarg($filepath);
+        $escapedOutput = escapeshellarg($outputPath);
+
+        $command = "$escapedPython $escapedScript $escapedInput $escapedOutput 2>&1";
+        $output     = [];
         $return_var = 0;
         exec($command, $output, $return_var);
 
+        $outputStr = implode("\n", $output);
+        error_log("Python import output: " . $outputStr);
+
         if ($return_var !== 0) {
-            $errorMsg = implode("\n", $output);
-            error_log("Python script error: " . $errorMsg);
-            throw new Exception("Excel parser error: " . $errorMsg);
+            throw new Exception("Excel parser error (exit $return_var): " . $outputStr);
         }
 
         if (!file_exists($outputPath)) {
-            throw new Exception('Excel parser did not produce any output. Check if the file is a valid Excel and not empty.');
+            throw new Exception('Excel parser produced no output file. Python output: ' . $outputStr);
         }
 
-        $jsonData = json_decode(file_get_contents($outputPath), true);
-        unlink($outputPath); // Delete temp JSON
+        $jsonContent = file_get_contents($outputPath);
+        unlink($outputPath);
+
+        if (empty($jsonContent)) {
+            throw new Exception('Excel parser output is empty. Python output: ' . $outputStr);
+        }
+
+        $jsonData = json_decode($jsonContent, true);
+        if ($jsonData === null) {
+            throw new Exception('Invalid JSON from Excel parser. JSON error: ' . json_last_error_msg() . '. Python output: ' . $outputStr);
+        }
+
         return $jsonData;
     }
 }

@@ -82,6 +82,22 @@ class Controller {
     }
 
     /**
+     * Start session with extended lifetime (24h).
+     * Prevents "Authentication required" errors on AWS caused by the default
+     * 24-minute PHP session GC window expiring during long form submissions.
+     */
+    protected static function startSession() {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return;
+        }
+        ini_set('session.gc_maxlifetime', 86400);
+        ini_set('session.cookie_lifetime', 86400);
+        ini_set('session.cookie_path', '/');
+        ini_set('session.cookie_samesite', 'Lax');
+        @session_start();
+    }
+
+    /**
      * Check if user is logged in
      */
     protected function requireAuth() {

@@ -34,7 +34,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
     </div>
 
     <div class="Students-header-actions">
-      <div class="Students-button-group">
+      <div class="Students-button-group" style="align-items:center;">
         <button id="btnImportStudents" class="Students-btn outline small">
           <i class='bx bx-upload'></i>
           <span>Import</span>
@@ -43,6 +43,54 @@ require_once __DIR__ . '/../../config/db_connect.php';
           <i class='bx bx-download'></i>
           <span>Export</span>
         </button>
+
+        <!-- Delete All — hidden by default, toggled by the chevron -->
+        <div class="delete-all-toggle-group">
+          <div id="deleteAllWrapper" style="overflow:hidden;max-width:0;opacity:0;transition:max-width 0.3s ease,opacity 0.25s ease;">
+            <button id="btnDeleteAllStudents" class="Students-btn outline small" style="color:#ef4444;border-color:#ef4444;white-space:nowrap;">
+              <i class='bx bx-trash'></i>
+              <span>Delete All</span>
+            </button>
+          </div>
+          <button id="btnToggleDeleteAll" title="Show / hide Delete All"
+            style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;padding:0;color:#9ca3af;transition:color 0.2s,border-color 0.2s;flex-shrink:0;">
+            <i id="toggleDeleteAllIcon" class='bx bx-chevron-left' style="font-size:15px;transition:transform 0.3s;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      var wrapper = document.getElementById('deleteAllWrapper');
+      var btn     = document.getElementById('btnToggleDeleteAll');
+      var icon    = document.getElementById('toggleDeleteAllIcon');
+      var open    = false;
+      btn.addEventListener('click', function(){
+        open = !open;
+        wrapper.style.maxWidth  = open ? '140px' : '0';
+        wrapper.style.opacity   = open ? '1'    : '0';
+        icon.style.transform    = open ? 'rotate(180deg)' : 'rotate(0deg)';
+        btn.style.color         = open ? '#ef4444' : '#9ca3af';
+        btn.style.borderColor   = open ? '#ef4444' : '#d1d5db';
+      });
+    })();
+    </script>
+  </div>
+
+  <!-- DELETE ALL CONFIRMATION MODAL -->
+  <div id="DeleteAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;">
+      <div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class='bx bx-trash' style="font-size:26px;color:#ef4444;"></i>
+      </div>
+      <h3 style="margin:0 0 8px;font-size:18px;color:#111;">Delete All Students?</h3>
+      <p style="margin:0 0 24px;color:#666;font-size:14px;line-height:1.5;">This will permanently delete <strong>all student records</strong>, their <strong>login accounts</strong>, all <strong>sections</strong>, and all <strong>departments</strong>. Import a new enrollment list to restore everything. This cannot be undone.</p>
+      <p style="margin:0 0 24px;font-size:13px;color:#ef4444;background:#fee2e2;padding:10px 14px;border-radius:8px;">Type <strong>DELETE</strong> to confirm</p>
+      <input id="deleteAllConfirmInput" type="text" placeholder="Type DELETE here" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;box-sizing:border-box;text-align:center;">
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="btnDeleteAllCancel" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;">Cancel</button>
+        <button id="btnDeleteAllConfirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;cursor:pointer;font-size:14px;font-weight:600;" disabled>Delete All</button>
       </div>
     </div>
   </div>
@@ -58,7 +106,7 @@ require_once __DIR__ . '/../../config/db_connect.php';
         <div class="Students-stat-value" id="totalStudents">0</div>
         <div class="Students-stat-change positive">
           <i class='bx bx-up-arrow-alt'></i>
-          <span>+25 this month</span>
+          <span id="studentsThisMonth">+0 this month</span>
         </div>
       </div>
     </div>

@@ -54,6 +54,11 @@ require_once __DIR__ . '/../../core/View.php';
           <i class='bx bx-search'></i>
           <input type="text" id="searchViolation" placeholder="Search…">
         </div>
+        <select id="statusFilter" class="uv-select" onchange="filterViolations()">
+          <option value="all">All Records</option>
+          <option value="with_sanction">Has Sanction</option>
+          <option value="no_sanction">No Sanction Yet</option>
+        </select>
         <select id="timePeriodFilter" class="uv-select" onchange="filterViolations()" style="display:none;">
           <option value="all">All History</option>
         </select>
@@ -61,23 +66,18 @@ require_once __DIR__ . '/../../core/View.php';
           <select id="violationFilter" class="uv-select" onchange="filterViolations()">
             <option value="all">All Types</option>
           </select>
-          <select id="statusFilter" class="uv-select" onchange="filterViolations()">
-            <option value="all">All Records</option>
-            <option value="with_sanction">Has Sanction</option>
-            <option value="no_sanction">No Sanction Yet</option>
-          </select>
-        </div>
-        <!-- View Toggle -->
-        <div class="Violations-view-toggle">
-          <button class="Violations-view-btn" data-view="table" title="Table View" onclick="setUvView('table')">
-            <i class='bx bx-table'></i>
-          </button>
-          <button class="Violations-view-btn" data-view="grid" title="Grid View" onclick="setUvView('grid')">
-            <i class='bx bx-grid-alt'></i>
-          </button>
-          <button class="Violations-view-btn active" data-view="list" title="List View" onclick="setUvView('list')">
-            <i class='bx bx-list-ul'></i>
-          </button>
+          <!-- View Toggle -->
+          <div class="Violations-view-toggle">
+            <button class="Violations-view-btn" data-view="table" title="Table View" onclick="setUvView('table')">
+              <i class='bx bx-table'></i>
+            </button>
+            <button class="Violations-view-btn" data-view="grid" title="Grid View" onclick="setUvView('grid')">
+              <i class='bx bx-grid-alt'></i>
+            </button>
+            <button class="Violations-view-btn active" data-view="list" title="List View" onclick="setUvView('list')">
+              <i class='bx bx-list-ul'></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>

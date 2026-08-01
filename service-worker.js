@@ -2,7 +2,7 @@
 // No git hooks needed: whenever this file changes (new deploy / git pull),
 // the browser treats it as a new SW, runs install, and the new cache names
 // replace the old ones automatically.
-const BUILD_DATE = '2026-07-11-expulsion-count-fix';
+const BUILD_DATE = '2026-07-30-push-icon-path-fix';
 const CACHE_NAME = 'osas-cache-' + BUILD_DATE;
 const API_CACHE  = 'osas-api-'   + BUILD_DATE;
 
@@ -287,28 +287,50 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('push', event => {
-  let p = { title: 'E-OSAS', body: 'You have a new update.', icon: '/app/assets/img/default.png', tag: 'eosas', data: { page: 'user-page/user_dashcontent' } };
+  // Derive base path from SW scope so icon works on both root and subfolder installs
+  const scopeBase = self.registration.scope.replace(/\/$/, ''); // e.g. '' or '/OSAS_WEB'
+  const iconPath  = scopeBase + '/app/assets/img/default.png';
+
+  let p = { title: 'E-OSAS', body: 'You have a new update.', icon: iconPath, tag: 'eosas', data: { page: 'user-page/user_dashcontent' } };
   if (event.data) {
     try {
       const j = event.data.json();
       p = { ...p, ...j, data: { ...p.data, ...(j.data || {}) } };
+      // Always use the resolved icon path — override any stale path in the payload
+      if (!j.icon) p.icon = iconPath;
     } catch (e) { p.body = event.data.text() || p.body; }
   }
   event.waitUntil(self.registration.showNotification(p.title, {
-    body: p.body, icon: p.icon || '/app/assets/img/default.png', badge: p.icon, tag: p.tag, data: p.data, vibrate: [180, 80, 180], renotify: true
+    body: p.body, icon: p.icon, badge: iconPath, tag: p.tag, data: p.data, vibrate: [180, 80, 180], renotify: true
   }));
 });
 
 function notificationTargetPath(data) {
   const type = data.type || '';
   const page = data.page || '';
-  if (type === 'violation' || (page && page.includes('violation'))) {
-    return '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page || 'user-page/my_violations');
+  // Base path derived from SW scope ('' for root, '/OSAS_WEB' for subfolder)
+  const base = self.registration.scope.replace(/\/$/, '');
+
+  // Admin-side notifications
+  if (type === 'admin_violation' || type === 'admin_violation_resolved' || page === 'violations') {
+    return base + '/includes/dashboard.php?push_page=' + encodeURIComponent('admin_page/Violations');
   }
+
+  // Student-side violation notifications
+  if (type === 'violation' || type === 'violation_updated' || type === 'violation_resolved'
+      || (page && page.includes('my_violations'))) {
+    return base + '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page || 'user-page/my_violations');
+  }
+
+  // Generic page navigation
   if (page) {
-    return '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page);
+    if (page.startsWith('admin_page/')) {
+      return base + '/includes/dashboard.php?push_page=' + encodeURIComponent(page);
+    }
+    return base + '/includes/user_dashboard.php?push_page=' + encodeURIComponent(page);
   }
-  return data.url || '/';
+
+  return data.url || base + '/';
 }
 
 self.addEventListener('notificationclick', event => {

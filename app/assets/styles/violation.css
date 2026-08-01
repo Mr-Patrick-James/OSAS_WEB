@@ -1021,6 +1021,47 @@ body.dark {
   border-color: rgba(76, 175, 80, 0.4);
 }
 
+.Violations-status-badge.pending {
+  background: rgba(245, 158, 11, 0.18);
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+/* pulse only on the "Syncing…" variant (offline pending) */
+.Violations-status-badge.pending.syncing {
+  animation: pendingSyncPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pendingSyncPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+body.dark .Violations-status-badge.pending {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+body.dark .Violations-status-badge.warning {
+  background: rgba(255, 152, 0, 0.2);
+  color: #fbbf24;
+  border-color: rgba(255, 152, 0, 0.4);
+}
+
+body.dark .Violations-status-badge.disciplinary {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f87171;
+  border-color: rgba(244, 67, 54, 0.4);
+}
+
+body.dark .Violations-status-badge.permitted,
+body.dark .Violations-status-badge.resolved {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4ade80;
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
 /* ── Sanction Badge ── */
 .sanction-badge {
   display: inline-flex;
@@ -1550,7 +1591,6 @@ body.dark {
   background: var(--grey);
   border-color: var(--gold);
   color: var(--gold);
-  transform: rotate(180deg);
 }
 
 /* QR Scan Button */
@@ -2992,6 +3032,53 @@ body.dark {
   border: 1px solid rgba(255,255,255,0.1);
 }
 
+/* ── Mobile lightbox overrides ── */
+@media (max-width: 600px) {
+  .evidence-lightbox-content {
+    max-width: 100vw;
+    max-height: 100dvh;
+    padding: 0;
+    justify-content: center;
+  }
+  .evidence-lightbox-topbar {
+    padding: 12px 14px 10px 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .evidence-lightbox-label {
+    font-size: 11px;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+  }
+  .evidence-lightbox-close {
+    min-width: 34px;
+  }
+  .evidence-lightbox-imgwrap {
+    width: 100%;
+    padding: 0;
+    justify-content: center;
+  }
+  /* Hide side nav buttons on mobile — user swipes instead */
+  .evidence-lightbox-prev,
+  .evidence-lightbox-next {
+    display: none;
+  }
+  .evidence-lightbox-content img {
+    max-width: 100vw;
+    max-height: calc(100dvh - 100px);
+    width: 100vw;
+    border-radius: 0;
+    object-fit: contain;
+  }
+  .evidence-lightbox-caption {
+    margin-top: 10px;
+    padding-bottom: 8px;
+  }
+}
+
 /* Enhanced Form Actions */
 .Violations-form-actions {
   display: flex;
@@ -4263,15 +4350,15 @@ body.dark {
 
 /* Refresh button animation */
 #refreshViolationsBtn {
-  transition: all 0.3s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 #refreshViolationsBtn:hover {
-  transform: rotate(180deg);
+  /* no rotate — avoids glitch when spin animation is also active */
 }
 
 #refreshViolationsBtn i {
-  transition: transform 0.3s ease;
+  transition: none;
 }
 
 /* Enhanced empty state for loading */
@@ -4844,7 +4931,7 @@ body.dark {
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: var(--dark-grey);
+  color: #b0b0b0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4854,7 +4941,7 @@ body.dark {
 }
 
 .Violations-view-btn:hover {
-  color: var(--dark);
+  color: #888;
   background: var(--light);
 }
 

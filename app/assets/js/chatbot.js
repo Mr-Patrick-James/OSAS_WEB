@@ -650,22 +650,22 @@ HOW-TO FOR ADMINS:
 
         // Role-specific welcome content
         const welcomeText = isUser
-            ? `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or how to use the student portal.</p>`
-            : `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, departments, or how to use the system.</p>`;
+            ? `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me about your violations, announcements, or anything about the student portal.</p>`
+            : `<p>Hi there 👋 I'm <strong>OSAS Bot</strong>.</p><p>Ask me anything about students, violations, reports, departments, or how to use the system.</p>`;
 
         const chips = isUser
-            ? `<button class="cb-chip" data-prompt="What are my current violations and their status?">My violations</button>
-               <button class="cb-chip" data-prompt="Show me the latest announcements I should know about">Announcements</button>
-               <button class="cb-chip" data-prompt="Explain the violation levels and what sanctions I could face">Sanctions info</button>
-               <button class="cb-chip" data-prompt="How do I navigate and use the student portal? What pages are available to me?">Portal help</button>
-               <button class="cb-chip" data-prompt="I received an entrance slip. What do I do with it?">Entrance slip</button>
-               <button class="cb-chip" data-prompt="How do I appeal a violation?">Appeal process</button>`
-            : `<button class="cb-chip" data-prompt="Give me a summary of today's system stats — students, violations, departments">System summary</button>
-               <button class="cb-chip" data-prompt="Show me the current violation statistics by type and level">Violation stats</button>
-               <button class="cb-chip" data-prompt="How do I record a new student violation? Step by step.">Record violation</button>
-               <button class="cb-chip" data-prompt="What departments and sections exist in the system?">Departments</button>
-               <button class="cb-chip" data-prompt="How do I generate and export a report?">Generate report</button>
-               <button class="cb-chip" data-prompt="How do I import students from an Excel file?">Import students</button>`;
+            ? `<button class="cb-chip" data-prompt="Show me my current violations and their status">My violations</button>
+               <button class="cb-chip" data-prompt="Show me the latest school announcements">Announcements</button>
+               <button class="cb-chip" data-prompt="Explain each violation level from 1st offense to disciplinary action and what sanctions I could face">Sanctions info</button>
+               <button class="cb-chip" data-prompt="What pages are available to me in the student portal and how do I use each one?">Portal help</button>
+               <button class="cb-chip" data-prompt="I received an entrance slip — what does it mean and what do I do with it?">Entrance slip</button>
+               <button class="cb-chip" data-prompt="How do I appeal a violation or contest a record I disagree with?">Appeal process</button>`
+            : `<button class="cb-chip" data-prompt="Give me a summary of the current system stats — total students, active violations, and departments">System summary</button>
+               <button class="cb-chip" data-prompt="Show me the current violation statistics broken down by type and level">Violation stats</button>
+               <button class="cb-chip" data-prompt="How do I record a new student violation? Walk me through it step by step.">Record violation</button>
+               <button class="cb-chip" data-prompt="List all departments and sections currently in the system">Departments</button>
+               <button class="cb-chip" data-prompt="How do I use the Reports module to filter and export data?">Reports guide</button>
+               <button class="cb-chip" data-prompt="How do I import students from an Excel file into the system?">Import students</button>`;
 
         // ── Main panel ───────────────────────────────────────────────────
         const chatbotPanel = document.createElement('div');
@@ -1348,7 +1348,7 @@ HOW-TO FOR ADMINS:
 
             // Extract actions from response
             console.log('🤖 Raw AI Response:', responseText);
-            const { cleanText, actions } = this.extractActions(responseText);
+            const { cleanText, actions } = this.extractActions(responseText, message);
             console.log('🤖 Clean Text:', cleanText);
             console.log('🤖 Extracted Actions:', actions);
             responseText = cleanText;
@@ -1562,24 +1562,24 @@ HOW-TO FOR ADMINS:
     }
 
     /**
-     * Extract JSON actions from AI response
+     * Extract JSON actions from AI response.
+     * Only fenced ```json … ``` blocks are parsed — loose JSON matching is intentionally
+     * removed because it caused false-positive action triggers on casual / essay responses.
      */
-    extractActions(text) {
+    extractActions(text, userMessage) {
         const actions = [];
         let cleanText = text;
 
-        // 1. FIRST: Find ALL possible code blocks (json or not)
+        // 1. Find ALL fenced code blocks (```json … ``` or ``` … ```)
         const allCodeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/g;
         let match;
-        let tempText = text;
         const matchesToRemove = [];
-        
-        // Collect all code blocks first
-        while ((match = allCodeBlockRegex.exec(tempText)) !== null) {
+
+        while ((match = allCodeBlockRegex.exec(text)) !== null) {
             try {
                 // Strip JS-style comments before parsing (AI sometimes adds // comments)
                 const stripped = match[1].trim()
-                    .replace(/\/\/[^\n]*/g, '')   // remove // line comments
+                    .replace(/\/\/[^\n]*/g, '')        // remove // line comments
                     .replace(/\/\*[\s\S]*?\*\//g, ''); // remove /* block comments */
                 const actionData = JSON.parse(stripped);
                 if (actionData.action) {
@@ -1588,40 +1588,39 @@ HOW-TO FOR ADMINS:
                     console.log('🤖 Extracted action from code block:', actionData);
                 }
             } catch (e) {
-                // Not valid JSON, skip
+                // Not valid JSON — remove the block from display anyway so raw ``` blocks
+                // don't appear in the chat bubble.
+                matchesToRemove.push(match[0]);
                 console.warn('Code block not valid action JSON:', e);
             }
         }
-        
-        // 2. Now remove all the matched code blocks from cleanText
+
+        // 2. Remove all matched code blocks from cleanText
         matchesToRemove.forEach(block => {
             cleanText = cleanText.replace(block, '');
         });
-        
-        // 3. If still no actions, try loose JSON matching
-        if (actions.length === 0) {
-            const looseJsonRegex = /\{[\s\S]*?"action"[\s\S]*?\}/g;
-            while ((match = looseJsonRegex.exec(text)) !== null) {
-                try {
-                    const actionData = JSON.parse(match[0]);
-                    if (actionData.action) {
-                        actions.push(actionData);
-                        cleanText = cleanText.replace(match[0], '');
-                        console.log('🤖 Extracted loose action JSON:', actionData);
-                    }
-                } catch (e) {
-                    console.warn('Failed to parse loose JSON:', e);
-                }
+
+        // 3. Guard: filter out export_pdf unless the user's own message explicitly
+        //    requested a download / export / report.  This prevents the AI from
+        //    triggering a report download when answering casual or essay questions.
+        const exportKeywords = /\b(download|export|generate|report|pdf|excel|get.*report|report.*get)\b/i;
+        const userWantsExport = userMessage && exportKeywords.test(userMessage);
+
+        const filteredActions = actions.filter(a => {
+            if (a.action === 'export_pdf' && !userWantsExport) {
+                console.warn('🤖 export_pdf action suppressed — user message did not request a download/export:', userMessage);
+                return false;
             }
-        }
+            return true;
+        });
 
         // 4. FINAL CLEANUP: Remove extra newlines/whitespace from cleanText
         cleanText = cleanText
             .replace(/\n\s*\n\s*\n/g, '\n\n') // Collapse multiple blank lines
-            .replace(/^\s+|\s+$/g, '')       // Trim
+            .replace(/^\s+|\s+$/g, '')
             .trim();
 
-        return { cleanText, actions };
+        return { cleanText, actions: filteredActions };
     }
 
     /**
@@ -1689,6 +1688,9 @@ HOW-TO FOR ADMINS:
                         console.log('🤖 Calling handleExportPDF');
                         await this.handleExportPDF(params);
                         break;
+                    case 'reset_system':
+                        await this.handleResetSystem(params);
+                        break;
                     default:
                         console.warn('Unknown action:', action);
                 }
@@ -1733,6 +1735,36 @@ HOW-TO FOR ADMINS:
             this.addMessage('bot', `✅ Successfully added level **${params.name}** to the violation type.`);
             if (typeof loadViolationTypes === 'function') loadViolationTypes(true);
         } else throw new Error(data.message);
+    }
+
+    /**
+     * Handle reset_system action — deletes all students, sections, and departments.
+     * Triggered by the AI chatbot after explicit user confirmation.
+     */
+    async handleResetSystem(params) {
+        try {
+            this.addMessage('bot', '⏳ Resetting system... deleting all students, sections, and departments.');
+
+            const apiBase = window.location.pathname.includes('/includes/')
+                ? '../api/students.php'
+                : 'api/students.php';
+
+            const res = await fetch(`${apiBase}?action=deleteAll`, { method: 'POST' });
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                // Clear any cached student data in the page
+                if (window._studentsCache) {
+                    window._studentsCache = { students: [], allStudents: [], stats: null, loaded: false };
+                }
+                this.addMessage('bot', '✅ System reset complete. All students, sections, and departments have been cleared.\n\nYou can now go to **Students → Import** to upload a fresh enrollment list and everything will be recreated automatically.');
+            } else {
+                throw new Error(data.message || 'Reset failed');
+            }
+        } catch (err) {
+            console.error('handleResetSystem error:', err);
+            this.addMessage('bot', `⚠️ System reset failed: ${err.message}`);
+        }
     }
 
     async handleExportPDF(params) {

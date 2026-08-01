@@ -26,16 +26,42 @@ document.addEventListener('DOMContentLoaded', function () {
     syncThemeToggles();
 
     // Load default dashboard content or restore last visited page
-    const lastPage = localStorage.getItem('lastPage') || 'admin_page/dashcontent';
-    loadContent(lastPage);
+    // Officers and CSC Officers default to Violations (their primary page)
+    const _roleForDefault = (() => {
+        try {
+            const s = localStorage.getItem('userSession');
+            if (s) return JSON.parse(s).role || '';
+        } catch(e) {}
+        const c = document.cookie.split(';').map(x => x.trim()).find(x => x.startsWith('role='));
+        return c ? decodeURIComponent(c.split('=')[1]) : '';
+    })();
+    const _isOfficerDefault = _roleForDefault === 'Officer' || _roleForDefault === 'CSC Officer';
+    const _defaultPage = _isOfficerDefault ? 'admin_page/Violations' : 'admin_page/dashcontent';
 
+    const lastPage = localStorage.getItem('lastPage') || _defaultPage;
+    // If an officer somehow has dashcontent saved as lastPage, override it
+    const resolvedPage = _isOfficerDefault && lastPage === 'admin_page/dashcontent'
+        ? 'admin_page/Violations'
+        : lastPage;
 
+    // Handle push notification deep-link (?push_page=admin_page/Violations)
+    const _pushPage = new URLSearchParams(location.search).get('push_page');
+    loadContent(_pushPage || resolvedPage);
 
-    // Set dashboard as active by default only if no saved page
+    // Listen for SW PUSH_NAVIGATE messages (notification click while page is open)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (e) => {
+            if (e.data?.type === 'PUSH_NAVIGATE' && e.data.page && typeof loadContent === 'function') {
+                loadContent(e.data.page);
+            }
+        });
+    }
+
+    // Set default active nav item
     if (!localStorage.getItem('lastPage')) {
-        const dashboardLink = document.querySelector('[data-page="admin_page/dashcontent"]');
-        if (dashboardLink) {
-            dashboardLink.parentElement.classList.add('active');
+        const defaultLink = document.querySelector(`[data-page="${_defaultPage}"]`);
+        if (defaultLink) {
+            defaultLink.parentElement.classList.add('active');
         }
     }
 

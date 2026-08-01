@@ -354,7 +354,7 @@ require_once __DIR__ . '/../../core/View.php';
         <div class="Reports-form-group">
           <label for="includeCharts">Include Charts & Graphs</label>
           <div class="toggle-switch">
-            <input type="checkbox" id="includeCharts" name="includeCharts">
+            <input type="checkbox" id="includeCharts" name="includeCharts" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;">
             <label for="includeCharts" class="toggle-label">
               <span class="toggle-handle"></span>
             </label>

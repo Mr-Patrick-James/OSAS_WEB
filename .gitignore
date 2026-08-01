@@ -15,3 +15,7 @@ composer.phar
 .DS_Store
 Thumbs.db
 .vscode/settings.json
+
+# Keep the violations upload folder structure but ignore uploaded files
+app/assets/img/violations/*
+!app/assets/img/violations/.gitkeep

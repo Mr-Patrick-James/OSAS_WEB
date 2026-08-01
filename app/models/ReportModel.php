@@ -262,6 +262,17 @@ class ReportModel extends Model {
             
             $stmt->close();
             
+            // Remove reports for students who no longer have any violations.
+            // The upsert loop above only updates/inserts — students whose last
+            // violation was hard-deleted would keep a stale report row without this.
+            $this->conn->query(
+                "DELETE r FROM reports r
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM violations v
+                     WHERE BINARY v.student_id = BINARY r.student_id
+                 )"
+            );
+
             // Sync violation history and recommendations
             $this->syncReportViolations($startDate, $endDate);
             $this->syncReportRecommendations();
@@ -582,6 +593,14 @@ class ReportModel extends Model {
      * Sync violation history to report_violations table
      */
     private function syncReportViolations($startDate = null, $endDate = null) {
+        // First: remove stale report_violations entries where the violation was hard-deleted
+        $this->conn->query(
+            "DELETE rv FROM report_violations rv
+             WHERE NOT EXISTS (
+                 SELECT 1 FROM violations v WHERE v.id = rv.violation_id
+             )"
+        );
+
         $query = "SELECT r.id as report_id, v.id as violation_id, 
                          vt.name as violation_type, 
                          vl.name as violation_level, 

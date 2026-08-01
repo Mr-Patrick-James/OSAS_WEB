@@ -67,8 +67,8 @@ function initViolationsModule() {
                 return getInitialsAvatar(fallbackName);
             }
             
-            // If it's already a full URL (http/https or data:), return as-is
-            if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+            // If it's already a full URL (http/https, blob:, or data:), return as-is
+            if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:') || imagePath.startsWith('blob:')) {
                 return imagePath;
             }
             
@@ -169,6 +169,29 @@ function initViolationsModule() {
         let totalPages      = 0;
         let selectedFiles   = [];
         let manageView = 'types'; // kept for compatibility
+
+        /**
+         * Returns the current user's role from localStorage or cookie.
+         * Used for role-based UI visibility throughout violation.js.
+         */
+        function getCurrentUserRole() {
+            const sessionStr = localStorage.getItem('userSession');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session.role) return session.role;
+                } catch (e) {}
+            }
+            const cookieRoleMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('role='));
+            if (cookieRoleMatch) return decodeURIComponent(cookieRoleMatch.split('=')[1]);
+            return '';
+        }
+
+        /** Returns true if the current user is an Officer or CSC Officer */
+        function isOfficerRole() {
+            const role = getCurrentUserRole();
+            return role === 'Officer' || role === 'CSC Officer';
+        }
 
         function getCurrentAdminName() {
             // Try localStorage session first
@@ -447,6 +470,15 @@ function initViolationsModule() {
                         );
                         await window.offlineDB.saveViolations(all);
                         console.log(`✅ IndexedDB saved immediately: ${all.length} total (${violations.length} fresh + ${kept.length} kept)`);
+
+                        // If server returned fewer violations than what was cached,
+                        // invalidate the _modalStudentHistoryCache so record modal
+                        // badges reflect deletions on other devices immediately.
+                        const prevCount = existing.filter(v => (v.is_archived || 0) == isArchived).length;
+                        if (violations.length < prevCount) {
+                            console.log(`🔄 Server has fewer violations (${violations.length} vs ${prevCount} cached) — clearing modal history cache`);
+                            Object.keys(_modalStudentHistoryCache).forEach(k => delete _modalStudentHistoryCache[k]);
+                        }
                     } catch (err) {
                         console.error('IndexedDB immediate save failed:', err);
                     }
@@ -474,8 +506,6 @@ function initViolationsModule() {
                         .catch(err => console.warn('Background opposite-state fetch failed (non-critical):', err));
                 }
 
-                // Sync to window cache for instant restore on page revisit
-                _cache.violations = violations;
                 _cache.loaded = true;
                 console.log('Violations array:', violations);
                 
@@ -498,6 +528,9 @@ function initViolationsModule() {
                         studentImage: getImageUrl(v.studentImage, v.studentName || 'Student')
                     };
                 });
+
+                // Sync to window cache AFTER image processing so cached data has correct image URLs
+                _cache.violations = violations;
 
                 // Debug: Check first violation structure
                 if (violations.length > 0) {
@@ -687,6 +720,9 @@ function initViolationsModule() {
                     loadStudents(false),
                     loadViolationTypes()
                 ]);
+
+                // Reset to page 1 so pagination doesn't land on a now-empty page
+                currentPage = 1;
 
                 // Re-render everything
                 renderViolations();
@@ -1761,8 +1797,37 @@ function initViolationsModule() {
             checkStudentViolationHistory();
         }
 
+        // Per-student full history cache for the record modal
+        // Keyed by studentId so we don't re-fetch on every type-card click
+        const _modalStudentHistoryCache = {};
+
+        /**
+         * Fetch the complete violation history for a student from the API.
+         * Officers/CSC Officers only have their own violations in the local `violations[]`
+         * array, so we must go to the server with for_modal=1 to get the full picture.
+         * Result is cached per studentId for the lifetime of the modal session.
+         */
+        async function fetchStudentHistory(studentId) {
+            if (_modalStudentHistoryCache[studentId]) {
+                return _modalStudentHistoryCache[studentId];
+            }
+            try {
+                const url = `${API_BASE}violations.php?student_id=${encodeURIComponent(studentId)}&for_modal=1&is_archived=0&limit=all`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const list = data.violations || data.data || [];
+                _modalStudentHistoryCache[studentId] = list;
+                return list;
+            } catch (err) {
+                console.warn('fetchStudentHistory failed, falling back to local cache:', err);
+                // Fallback to local violations array (works fine for admin/OSAS Staff/Faculty)
+                return violations.filter(v => v.studentId === studentId);
+            }
+        }
+
         // Check and highlight student's violation history
-        function checkStudentViolationHistory() {
+        async function checkStudentViolationHistory() {
             // 1. Get selected student ID
             const studentIdElement = document.getElementById('modalStudentId');
             if (!studentIdElement || !studentIdElement.textContent) return;
@@ -1780,34 +1845,53 @@ function initViolationsModule() {
             
             const violationTypeId = parseInt(violationTypeInput.value);
 
-            // 3. Filter violations for this student and type
-            // Include both synced and pending/offline violations for level progression
-            const studentHistory = violations.filter(v => 
-                v.studentId === studentId && 
-                (v.violationType == violationTypeId)
+            // 3. Fetch full student history (from API — bypasses role filter for modal use)
+            const allStudentViolations = await fetchStudentHistory(studentId);
+
+            // Also merge any local offline/pending violations for this student
+            const pendingLocal = violations.filter(v =>
+                v.studentId === studentId && String(v.id).startsWith('TEMP-')
             );
+            const merged = [
+                ...allStudentViolations,
+                ...pendingLocal.filter(p => !allStudentViolations.find(a => a.id === p.id))
+            ];
+
+            const studentHistory = merged.filter(v => v.violationType == violationTypeId);
             
-            console.log(`Found ${studentHistory.length} previous violations for student ${studentId} of type ${violationTypeId}`);
+            console.log(`Found ${studentHistory.length} violations for student ${studentId} of type ${violationTypeId} (full history)`);
 
             // 4. Update UI
             updateLevelSelectionBasedOnHistory(studentHistory);
         }
 
-        function updateViolationTypeBadges(studentId) {
+        async function updateViolationTypeBadges(studentId) {
             console.log('Updating violation type badges for student:', studentId);
             
             // 1. Clear existing badges
             document.querySelectorAll('.violation-type-badge-overlay').forEach(el => el.remove());
 
-            // 2. Iterate cards
+            // 2. Fetch full student history (from API — bypasses role filter for modal use)
+            const allStudentViolations = await fetchStudentHistory(studentId);
+
+            // Also merge any local offline/pending violations for this student
+            const pendingLocal = violations.filter(v =>
+                v.studentId === studentId && String(v.id).startsWith('TEMP-')
+            );
+            const fullHistory = [
+                ...allStudentViolations,
+                ...pendingLocal.filter(p => !allStudentViolations.find(a => a.id === p.id))
+            ];
+
+            // 3. Iterate cards
             document.querySelectorAll('.violation-type-card').forEach(card => {
                 const input = card.querySelector('input[name="violationType"]');
                 if (!input) return;
                 
                 const typeId = parseInt(input.value);
                 
-                // 3. Find history for this student and type
-                const history = violations.filter(v => 
+                // Find history for this student and type (from full API history)
+                const history = fullHistory.filter(v => 
                     v.studentId === studentId && 
                     (v.violationType == typeId)
                 );
@@ -1923,6 +2007,11 @@ function initViolationsModule() {
                                 // Remove from local cache
                                 const idx = violations.findIndex(x => x.id == vid);
                                 if (idx !== -1) violations.splice(idx, 1);
+
+                                // Invalidate the modal history cache so next fetch is fresh
+                                if (_modalStudentHistoryCache[studentId]) {
+                                    delete _modalStudentHistoryCache[studentId];
+                                }
 
                                 showNotification(`"${levelLabel}" offense removed. Student is now at: ${stepBackTo}.`, 'success');
 
@@ -2250,6 +2339,40 @@ function initViolationsModule() {
                     throw new Error(result.message || 'Unknown error occurred');
                 }
 
+                // ── Duplicate-day warning: ask user to confirm before proceeding ──
+                if (result.status === 'duplicate_day') {
+                    hideLoadingOverlay(); // clear spinner before showing dialog
+                    const proceed = typeof window.showModernAlert === 'function'
+                        ? await window.showModernAlert({
+                            type: 'warning',
+                            title: 'Violation Already Recorded Today',
+                            message: `<strong>${result.student_name}</strong> already has a <strong>${result.violation_type_name}</strong> violation recorded today by <strong>${result.reported_by}</strong>.<br><br>Do you still want to record this violation?`,
+                            confirmText: 'Yes, Record Anyway',
+                            cancelText: 'Cancel',
+                          })
+                        : confirm(`${result.student_name} already has a "${result.violation_type_name}" violation recorded today by ${result.reported_by}.\n\nDo you still want to record this violation?`);
+
+                    if (!proceed) {
+                        // User cancelled — reset state and bail out
+                        return null;
+                    }
+
+                    // User confirmed — re-submit with force flag
+                    formData.set('force', '1');
+                    const forceResponse = await fetch(API_BASE + 'violations.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const forceText = await forceResponse.text();
+                    if (!forceResponse.ok) {
+                        let msg = `HTTP error! status: ${forceResponse.status}`;
+                        try { const d = JSON.parse(forceText); if (d.message) msg = d.message; } catch(e) {}
+                        throw new Error(msg);
+                    }
+                    try { result = JSON.parse(forceText); } catch(e) { throw new Error('Invalid JSON on force save: ' + forceText.substring(0, 200)); }
+                    if (result.status === 'error') throw new Error(result.message || 'Unknown error occurred');
+                }
+
                 console.log('✅ Violation saved successfully');
 
                 // Reload violations data in background (Manual Fallback handles immediate UI)
@@ -2315,7 +2438,18 @@ function initViolationsModule() {
                         status: vStatus,
                         statusLabel: vStatus.charAt(0).toUpperCase() + vStatus.slice(1),
                         notes: vNotes,
-                        attachments: result.data?.attachments || [] // Use attachments from server response if available
+                        attachments: (result.data?.attachments && result.data.attachments.length > 0)
+                            ? result.data.attachments  // use server-returned paths (most reliable)
+                            : (() => {
+                                // Fallback: build local object URLs from the uploaded File objects
+                                // so the Evidence badge appears immediately without waiting for a reload.
+                                const files = [];
+                                if (formData) {
+                                    const raw = formData.getAll('attachments[]');
+                                    raw.forEach(f => { if (f instanceof File && f.size > 0) files.push(f); });
+                                }
+                                return files.map(f => URL.createObjectURL(f));
+                              })()
                     };
                     
                     // 5. Inject at the beginning (assuming desc sort)
@@ -2327,8 +2461,14 @@ function initViolationsModule() {
 
                 renderViolations();
                 
-                // Explicitly update badges for the student if applicable
+                // Invalidate the modal history cache for this student so the next
+                // time they're searched, fresh data is fetched from the API
                 const sId = formData.get('studentId');
+                if (sId && _modalStudentHistoryCache[sId]) {
+                    delete _modalStudentHistoryCache[sId];
+                }
+
+                // Explicitly update badges for the student if applicable
                 if (sId) {
                     console.log('🔄 Force updating badges for student:', sId);
                     updateViolationTypeBadges(sId);
@@ -3037,6 +3177,11 @@ function initViolationsModule() {
             if (window.refreshOfflineBadge) window.refreshOfflineBadge();
         };
 
+        // Expose refreshData globally so external callers (chatbot, PWA, etc.) can trigger a full refresh
+        window.refreshViolationsList = function() {
+            return refreshData();
+        };
+
         // ========== STUDENT DETAILS FUNCTIONS ==========
 
         // Check if search term looks like a student ID
@@ -3417,21 +3562,40 @@ function initViolationsModule() {
 
             // ── Helper: compute display status ──────────────────────────────
             function getDisplayStatus(v) {
-                // Rely entirely on the status from the database/API
-                let displayStatus = v.status;
-                let displayStatusLabel = v.statusLabel || v.status;
+                let displayStatus = v.status || 'warning';
+                let displayStatusLabel = v.statusLabel || '';
 
-                // Don't override pending status — keep "Pending Sync" for offline violations
-                if (displayStatus === 'pending') {
-                    return { displayStatus, displayStatusLabel: 'Pending Sync' };
+                // Offline / pending-sync item
+                if (displayStatus === 'pending' || String(v.id).startsWith('TEMP-')) {
+                    return { displayStatus: 'pending', displayStatusLabel: 'Pending Sync' };
                 }
-                
-                // Capitalize for label if no label provided
-                if (!v.statusLabel) {
+
+                // Capitalise label if not provided
+                if (!displayStatusLabel) {
                     displayStatusLabel = displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1);
                 }
 
                 return { displayStatus, displayStatusLabel };
+            }
+
+            // ── Helper: render a status badge pill ───────────────────────────
+            function statusBadgeHtml(displayStatus, displayStatusLabel, violationId) {
+                // Offline / not-yet-synced (TEMP- id means queued offline)
+                if (String(violationId || '').startsWith('TEMP-')) {
+                    return `<span class="Violations-status-badge pending syncing">
+                                <i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Syncing…
+                            </span>`;
+                }
+                // Fully resolved
+                if (displayStatus === 'resolved') {
+                    return `<span class="Violations-status-badge resolved">
+                                <i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved
+                            </span>`;
+                }
+                // Everything else = still open/unresolved = Pending
+                return `<span class="Violations-status-badge pending">
+                            <i class='bx bx-time-five' style="vertical-align:middle;margin-right:2px;"></i>Pending
+                        </span>`;
             }
 
             // ── TABLE VIEW ──────────────────────────────────────────────────
@@ -3477,18 +3641,18 @@ function initViolationsModule() {
                         ${v.sanctionName
                             ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
                             : ''}
-                        ${displayStatus === 'resolved'
-                            ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;margin-left:3px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
-                            : ''}
+                        ${statusBadgeHtml(displayStatus, displayStatusLabel, v.id)}
                     </td>
                     <td data-label="Actions">
                         <div class="Violations-action-buttons">
+                            ${isOfficerRole() ? '' : `
                             <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                 <i class='bx bx-show'></i>
-                            </button>
+                            </button>`}
+                            ${isOfficerRole() ? '' : `
                             <button class="Violations-action-btn entrance" data-id="${v.id}" title="Generate Entrance Slip">
                                 <i class='bx bx-receipt'></i>
-                            </button>
+                            </button>`}
                             ${displayStatus === 'resolved' || !isUserAdmin
                                 ? ''
                                 : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved">
@@ -3553,17 +3717,17 @@ function initViolationsModule() {
                                     ${v.sanctionName
                                         ? `<span class="sanction-badge">${escapeHtml(v.sanctionName)}</span>`
                                         : ''}
-                                    ${displayStatus === 'resolved'
-                                        ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
-                                        : ''}
+                                    ${statusBadgeHtml(displayStatus, displayStatusLabel, v.id)}
                                 </div>
                                 <div class="violation-card-actions">
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                         <i class='bx bx-show'></i>
-                                    </button>
+                                    </button>`}
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
-                                    </button>
+                                    </button>`}
                                     ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
                                         : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
@@ -3598,12 +3762,14 @@ function initViolationsModule() {
                                     <span class="violation-list-id">${v.studentId}</span>
                                 </div>
                                 <div class="violation-list-actions">
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn view" data-id="${v.id}" title="View Details">
                                         <i class='bx bx-show'></i>
-                                    </button>
+                                    </button>`}
+                                    ${isOfficerRole() ? '' : `
                                     <button class="Violations-action-btn entrance" data-id="${v.id}" title="Entrance Slip">
                                         <i class='bx bx-receipt'></i>
-                                    </button>
+                                    </button>`}
                                     ${displayStatus === 'resolved' || !isUserAdmin
                                         ? ''
                                         : `<button class="Violations-action-btn resolve" data-id="${v.id}" title="Mark Resolved"><i class='bx bx-check'></i></button>`
@@ -3617,9 +3783,7 @@ function initViolationsModule() {
                                 ${v.sanctionName
                                     ? `<span class="sanction-badge" style="font-size:9px;">${escapeHtml(v.sanctionName)}</span>`
                                     : ''}
-                                ${displayStatus === 'resolved'
-                                    ? `<span class="Violations-status-badge resolved" style="font-size:9px;padding:2px 7px;"><i class='bx bx-check-circle' style="vertical-align:middle;margin-right:2px;"></i>Resolved</span>`
-                                    : ''}
+                                ${statusBadgeHtml(displayStatus, displayStatusLabel, v.id)}
                                 <span style="font-size:9px;color:var(--dark-grey);margin-left:2px;">
                                     <i class='bx bx-calendar' style="vertical-align:middle;"></i> ${formatDate(v.dateReported)}
                                 </span>
@@ -3713,6 +3877,12 @@ function initViolationsModule() {
             // Clear previous attachments selection
             selectedFiles = [];
             updateAttachmentPreviews();
+
+            // Re-attach handler if the file input was recreated (SPA navigation resets dataset)
+            const fileInputCheck = document.getElementById('violationAttachment');
+            if (fileInputCheck && fileInputCheck.dataset.attachHandlerReady !== 'true') {
+                setupAttachmentHandler();
+            }
             
             // Show/hide entrance slip button
             if (modalEntranceBtn) {
@@ -4012,7 +4182,7 @@ function initViolationsModule() {
             }, 150);
         }
 
-        function openDetailsModal(violationId) {
+        async function openDetailsModal(violationId) {
             console.log('📖 openDetailsModal called with ID:', violationId);
             if (!detailsModal) {
                 console.error('❌ Details modal element (#ViolationDetailsModal) not found!');
@@ -4230,9 +4400,39 @@ function initViolationsModule() {
             // Populate timeline
             const timelineEl = document.getElementById('detailTimeline');
             if (timelineEl) {
-                // Filter violations for this student
-                let studentHistory = violations.filter(v => v.studentId === violation.studentId);
-                
+                // Show a loading state while we fetch fresh data from the API
+                timelineEl.innerHTML = '<p style="color:#6c757d;font-size:14px;text-align:center;padding:10px;">Loading history...</p>';
+
+                // Fetch complete student history from the API so attachments are always present.
+                // The local `violations` array is only the current table view (filtered/paginated),
+                // so it may be missing violations — and their attachments — for this student.
+                // IMPORTANT: bypass the _modalStudentHistoryCache here — the cache may be stale
+                // (populated before the violation was saved, missing the new attachments).
+                // Always fetch fresh from the API for the details modal.
+                let studentHistory;
+                try {
+                    const url = `${API_BASE}violations.php?student_id=${encodeURIComponent(violation.studentId)}&for_modal=1&is_archived=0&limit=all`;
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const data = await res.json();
+                    studentHistory = data.violations || data.data || [];
+                    // Update the cache with fresh data now that we have it
+                    _modalStudentHistoryCache[violation.studentId] = studentHistory;
+                } catch (err) {
+                    console.warn('openDetailsModal: failed to fetch fresh history, falling back:', err);
+                    studentHistory = violations.filter(v => v.studentId === violation.studentId);
+                }
+
+                // Merge any locally-injected violations (e.g. just-recorded, not yet in API cache)
+                // so freshly recorded violations with blob: attachment URLs appear immediately.
+                const localOnly = violations.filter(lv =>
+                    lv.studentId === violation.studentId &&
+                    !studentHistory.some(sv => sv.id == lv.id)
+                );
+                if (localOnly.length > 0) {
+                    studentHistory = [...localOnly, ...studentHistory];
+                }
+
                 // Deduplicate history for timeline
                 const seenHistory = new Set();
                 studentHistory = studentHistory.filter(v => {
@@ -4289,7 +4489,11 @@ function initViolationsModule() {
                     `}).join('');
 
                     // Click handler — Evidence badge opens lightbox directly (no popup)
-                    timelineEl.addEventListener('click', function(e) {
+                    // Remove previously-bound handler to prevent stacking on repeated modal opens
+                    if (timelineEl._evidenceClickHandler) {
+                        timelineEl.removeEventListener('click', timelineEl._evidenceClickHandler);
+                    }
+                    timelineEl._evidenceClickHandler = function(e) {
                         const badge = e.target.closest('.timeline-evidence-badge');
                         if (!badge) return;
 
@@ -4297,11 +4501,18 @@ function initViolationsModule() {
                         if (!item) return;
 
                         const vid = parseInt(item.dataset.vid);
-                        const clicked = violations.find(v => v.id === vid);
+                        // Look up from the fresh studentHistory first (has server attachments),
+                        // fall back to local violations array for just-recorded blob: URLs.
+                        const clicked = studentHistory.find(v => v.id == vid) || violations.find(v => v.id == vid);
                         if (!clicked || !clicked.attachments || !clicked.attachments.length) return;
 
                         const label = `${clicked.violationLevelLabel || ''} — ${clicked.violationTypeLabel || ''} · ${formatDate(clicked.dateReported || clicked.date)}`;
-                        const imageAttachments = clicked.attachments.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.split('/').pop()));
+                        const imageAttachments = clicked.attachments.filter(f => {
+                            const s = String(f);
+                            // blob: object URLs are always images (we only create them from File objects)
+                            if (s.startsWith('blob:')) return true;
+                            return /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(s.split('/').pop());
+                        });
 
                         if (imageAttachments.length > 0) {
                             window._lightboxImages = imageAttachments.map(f => getImageUrl(f));
@@ -4312,7 +4523,8 @@ function initViolationsModule() {
                             // Non-image file — open in new tab
                             window.open(getImageUrl(clicked.attachments[0]), '_blank');
                         }
-                    });
+                    };
+                    timelineEl.addEventListener('click', timelineEl._evidenceClickHandler);
                 } else {
                     timelineEl.innerHTML = '<p style="color:#6c757d;font-size:14px;text-align:center;padding:10px;">No history available.</p>';
                 }
@@ -4364,9 +4576,9 @@ function initViolationsModule() {
                 }
             }
 
-            // Print Slip is always visible
+            // Print Slip — hidden for Officer and CSC Officer roles
             if (detailPrintSlipBtn) {
-                detailPrintSlipBtn.style.display = 'inline-flex';
+                detailPrintSlipBtn.style.display = isOfficerRole() ? 'none' : 'inline-flex';
             }
 
             if (detailSlipStatus) {
@@ -4432,6 +4644,10 @@ function initViolationsModule() {
             const form = document.getElementById('ViolationRecordForm');
             if (form) form.reset();
             setDefaultViolationLocation();
+
+            // Always clear attachment state on close so the next violation starts fresh
+            selectedFiles = [];
+            updateAttachmentPreviews();
             
             // Hide student card
             const studentCard = document.getElementById('selectedStudentCard');
@@ -5863,27 +6079,36 @@ function initViolationsModule() {
             const browseBtn   = document.getElementById('evidenceBrowseBtn');
             if (!fileInput) return;
 
-            // Browse button click
-            if (browseBtn) browseBtn.addEventListener('click', () => {
+            // Guard: only register handlers once per element lifecycle
+            if (fileInput.dataset.attachHandlerReady === 'true') return;
+            fileInput.dataset.attachHandlerReady = 'true';
+
+            function openPicker() {
                 if (!navigator.onLine) {
                     showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
                     return;
                 }
                 fileInput.click();
-            });
-            // Clicking anywhere on dropzone also opens file picker
-            if (dropzone) dropzone.addEventListener('click', e => {
-                if (e.target !== browseBtn) {
-                    if (!navigator.onLine) {
-                        showNotification('Evidence upload is only available when online. You can add attachments after syncing.', 'warning', 4000);
-                        return;
-                    }
-                    fileInput.click();
-                }
-            });
+            }
 
-            // Drag & drop
+            // Browse button — stop propagation so the dropzone click handler doesn't
+            // also fire and open the picker a second time
+            if (browseBtn) {
+                browseBtn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    openPicker();
+                });
+            }
+
+            // Clicking anywhere on dropzone (except the browse button) also opens picker
             if (dropzone) {
+                dropzone.addEventListener('click', e => {
+                    // Ignore if the click originated from the browse button or its children
+                    if (browseBtn && browseBtn.contains(e.target)) return;
+                    openPicker();
+                });
+
+                // Drag & drop
                 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
                 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
                 dropzone.addEventListener('drop', e => {
@@ -5903,17 +6128,26 @@ function initViolationsModule() {
                     this.value = '';
                     return;
                 }
-                addFiles(this.files);
+                if (this.files && this.files.length > 0) {
+                    addFiles(this.files);
+                }
+                // Reset value so the same file can be re-selected on the next violation
                 this.value = '';
             });
 
             function addFiles(files) {
+                let added = 0;
                 for (const file of files) {
-                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    // Skip truly empty entries (e.g. drag-drop ghost items)
+                    if (!file || file.size === 0) continue;
+                    // Dedup within the same selection only — allow same file on next violation
+                    // because selectedFiles is cleared in openRecordModal before each new record
+                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
                         selectedFiles.push(file);
+                        added++;
                     }
                 }
-                updateAttachmentPreviews();
+                if (added > 0) updateAttachmentPreviews();
             }
         }
 
@@ -6053,7 +6287,13 @@ function initViolationsModule() {
                             });
                         }
 
-                        await saveViolation(formData);
+                        const saveResult = await saveViolation(formData);
+                        // null means user cancelled the duplicate-day warning — keep modal open
+                        if (saveResult === null) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                            return;
+                        }
                         showNotification('Violation recorded successfully!', 'success');
                     }
 
@@ -6107,6 +6347,35 @@ function initViolationsModule() {
                     }
                 });
             }
+        }
+
+        // Refresh students button (inside record modal) — reloads student list from server
+        const refreshStudentsBtn = document.getElementById('refreshStudentsBtn');
+        if (refreshStudentsBtn) {
+            refreshStudentsBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    const icon = refreshStudentsBtn.querySelector('i');
+                    if (icon) icon.classList.add('bx-spin');
+                    refreshStudentsBtn.disabled = true;
+
+                    await loadStudents(false);
+
+                    // If there's already a search term, re-run the search with fresh data
+                    if (studentSearchInput && studentSearchInput.value.trim()) {
+                        await handleStudentSearch();
+                    }
+
+                    showNotification('Student data refreshed', 'success');
+                } catch (error) {
+                    console.error('Error refreshing students:', error);
+                    showNotification('Failed to refresh student data', 'error');
+                } finally {
+                    const icon = refreshStudentsBtn.querySelector('i');
+                    if (icon) icon.classList.remove('bx-spin');
+                    refreshStudentsBtn.disabled = false;
+                }
+            });
         }
 
         // 8. QR SCANNER BUTTON
@@ -6866,9 +7135,193 @@ function initViolationsModule() {
             }
         };
 
-        // Start initialization
-        initializeData();
-        
+        // ── REALTIME POLLING ──────────────────────────────────────────────────
+        // Polls a cheap endpoint every 15 s (when online) and silently refreshes
+        // the table only when a new violation has actually been recorded by
+        // another user.  No full-page reload — just re-fetches & re-renders.
+        (function startViolationsRealtimePoll() {
+            const POLL_INTERVAL_MS  = 5000; // 5 s — fast enough to feel real-time on plain PHP
+            const STORAGE_SNAP_KEY  = 'violations_rt_snapshot';
+
+            let _pollTimer      = null;
+            let _lastKnownId    = 0;
+            let _lastKnownCount = -1; // -1 = not yet set; tracks total for deletion detection
+            let _isRefreshing   = false;
+
+            // Load the snapshot written by a previous session so we don't
+            // immediately fire a "new violation" alert on first visit.
+            try {
+                const saved = JSON.parse(sessionStorage.getItem(STORAGE_SNAP_KEY) || '{}');
+                if (saved.latestId) _lastKnownId = Number(saved.latestId);
+            } catch (_) { /* ignore */ }
+
+            function saveSnap(id) {
+                try {
+                    sessionStorage.setItem(STORAGE_SNAP_KEY, JSON.stringify({ latestId: id }));
+                } catch (_) { /* ignore */ }
+            }
+
+            // Show a non-intrusive "new violation" toast with a one-click refresh
+            function showNewViolationToast(reportedBy, caseId) {
+                // Avoid stacking duplicate toasts
+                if (document.getElementById('rt-new-violation-toast')) return;
+
+                const toast = document.createElement('div');
+                toast.id = 'rt-new-violation-toast';
+                toast.style.cssText = [
+                    'position:fixed', 'bottom:24px', 'right:24px', 'z-index:99999',
+                    'background:#1e2029', 'color:#fff', 'border-left:4px solid #f59e0b',
+                    'border-radius:10px', 'padding:14px 18px', 'min-width:270px',
+                    'box-shadow:0 6px 24px rgba(0,0,0,.35)', 'font-size:13px',
+                    'display:flex', 'align-items:center', 'gap:12px',
+                    'animation:rtSlideIn .3s ease', 'cursor:pointer'
+                ].join(';');
+
+                toast.innerHTML = `
+                    <i class='bx bx-bell-ring' style="font-size:22px;color:#f59e0b;flex-shrink:0;"></i>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;margin-bottom:3px;">New violation recorded</div>
+                        <div style="font-size:11px;color:#aaa;">
+                            ${reportedBy ? 'By <b style="color:#eee;">' + reportedBy + '</b>' : ''}
+                            ${caseId ? ' &bull; Case <b style="color:#f59e0b;">' + caseId + '</b>' : ''}
+                        </div>
+                    </div>
+                    <button id="rt-dismiss-toast" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1;" title="Dismiss">&times;</button>
+                `;
+
+                // Inject the slide-in keyframes once
+                if (!document.getElementById('rt-toast-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'rt-toast-style';
+                    style.textContent = `
+                        @keyframes rtSlideIn {
+                            from { transform: translateX(110%); opacity: 0; }
+                            to   { transform: translateX(0);    opacity: 1; }
+                        }
+                        @keyframes rtSlideOut {
+                            from { transform: translateX(0);    opacity: 1; }
+                            to   { transform: translateX(110%); opacity: 0; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+
+                function dismissToast() {
+                    toast.style.animation = 'rtSlideOut .25s ease forwards';
+                    setTimeout(() => toast.remove(), 260);
+                }
+
+                toast.addEventListener('click', async (e) => {
+                    if (e.target.id === 'rt-dismiss-toast') { dismissToast(); return; }
+                    dismissToast();
+                });
+
+                document.body.appendChild(toast);
+                // Auto-dismiss after 12 s
+                setTimeout(dismissToast, 12000);
+            }
+
+            async function poll() {
+                if (!navigator.onLine) return;               // skip when offline
+                if (_isRefreshing) return;                   // avoid overlapping
+
+                // Stop if the module DOM is gone (navigated away)
+                if (!document.getElementById('ViolationsTableBody')) { stopPoll(); return; }
+
+                try {
+                    const res  = await fetch(API_BASE + 'violations.php?action=poll_latest&t=' + Date.now(), {
+                        credentials: 'same-origin',
+                        cache: 'no-store'
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data.status !== 'success') return;
+
+                    const incomingId    = Number(data.latest_id    || 0);
+                    const incomingCount = Number(data.total_count  ?? -1);
+
+                    // Very first successful poll — set baseline, no alert
+                    if (_lastKnownId === 0) {
+                        _lastKnownId    = incomingId;
+                        _lastKnownCount = incomingCount;
+                        saveSnap(_lastKnownId);
+                        return;
+                    }
+
+                    // Detect deletion on another device: count dropped
+                    const countDropped = incomingCount >= 0 && _lastKnownCount >= 0 && incomingCount < _lastKnownCount;
+
+                    if (incomingId > _lastKnownId || countDropped) {
+                        if (countDropped) {
+                            console.log(`🗑️ [realtime] Violation deleted on another device: count ${_lastKnownCount} → ${incomingCount}`);
+                        } else {
+                            console.log(`🔔 [realtime] New violation: id ${_lastKnownId} → ${incomingId}`);
+                        }
+                        _lastKnownId    = incomingId;
+                        _lastKnownCount = incomingCount;
+                        saveSnap(_lastKnownId);
+
+                        // Silently reload + re-render
+                        _isRefreshing = true;
+                        try {
+                            await loadViolations(false);
+                            currentPage = 1;
+                            renderViolations();
+                            updateStats();
+                        } finally {
+                            _isRefreshing = false;
+                        }
+
+                        // Toast notification — only for new violations, not deletions
+                        if (!countDropped) {
+                            showNewViolationToast(data.latest_reported_by, data.latest_case_id);
+
+                            // Immediately bump the admin notification badge count
+                            if (typeof window.updateNotificationCount === 'function') {
+                                window.updateNotificationCount();
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('[realtime violations poll]', err.message);
+                }
+            }
+
+            function onVisible() {
+                if (document.visibilityState === 'visible') poll();
+            }
+
+            function startPoll() {
+                if (_pollTimer) return;
+                _pollTimer = setInterval(poll, POLL_INTERVAL_MS);
+                document.addEventListener('visibilitychange', onVisible);
+            }
+
+            function stopPoll() {
+                if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+                document.removeEventListener('visibilitychange', onVisible);
+            }
+
+            // Baseline the last known ID from the violations already loaded, then start
+            function baselineAndStart() {
+                const top = violations.length > 0
+                    ? Math.max(...violations.map(v => Number(v.id) || 0))
+                    : 0;
+                if (_lastKnownId === 0 && top > 0) {
+                    _lastKnownId = top;
+                    saveSnap(_lastKnownId);
+                }
+                startPoll();
+            }
+
+            // Expose for debugging
+            window._violationsStopRTPoll  = stopPoll;
+            window._violationsStartRTPoll = startPoll;
+
+            // Start initialization, then baseline + begin polling
+            initializeData().then(baselineAndStart).catch(baselineAndStart);
+        })();
+
     } catch (error) {
         console.error('❌ Error initializing violations module:', error);
     }
@@ -6940,6 +7393,30 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowRight')  lightboxNav(1);
     if (e.key === 'ArrowLeft')   lightboxNav(-1);
 });
+
+// Touch swipe navigation for lightbox (mobile)
+(function() {
+    let _touchStartX = 0;
+    let _touchStartY = 0;
+
+    document.addEventListener('touchstart', function(e) {
+        const lb = document.getElementById('evidenceLightbox');
+        if (!lb || lb.style.display === 'none') return;
+        _touchStartX = e.touches[0].clientX;
+        _touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        const lb = document.getElementById('evidenceLightbox');
+        if (!lb || lb.style.display === 'none') return;
+        const dx = e.changedTouches[0].clientX - _touchStartX;
+        const dy = e.changedTouches[0].clientY - _touchStartY;
+        // Only trigger if horizontal swipe is dominant (not a scroll)
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+            lightboxNav(dx < 0 ? 1 : -1);
+        }
+    }, { passive: true });
+})();
 
 // ── Drag scroll for violation-details-grid ────────────────────────────────────
 (function initAdminDragScroll() {

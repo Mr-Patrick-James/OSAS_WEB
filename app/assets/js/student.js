@@ -466,12 +466,13 @@ function initStudentsModule() {
             const activePctEl   = document.getElementById('activeStudentsPct');
             const inactivePctEl = document.getElementById('inactiveStudentsPct');
             const graduatingPctEl = document.getElementById('graduatingStudentsPct');
+            const thisMonthEl   = document.getElementById('studentsThisMonth');
 
-            // Static override: 546 total enrolled (until registrar fixes duplicate IDs)
-            const total      = 546;
-            const active     = 546;
+            const total      = Number(stats.total)      || 0;
+            const active     = Number(stats.active)     || 0;
             const inactive   = Number(stats.inactive)   || 0;
             const graduating = Number(stats.graduating) || 0;
+            const newThisMonth = Number(stats.new_this_month) || 0;
 
             animateCount(totalEl,      total);
             animateCount(activeEl,     active);
@@ -485,6 +486,7 @@ function initStudentsModule() {
             if (activePctEl)     activePctEl.textContent     = `${activePct}%`;
             if (inactivePctEl)   inactivePctEl.textContent   = `${inactivePct}%`;
             if (graduatingPctEl) graduatingPctEl.textContent = `${graduatingPct}%`;
+            if (thisMonthEl)     thisMonthEl.textContent     = `+${newThisMonth} this month`;
         }
 
         async function loadStats() {
@@ -2266,6 +2268,59 @@ function initStudentsModule() {
                 });
                 renderStudents();
             }
+        }
+
+        // ── DELETE ALL STUDENTS ──────────────────────────────────────────────────
+        const btnDeleteAll = document.getElementById('btnDeleteAllStudents');
+        const deleteAllModal = document.getElementById('DeleteAllModal');
+        const deleteAllInput = document.getElementById('deleteAllConfirmInput');
+        const btnDeleteAllConfirm = document.getElementById('btnDeleteAllConfirm');
+        const btnDeleteAllCancel = document.getElementById('btnDeleteAllCancel');
+
+        if (btnDeleteAll && deleteAllModal) {
+            // Open modal
+            btnDeleteAll.addEventListener('click', () => {
+                deleteAllInput.value = '';
+                btnDeleteAllConfirm.disabled = true;
+                deleteAllModal.style.display = 'flex';
+            });
+
+            // Enable confirm only when user types DELETE
+            deleteAllInput.addEventListener('input', () => {
+                btnDeleteAllConfirm.disabled = deleteAllInput.value.trim() !== 'DELETE';
+            });
+
+            // Cancel
+            btnDeleteAllCancel.addEventListener('click', () => {
+                deleteAllModal.style.display = 'none';
+            });
+
+            // Click outside to close
+            deleteAllModal.addEventListener('click', (e) => {
+                if (e.target === deleteAllModal) deleteAllModal.style.display = 'none';
+            });
+
+            // Confirm delete
+            btnDeleteAllConfirm.addEventListener('click', async () => {
+                btnDeleteAllConfirm.disabled = true;
+                btnDeleteAllConfirm.textContent = 'Deleting...';
+                try {
+                    const res = await fetch(`${apiBase}?action=deleteAll`, { method: 'POST' });
+                    const data = await res.json();
+                    deleteAllModal.style.display = 'none';
+                    if (data.status === 'success') {
+                        window._studentsCache = { students: [], allStudents: [], stats: null, loaded: false };
+                        showSuccess('All students and login accounts deleted successfully.');
+                        await fetchStudents();
+                    } else {
+                        showError(data.message || 'Failed to delete students.');
+                    }
+                } catch (err) {
+                    deleteAllModal.style.display = 'none';
+                    showError('Error: ' + err.message);
+                }
+                btnDeleteAllConfirm.textContent = 'Delete All';
+            });
         }
 
         // Start initialization

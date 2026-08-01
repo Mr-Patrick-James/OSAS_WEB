@@ -7,7 +7,7 @@ class ReportController extends Controller {
 
     public function __construct() {
         header('Content-Type: application/json');
-        @session_start();
+        self::startSession();
         $this->model = new ReportModel();
     }
 

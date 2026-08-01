@@ -97,7 +97,6 @@ function initDepartmentModule() {
     function actionBtns(d) {
       return `
         <button class="action-btn view" data-id="${d.id}" title="View"><i class='bx bx-show'></i></button>
-        ${d.status !== 'archived' ? `<button class="action-btn edit" data-id="${d.id}" title="Edit"><i class='bx bx-edit'></i></button>` : ''}
         ${d.status === 'archived' ? `<button class="action-btn restore" data-id="${d.id}" title="Restore"><i class='bx bx-reset'></i></button>` : ''}
       `;
     }
@@ -116,7 +115,7 @@ function initDepartmentModule() {
             </div>
           </div>
         </td>
-        <td class="hod-name" data-label="HOD">${d.hod}</td>
+        <td class="hod-name" data-label="HOD">${d.hod && d.hod !== 'N/A' ? d.hod : '<span style="color:#bbb;">—</span>'}</td>
         <td class="student-count" data-label="Students">${d.studentCount}</td>
         <td class="date-created" data-label="Date Created">${d.date}</td>
         <td data-label="Status">
@@ -144,10 +143,11 @@ function initDepartmentModule() {
             </div>
             <div class="dept-card-divider"></div>
             <div class="dept-card-meta">
+              ${d.hod && d.hod !== 'N/A' ? `
               <div class="dept-card-meta-row">
                 <span class="dept-card-meta-label">HOD</span>
-                <span class="dept-card-meta-value" style="text-align:right;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.hod || 'N/A'}</span>
-              </div>
+                <span class="dept-card-meta-value" style="text-align:right;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.hod}</span>
+              </div>` : ''}
               <div class="dept-card-meta-row">
                 <span class="dept-card-meta-label">Students</span>
                 <span class="dept-card-meta-value">${d.studentCount}</span>
@@ -179,9 +179,9 @@ function initDepartmentModule() {
             <span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
               <i class='bx bx-user'></i>${d.studentCount} students
             </span>
-            <span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
-              <i class='bx bx-user-pin'></i>${d.hod || 'N/A'}
-            </span>
+            ${d.hod && d.hod !== 'N/A' ? `<span style="font-size:9px;color:var(--dark-grey);display:flex;align-items:center;gap:3px;">
+              <i class='bx bx-user-pin'></i>${d.hod}
+            </span>` : ''}
             <span class="status-badge ${d.status}" style="font-size:9px;">${d.status === 'active' ? 'Active' : 'Archived'}</span>
           </div>
         </div>
@@ -840,6 +840,10 @@ function initDepartmentModule() {
         console.error('❌ Could not find department with ID:', viewId);
       }
 
+      // Always show HOD field in edit mode
+      const hodGroupEdit = document.getElementById('hodName')?.closest('.form-group');
+      if (hodGroupEdit) hodGroupEdit.style.display = '';
+
       // Enable all fields
       if (form) {
         form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
@@ -873,6 +877,10 @@ function initDepartmentModule() {
         document.getElementById('hodName').value = (dept.hod === 'N/A' || !dept.hod) ? '' : dept.hod;
         document.getElementById('deptDescription').value = dept.description || '';
         document.getElementById('deptStatus').value = dept.status || 'active';
+
+        // Hide HOD field in view mode when there's no value
+        const hodGroup = document.getElementById('hodName')?.closest('.form-group');
+        if (hodGroup) hodGroup.style.display = (!dept.hod || dept.hod === 'N/A') ? 'none' : '';
       } else {
         console.error('❌ Could not find department with ID:', viewId);
       }
@@ -899,6 +907,9 @@ function initDepartmentModule() {
         form.reset();
         form.querySelectorAll('input, textarea, select').forEach(el => el.removeAttribute('disabled'));
       }
+      // Always show HOD field in add mode
+      const hodGroupAdd = document.getElementById('hodName')?.closest('.form-group');
+      if (hodGroupAdd) hodGroupAdd.style.display = '';
       if (saveBtn) saveBtn.style.display = '';
       delete modal.dataset.editingId;
       delete modal.dataset.editingDbId;

@@ -583,10 +583,10 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         }
 
         .stats-grid {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 3rem;
         }
 
@@ -856,7 +856,8 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             }
 
             .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr);
+                gap: 2rem;
             }
 
             .footer-grid {
@@ -1001,9 +1002,9 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             </div>
 
             <h1 class="hero-title">
-                <span class="line">E-OSAS.</span>
-                <span class="line">Office of Student.</span>
-                <span class="line gold-gradient">Affairs and Services.</span>
+                <span class="line">E-OSAS</span>
+                <span class="line">Office of Student</span>
+                <span class="line gold-gradient">Affairs and Services</span>
             </h1>
 
             <p class="hero-subtitle">
@@ -1059,7 +1060,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 <section class="features" id="features">
     <div class="section-header fade-up">
         <span class="section-tag">Capabilities</span>
-        <h2 class="section-title">Built for Modern Student Affairs</h2>
+        <h2 class="section-title">Built for Modern Student Affairs Services</h2>
     </div>
 
     <div class="bento-grid">
@@ -1185,19 +1186,14 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
 <section class="stats">
     <div class="stats-grid">
         <div class="stat-item fade-up">
-            <div class="stat-number" data-target="500">0</div>
+            <div class="stat-number" data-target="600">0</div>
             <div class="stat-label">Students</div>
             <div class="stat-desc">Enrolled across all departments</div>
         </div>
         <div class="stat-item fade-up">
-            <div class="stat-number" data-target="6">0</div>
+            <div class="stat-number" data-target="3">0</div>
             <div class="stat-label">Departments</div>
             <div class="stat-desc">Fully integrated system-wide</div>
-        </div>
-        <div class="stat-item fade-up">
-            <div class="stat-number" data-target="100">0</div>
-            <div class="stat-label">Paperless</div>
-            <div class="stat-desc">100% digital record management</div>
         </div>
         <div class="stat-item fade-up">
             <div class="stat-number" data-target="24">0</div>
@@ -2132,7 +2128,7 @@ if (!$forceLanding && isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             if (progress < 1) {
                 requestAnimationFrame(update);
             } else {
-                element.textContent = target + (target === 500 ? '+' : target === 100 ? '%' : target === 24 ? '/7' : '');
+                element.textContent = target + (target === 600 ? '+' : target === 24 ? '/7' : '');
             }
         }
 

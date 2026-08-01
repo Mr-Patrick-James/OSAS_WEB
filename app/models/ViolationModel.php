@@ -368,7 +368,7 @@ class ViolationModel extends Model {
                     'status' => $row['status'] ?? 'warning',
                     'statusLabel' => $statusLabel,
                     'notes' => $row['notes'] ?? '',
-                    'attachments' => !empty($row['attachments']) ? json_decode($row['attachments'], true) : [],
+                    'attachments' => (!empty($row['attachments']) && ($decodedAttachments = json_decode($row['attachments'], true)) !== null) ? $decodedAttachments : [],
                     'is_archived' => (int)($row['is_archived'] ?? 0),
                     'created_at' => $row['created_at'] ?? '',
                     'updated_at' => $row['updated_at'] ?? ''
@@ -483,9 +483,21 @@ class ViolationModel extends Model {
      */
     public function generateCaseId() {
         $year = date('Y');
-        $result = $this->query("SELECT COUNT(*) as count FROM violations WHERE YEAR(created_at) = ?", [$year]);
-        $count = ($result[0]['count'] ?? 0) + 1;
-        return sprintf('VIOL-%d-%03d', $year, $count);
+
+        // Use MAX of existing sequence numbers instead of COUNT so that
+        // deleting/undoing violations never causes a collision.
+        // e.g. if VIOL-2026-010 was deleted, COUNT gives 9 → generates VIOL-2026-010 → collision.
+        $result = $this->query(
+            "SELECT MAX(CAST(SUBSTRING_INDEX(case_id, '-', -1) AS UNSIGNED)) as max_seq
+             FROM violations
+             WHERE case_id LIKE ?",
+            ["VIOL-{$year}-%"]
+        );
+
+        $maxSeq = (int)($result[0]['max_seq'] ?? 0);
+        $next   = $maxSeq + 1;
+
+        return sprintf('VIOL-%d-%03d', $year, $next);
     }
 
     /**
@@ -1080,7 +1092,7 @@ class ViolationModel extends Model {
     /**
      * Get recent violations
      */
-    public function getRecent($limit = 10, $studentId = null, $reportedBy = null) {
+    public function getRecent($limit = 10, $studentId = null, $reportedBy = null, $excludeReportedBy = null) {
         $query = "
             SELECT v.id,
                    v.case_id,
@@ -1122,9 +1134,16 @@ class ViolationModel extends Model {
             $types .= "s";
         }
 
-        if (!empty($conditions)) {
-            $query .= " WHERE " . implode(" AND ", $conditions);
+        if ($excludeReportedBy) {
+            $conditions[] = "v.reported_by != ?";
+            $params[] = $excludeReportedBy;
+            $types .= "s";
         }
+
+        // Always exclude archived violations
+        $conditions[] = "v.is_archived = 0";
+
+        $query .= " WHERE " . implode(" AND ", $conditions);
         
         $query .= " ORDER BY v.created_at DESC LIMIT ?";
         $params[] = $limit;
