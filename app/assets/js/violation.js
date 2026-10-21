@@ -2957,6 +2957,76 @@ function initViolationsModule() {
             }
         }
 
+        // Build a human-readable filter summary string for export headers
+        function buildFilterSummary() {
+            const isArchiveView = currentView === 'archive';
+            const parts = [];
+
+            // Date range
+            const archiveDateFrom = document.getElementById('ArchiveDateFrom');
+            const archiveDateTo   = document.getElementById('ArchiveDateTo');
+            const from = isArchiveView
+                ? (archiveDateFrom ? archiveDateFrom.value : '')
+                : (dateFromFilter  ? dateFromFilter.value  : '');
+            const to   = isArchiveView
+                ? (archiveDateTo   ? archiveDateTo.value   : '')
+                : (dateToFilter    ? dateToFilter.value    : '');
+
+            if (from && to) {
+                const fmt = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                parts.push(`Date: ${fmt(from)} – ${fmt(to)}`);
+            } else if (from) {
+                const fmt = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                parts.push(`From: ${fmt(from)}`);
+            } else if (to) {
+                const fmt = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                parts.push(`Until: ${fmt(to)}`);
+            }
+
+            // Archive month / year
+            if (isArchiveView) {
+                const archiveMonthEl = document.getElementById('ArchiveMonthFilter');
+                const archiveYearEl  = document.getElementById('ArchiveYearFilter');
+                const monthVal = archiveMonthEl ? archiveMonthEl.value : 'all';
+                const yearVal  = archiveYearEl  ? archiveYearEl.value  : 'all';
+                if (monthVal !== 'all') {
+                    const monthName = new Date(2000, parseInt(monthVal) - 1, 1).toLocaleString('en-US', { month: 'long' });
+                    parts.push(`Month: ${monthName}`);
+                }
+                if (yearVal !== 'all') parts.push(`Year: ${yearVal}`);
+            }
+
+            // Department
+            const deptEl = isArchiveView
+                ? document.getElementById('ArchiveDeptFilter')
+                : deptFilter;
+            const deptVal = deptEl ? deptEl.value : 'all';
+            if (deptVal && deptVal !== 'all') {
+                const deptText = deptEl.options[deptEl.selectedIndex]?.text || deptVal;
+                parts.push(`Department: ${deptText}`);
+            } else {
+                parts.push('Department: All');
+            }
+
+            // Violation type (current view only)
+            if (!isArchiveView && statusFilter && statusFilter.value !== 'all') {
+                const typeText = statusFilter.options[statusFilter.selectedIndex]?.text || statusFilter.value;
+                parts.push(`Type: ${typeText}`);
+            }
+
+            // Search keyword
+            const searchEl = isArchiveView
+                ? document.getElementById('searchViolationArchive')
+                : searchInput;
+            const searchVal = searchEl ? searchEl.value.trim() : '';
+            if (searchVal) parts.push(`Search: "${searchVal}"`);
+
+            // Display mode
+            if (!isArchiveView && displayMode === 'latest') parts.push('View: Latest per Student');
+
+            return parts.length ? parts.join('  |  ') : 'All Records (No Filters Applied)';
+        }
+
         async function downloadViolationsPDF() {
             if (!window.jspdf) {
                 showNotification('PDF library not loaded. Please refresh.', 'warning');
@@ -3022,20 +3092,27 @@ function initViolationsModule() {
                 doc.setFontSize(10);
                 doc.setTextColor(60, 60, 60);
                 doc.text(`Total Records: ${exportViolations.length}`, 14, 62);
-                
-                let startY = 67;
+
+                // Filters applied
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.setFont("helvetica", "italic");
+                const filterSummaryPDF = buildFilterSummary();
+                const splitSummary = doc.splitTextToSize(`Filters: ${filterSummaryPDF}`, 269);
+                doc.text(splitSummary, 14, 67);
+                doc.setFont("helvetica", "normal");
+
+                let startY = 67 + (splitSummary.length * 5);
 
                 // Table
-                const tableColumn = ["Case ID", "Student ID", "Name", "Type", "Level", "Date", "Location", "Status"];
+                const tableColumn = ["Student ID", "Name", "Type", "Level", "Date", "Location"];
                 const tableRows = exportViolations.map(v => [
-                    v.caseId,
                     v.studentId,
                     v.studentName,
                     v.violationTypeLabel,
                     v.violationLevelLabel,
                     v.dateReported,
-                    v.locationLabel,
-                    v.statusLabel
+                    v.locationLabel
                 ]);
 
                 doc.autoTable({
@@ -3095,10 +3172,10 @@ function initViolationsModule() {
                         </style>
                     </head>
                     <body>
-                        <table width="1200" style="width: 1200px; border-collapse: collapse;">
+                        <table width="1020" style="width: 1020px; border-collapse: collapse;">
                             ${headerData ? `
                             <tr height="100" style="height: 100px;">
-                                <td colspan="8" width="1200" align="center" valign="middle" style="width: 1200px; text-align: center; vertical-align: middle;">
+                                <td colspan="6" width="1020" align="center" valign="middle" style="width: 1020px; text-align: center; vertical-align: middle;">
                                     <center>
                                         <div align="center" style="text-align: center;">
                                             <p align="center" style="text-align: center; margin: 0; padding: 0;">
@@ -3108,35 +3185,32 @@ function initViolationsModule() {
                                     </center>
                                 </td>
                             </tr>` : ''}
-                            <tr><td colspan="8" class="title" align="center" style="text-align: center;">VIOLATION LIST REPORT</td></tr>
-                            <tr><td colspan="8" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
-                            <tr><td colspan="8" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
-                            <tr><td colspan="8" class="stats" align="center" style="text-align: center;">Exported by: ${getCurrentAdminName()}</td></tr>
-                            <tr><td colspan="8" class="stats" align="center" style="text-align: center;">Total Records: ${exportViolations.length}</td></tr>
-                            <tr><td colspan="8" style="height: 20px;"></td></tr>
+                            <tr><td colspan="6" class="title" align="center" style="text-align: center;">VIOLATION LIST REPORT</td></tr>
+                            <tr><td colspan="6" class="subtitle" align="center" style="text-align: center;">Office of Student Affairs and Services</td></tr>
+                            <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Generated on: ${now.toLocaleString()}</td></tr>
+                            <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Exported by: ${getCurrentAdminName()}</td></tr>
+                            <tr><td colspan="6" class="stats" align="center" style="text-align: center;">Total Records: ${exportViolations.length}</td></tr>
+                            <tr><td colspan="6" class="stats" align="center" style="text-align: center; font-style: italic; color: #555;">Filters: ${buildFilterSummary()}</td></tr>
+                            <tr><td colspan="6" style="height: 20px;"></td></tr>
                             <tr class="data-table">
-                                <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Case ID</th>
                                 <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student ID</th>
                                 <th width="200" style="width: 200px; background-color: #e0e0e0; border: 0.5pt solid #000;">Student Name</th>
                                 <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Violation Type</th>
                                 <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Violation Level</th>
                                 <th width="120" style="width: 120px; background-color: #e0e0e0; border: 0.5pt solid #000;">Date</th>
                                 <th width="150" style="width: 150px; background-color: #e0e0e0; border: 0.5pt solid #000;">Location</th>
-                                <th width="100" style="width: 100px; background-color: #e0e0e0; border: 0.5pt solid #000;">Status</th>
                             </tr>
                 `;
 
                 exportViolations.forEach(v => {
                     html += `
                         <tr>
-                            <td>${v.caseId || ''}</td>
                             <td>${v.studentId || ''}</td>
                             <td>${v.studentName || ''}</td>
                             <td>${v.violationTypeLabel || ''}</td>
                             <td>${v.violationLevelLabel || ''}</td>
                             <td>${v.dateReported || ''}</td>
                             <td>${v.locationLabel || ''}</td>
-                            <td>${v.statusLabel || ''}</td>
                         </tr>
                     `;
                 });
@@ -3201,7 +3275,7 @@ function initViolationsModule() {
                 
                 const tableHeader = new TableRow({
                     children: [
-                        "Case ID", "Student ID", "Name", "Type", "Level", "Date", "Location", "Status"
+                        "Student ID", "Name", "Type", "Level", "Date", "Location"
                     ].map(text => new TableCell({
                         children: [new Paragraph({ 
                             children: [new TextRun({ text, bold: true, size: 18, color: "FFFFFF" })],
@@ -3221,7 +3295,7 @@ function initViolationsModule() {
                     
                     return new TableRow({
                         children: [
-                            v.caseId, v.studentId, v.studentName, v.violationTypeLabel, v.violationLevelLabel, v.dateReported, v.locationLabel, v.statusLabel
+                            v.studentId, v.studentName, v.violationTypeLabel, v.violationLevelLabel, v.dateReported, v.locationLabel
                         ].map(text => new TableCell({
                             children: [new Paragraph({ 
                                 children: [new TextRun({ text: text || "", size: 18 })],
@@ -3267,7 +3341,11 @@ function initViolationsModule() {
                     }),
                     new Paragraph({ 
                         children: [new TextRun({ text: `Total Records: ${exportViolations.length}`, bold: true, size: 20 })],
-                        spacing: { after: 400 } 
+                        spacing: { after: 100 } 
+                    }),
+                    new Paragraph({
+                        children: [new TextRun({ text: `Filters: ${buildFilterSummary()}`, italics: true, color: "555555", size: 18 })],
+                        spacing: { after: 300 }
                     }),
                     new Table({
                         rows: [tableHeader, ...tableRows],
