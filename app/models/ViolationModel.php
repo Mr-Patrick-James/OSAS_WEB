@@ -43,7 +43,7 @@ class ViolationModel extends Model {
     /**
      * Get all violations with student info
      */
-    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '', $isArchived = 0, $specificId = null, $reportedByFilter = '') {
+    public function getAllWithStudentInfo($filter = 'all', $search = '', $studentId = '', $dateFrom = '', $dateTo = '', $isArchived = 0, $specificId = null, $reportedByFilter = '', $department = '', $violationTypeId = 0, $filterMonth = 0, $filterYear = 0) {
         // Check if violations table exists
         $tableCheck = @$this->conn->query("SHOW TABLES LIKE 'violations'");
         if ($tableCheck === false || $tableCheck->num_rows === 0) {
@@ -220,6 +220,35 @@ class ViolationModel extends Model {
             $query .= " AND v.reported_by = ?";
             $params[] = $reportedByFilter;
             $types .= "s";
+        }
+
+        // Department filter (matches students.department / departments.department_code)
+        if (!empty($department) && $department !== 'all') {
+            $query .= " AND (s.department = ? OR d.department_code = ?)";
+            $params[] = $department;
+            $params[] = $department;
+            $types .= "ss";
+        }
+
+        // Violation type filter (numeric ID from the type dropdown)
+        if (!empty($violationTypeId) && $violationTypeId > 0) {
+            $query .= " AND v.violation_type_id = ?";
+            $params[] = $violationTypeId;
+            $types .= "i";
+        }
+
+        // Month filter (archive view)
+        if (!empty($filterMonth) && $filterMonth > 0) {
+            $query .= " AND MONTH(v.violation_date) = ?";
+            $params[] = $filterMonth;
+            $types .= "i";
+        }
+
+        // Year filter (archive view)
+        if (!empty($filterYear) && $filterYear > 0) {
+            $query .= " AND YEAR(v.violation_date) = ?";
+            $params[] = $filterYear;
+            $types .= "i";
         }
 
         if (!empty($specificId)) {

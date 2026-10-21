@@ -202,12 +202,16 @@ class ViolationController extends Controller
             return;
         }
 
-        $studentId = $this->getGet('student_id', '');
-        $filter    = $this->getGet('filter', 'all');
-        $search    = trim(preg_replace('/\s+/', ' ', $this->getGet('search', '')));
-        $dateFrom  = $this->getGet('date_from', '');
-        $dateTo    = $this->getGet('date_to', '');
-        $isArchived = (int)($this->getGet('is_archived') ?? $this->getGet('isArchived') ?? 0);
+        $studentId       = $this->getGet('student_id', '');
+        $filter          = $this->getGet('filter', 'all');
+        $search          = trim(preg_replace('/\s+/', ' ', $this->getGet('search', '')));
+        $dateFrom        = $this->getGet('date_from', '');
+        $dateTo          = $this->getGet('date_to', '');
+        $isArchived      = (int)($this->getGet('is_archived') ?? $this->getGet('isArchived') ?? 0);
+        $department      = $this->getGet('department', '');
+        $violationTypeId = (int)$this->getGet('violation_type_id', 0);
+        $filterMonth     = (int)$this->getGet('month', 0);
+        $filterYear      = (int)$this->getGet('year', 0);
 
         if ($action === 'archive') {
             try {
@@ -318,7 +322,11 @@ class ViolationController extends Controller
                 $dateTo,
                 $isArchived,
                 null,
-                $reportedByFilter
+                $reportedByFilter,
+                $department,
+                $violationTypeId,
+                $filterMonth,
+                $filterYear
             );
 
             $this->json([

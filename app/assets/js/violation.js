@@ -2876,26 +2876,81 @@ function initViolationsModule() {
         // Helper function to get all violations for export based on current filters
         async function getFilteredViolationsForExport() {
             try {
-                const search = searchInput ? searchInput.value : '';
-                const dept = deptFilter ? deptFilter.value : 'all';
-                const status = statusFilter ? statusFilter.value : 'all';
-                const dateFrom = dateFromFilter ? dateFromFilter.value : '';
-                const dateTo = dateToFilter ? dateToFilter.value : '';
-                const isArchived = currentView === 'archive' ? 1 : 0;
-                
-                let url = API_BASE + `violations.php?is_archived=${isArchived}&filter=${status}&department=${encodeURIComponent(dept)}&date_from=${dateFrom}&date_to=${dateTo}&limit=all&t=${new Date().getTime()}`;
-                if (search) {
-                    url += `&search=${encodeURIComponent(search)}`;
-                }
-                
+                const isArchiveView = currentView === 'archive';
+                const isArchived    = isArchiveView ? 1 : 0;
+
+                // ── Pick the correct filter inputs depending on which view is active ──
+                const archiveDeptEl   = document.getElementById('ArchiveDeptFilter');
+                const archiveDateFrom = document.getElementById('ArchiveDateFrom');
+                const archiveDateTo   = document.getElementById('ArchiveDateTo');
+                const archiveMonthEl  = document.getElementById('ArchiveMonthFilter');
+                const archiveYearEl   = document.getElementById('ArchiveYearFilter');
+                const archiveSearchEl = document.getElementById('searchViolationArchive');
+
+                const search   = isArchiveView
+                    ? (archiveSearchEl  ? archiveSearchEl.value  : '')
+                    : (searchInput      ? searchInput.value      : '');
+
+                const dept     = isArchiveView
+                    ? (archiveDeptEl    ? archiveDeptEl.value    : 'all')
+                    : (deptFilter       ? deptFilter.value       : 'all');
+
+                const dateFrom = isArchiveView
+                    ? (archiveDateFrom  ? archiveDateFrom.value  : '')
+                    : (dateFromFilter   ? dateFromFilter.value   : '');
+
+                const dateTo   = isArchiveView
+                    ? (archiveDateTo    ? archiveDateTo.value    : '')
+                    : (dateToFilter     ? dateToFilter.value     : '');
+
+                // violation_type_id: the status filter dropdown holds a numeric type ID (or 'all')
+                const violationTypeId = (!isArchiveView && statusFilter && statusFilter.value !== 'all')
+                    ? statusFilter.value
+                    : '';
+
+                // Archive-specific: month / year
+                const archiveMonth = isArchiveView && archiveMonthEl && archiveMonthEl.value !== 'all'
+                    ? archiveMonthEl.value : '';
+                const archiveYear  = isArchiveView && archiveYearEl  && archiveYearEl.value  !== 'all'
+                    ? archiveYearEl.value  : '';
+
+                let url = API_BASE + `violations.php?is_archived=${isArchived}&date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}&limit=all&t=${new Date().getTime()}`;
+
+                if (dept && dept !== 'all')           url += `&department=${encodeURIComponent(dept)}`;
+                if (violationTypeId)                  url += `&violation_type_id=${encodeURIComponent(violationTypeId)}`;
+                if (search.trim())                    url += `&search=${encodeURIComponent(search.trim())}`;
+                if (archiveMonth)                     url += `&month=${encodeURIComponent(archiveMonth)}`;
+                if (archiveYear)                      url += `&year=${encodeURIComponent(archiveYear)}`;
+
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                
+
                 const result = await response.json();
-                if (result.status === 'success') {
-                    return result.violations || result.data || [];
+                if (result.status !== 'success') return [];
+
+                let records = result.violations || result.data || [];
+
+                // ── Apply displayMode (latest per student) client-side after fetch ──
+                if (!isArchiveView && displayMode === 'latest' && !search.trim()) {
+                    const seen = new Map();
+                    records.forEach(v => { if (!seen.has(v.studentId)) seen.set(v.studentId, v); });
+                    records = Array.from(seen.values());
                 }
-                return [];
+
+                // ── Apply the current sort order client-side ──
+                const sortDir = sortOrderFilter ? sortOrderFilter.value : 'desc';
+                records.sort((a, b) => {
+                    const getMs = v => {
+                        const ds = v.dateReported || v.violationDate || v.date_reported || v.created_at || '';
+                        const ts = v.violationTime || v.time || '00:00:00';
+                        const dt = new Date(`${ds} ${ts}`);
+                        return isNaN(dt.getTime()) ? 0 : dt.getTime();
+                    };
+                    const diff = getMs(b) - getMs(a);
+                    return sortDir === 'asc' ? -diff : diff;
+                });
+
+                return records;
             } catch (error) {
                 console.error('Error fetching violations for export:', error);
                 return [];
